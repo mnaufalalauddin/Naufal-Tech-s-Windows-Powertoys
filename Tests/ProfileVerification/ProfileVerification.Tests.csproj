@@ -1,0 +1,71 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\BuiltInAppsCatalog.cs" Link="BuiltInAppsCatalog.cs" />
+    <Compile Include="..\..\BuiltInAppsRemoval.cs" Link="BuiltInAppsRemoval.cs" />
+    <Compile Include="..\..\AppDataPaths.cs" Link="AppDataPaths.cs" />
+    <Compile Include="..\..\CatalogActionRunner.cs" Link="CatalogActionRunner.cs" />
+    <Compile Include="..\..\EssentialBulkActionsService.cs" Link="EssentialBulkActionsService.cs" />
+    <Compile Include="..\..\CatalogVerificationReport.cs" Link="CatalogVerificationReport.cs" />
+    <Compile Include="..\..\GamingDeviceNetworkService.cs" Link="GamingDeviceNetworkService.cs" />
+    <Compile Include="..\..\RegistryRestorePlan.cs" Link="RegistryRestorePlan.cs" />
+    <Compile Include="..\..\DocumentedRestoreDefaults.cs" Link="DocumentedRestoreDefaults.cs" />
+    <Compile Include="..\..\ServiceRestoreRuntime.cs" Link="ServiceRestoreRuntime.cs" />
+    <Compile Include="..\..\PreviousServiceSnapshot.cs" Link="PreviousServiceSnapshot.cs" />
+    <Compile Include="..\..\RegistryRestoreWrite.cs" Link="RegistryRestoreWrite.cs" />
+    <Compile Include="..\..\StoreDaclSnapshot.cs" Link="StoreDaclSnapshot.cs" />
+    <Compile Include="..\..\TeredoConfiguration.cs" Link="TeredoConfiguration.cs" />
+    <Compile Include="..\..\CatalogAvailability.cs" Link="CatalogAvailability.cs" />
+    <Compile Include="..\..\TaskAdmission.cs" Link="TaskAdmission.cs" />
+    <Compile Include="..\..\OfficeScriptDiscovery.cs" Link="OfficeScriptDiscovery.cs" />
+    <Compile Include="..\..\RepairCommandOutcome.cs" Link="RepairCommandOutcome.cs" />
+    <Compile Include="..\..\MaintenanceCompletion.cs" Link="MaintenanceCompletion.cs" />
+    <Compile Include="..\..\CatalogStateReader.cs" Link="CatalogStateReader.cs" />
+    <Compile Include="..\..\GpuDriverVersionVerification.cs" Link="GpuDriverVersionVerification.cs" />
+    <Compile Include="..\..\StoreResetCommand.cs" Link="StoreResetCommand.cs" />
+    <Compile Include="..\..\StoreRegistrationVerification.cs" Link="StoreRegistrationVerification.cs" />
+    <Compile Include="..\..\UpdateServiceStartupPolicy.cs" Link="UpdateServiceStartupPolicy.cs" />
+    <Compile Include="..\..\UpdateCacheReset.cs" Link="UpdateCacheReset.cs" />
+    <Compile Include="..\..\NativePowerPolicyReader.cs" Link="NativePowerPolicyReader.cs" />
+    <Compile Include="..\..\BoundedReadProbe.cs" Link="BoundedReadProbe.cs" />
+    <Compile Include="..\..\BcdRestoreVerification.cs" Link="BcdRestoreVerification.cs" />
+    <Compile Include="..\..\CatalogDisplayNames.cs" Link="CatalogDisplayNames.cs" />
+    <Compile Include="..\..\CatalogOperationProgress.cs" Link="CatalogOperationProgress.cs" />
+    <Compile Include="..\..\CatalogProgressState.cs" Link="CatalogProgressState.cs" />
+    <Compile Include="..\..\BoundedOperationGate.cs" Link="BoundedOperationGate.cs" />
+    <Compile Include="..\..\FirstRunWizardPolicy.cs" Link="FirstRunWizardPolicy.cs" />
+    <Compile Include="..\..\WmiPrerequisiteProbe.cs" Link="WmiPrerequisiteProbe.cs" />
+    <Compile Include="..\..\ToolActionModels.cs" Link="ToolActionModels.cs" />
+    <Compile Include="..\..\AtomicDownloadFile.cs" Link="AtomicDownloadFile.cs" />
+    <Compile Include="..\..\OperationGate.cs" Link="OperationGate.cs" />
+    <Compile Include="..\..\RegistrySnapshotCommit.cs" Link="RegistrySnapshotCommit.cs" />
+    <Compile Include="..\..\ServiceRestoreSnapshot.cs" Link="ServiceRestoreSnapshot.cs" />
+    <Compile Include="..\..\TaskActivityService.cs" Link="TaskActivityService.cs" />
+    <Compile Include="..\..\CatalogSelectionPlan.cs" Link="CatalogSelectionPlan.cs" />
+    <Compile Include="..\..\ToggleCatalogModels.cs" Link="ToggleCatalogModels.cs" />
+    <Compile Include="..\..\PerformanceProfileVerification.cs" Link="PerformanceProfileVerification.cs" />
+    <Compile Include="..\..\PerformanceProfileVerificationService.cs" Link="PerformanceProfileVerificationService.cs" />
+    <Compile Include="..\..\NativeRscReader.cs" Link="NativeRscReader.cs" />
+    <Compile Include="..\..\NativeRscService.cs" Link="NativeRscService.cs" />
+    <Compile Include="..\..\GamingLiveStatusService.cs" Link="GamingLiveStatusService.cs" />
+    <Compile Include="..\..\MaintenanceProgress.cs" Link="MaintenanceProgress.cs" />
+    <Compile Include="..\..\CommandOutputProgress.cs" Link="CommandOutputProgress.cs" />
+    <Compile Include="..\..\NativeCommandRunner.cs" Link="NativeCommandRunner.cs" />
+    <Compile Include="..\..\BitLockerVolumeInfo.cs" Link="BitLockerVolumeInfo.cs" />
+    <Compile Include="..\..\NativeHardwareData.cs" Link="NativeHardwareData.cs" />
+    <Compile Include="..\..\StoreResetStage.cs" Link="StoreResetStage.cs" />
+    <Compile Include="..\..\RuntimeActionAvailability.cs" Link="RuntimeActionAvailability.cs" />
+    <Compile Include="..\..\RuntimePrerequisiteVerification.cs" Link="RuntimePrerequisiteVerification.cs" />
+    <Compile Include="..\..\EssentialSnapshotValidation.cs" Link="EssentialSnapshotValidation.cs" />
+    <Compile Include="..\..\PerformanceProfileTransaction.cs" Link="PerformanceProfileTransaction.cs" />
+    <Compile Include="..\..\SupplementalUiCatalog.cs" Link="SupplementalUiCatalog.cs" />
+    <Compile Include="..\..\MsiNdisIdentity.cs" Link="MsiNdisIdentity.cs" />
+    <Compile Include="..\..\UiTextKeys.cs" Link="UiTextKeys.cs" />
+  </ItemGroup>
+</Project>

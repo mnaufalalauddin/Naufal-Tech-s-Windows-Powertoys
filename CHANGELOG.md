@@ -728,7 +728,7 @@ This documentation-only update does not rebuild or replace either artifact.
   entry. [PORTING_STATUS.md](PORTING_STATUS.md) is cumulative and also contains
   historical statements superseded by newer checkpoints.
 - Early workspace evidence is retained under
-  `C:\Users\Naufal\Documents\Codex\2026-08-30\a\analysis\v78-static`, including
+  `<private-analysis-workspace>/v78-static`, including
   `migration-map.md`, `feature-migration-matrix.md`, and `feature-parity-audit.md`.
   Initial analysis scripts and source snapshots corroborate the 30 August start.
 - The 3 September audit records the original EXE SHA-256 as

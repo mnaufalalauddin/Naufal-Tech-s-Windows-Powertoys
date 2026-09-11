@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Naufal Tech's Windows Powertoys (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Naufal Tech's Windows Powertoys (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
