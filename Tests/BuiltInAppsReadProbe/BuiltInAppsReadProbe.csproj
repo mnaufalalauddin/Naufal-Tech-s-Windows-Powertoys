@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\BuiltInAppsCatalog.cs" Link="BuiltInAppsCatalog.cs" />
+    <Compile Include="..\..\BuiltInAppsService.cs" Link="BuiltInAppsService.cs" />
+    <Compile Include="..\..\BuiltInAppsRemoval.cs" Link="BuiltInAppsRemoval.cs" />
+    <Compile Include="..\..\AppDataPaths.cs" Link="AppDataPaths.cs" />
+    <Compile Include="..\..\BoundedReadProbe.cs" Link="BoundedReadProbe.cs" />
+    <Compile Include="..\..\BoundedOperationGate.cs" Link="BoundedOperationGate.cs" />
+    <Compile Include="..\..\DeploymentOperationTimeout.cs" Link="DeploymentOperationTimeout.cs" />
+    <Compile Include="..\..\CatalogOperationProgress.cs" Link="CatalogOperationProgress.cs" />
+    <Compile Include="..\..\CatalogDisplayNames.cs" Link="CatalogDisplayNames.cs" />
+    <Compile Include="..\..\ToolActionModels.cs" Link="ToolActionModels.cs" />
+    <Compile Include="..\..\NativeCommandRunner.cs" Link="NativeCommandRunner.cs" />
+  </ItemGroup>
+</Project>

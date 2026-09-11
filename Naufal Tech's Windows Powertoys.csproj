@@ -1,0 +1,107 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>Naufal_Windows_Tech_s_Powertoys</RootNamespace>
+    <AssemblyName>Naufal Windows Powertoys</AssemblyName>
+    <AssemblyTitle>Windows 10/11 PowerToys for IT System-Administrator</AssemblyTitle>
+    <Product>Naufal Tech's Windows Powertoys</Product>
+    <Description>Windows 10/11 PowerToys for IT System-Administrator</Description>
+    <Version>8.0.0</Version>
+    <InformationalVersion>8.0.0.0</InformationalVersion>
+    <AssemblyVersion>8.0.0.0</AssemblyVersion>
+    <FileVersion>8.0.0.0</FileVersion>
+    <Company>Naufal Tech's Ltd.</Company>
+    <GenerateAssemblyCompanyAttribute>true</GenerateAssemblyCompanyAttribute>
+    <ApplicationIcon>Assets\NaufalWindowsPowertoys.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifier Condition="'$(Platform)' == 'x86'">win-x86</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(Platform)' == 'x64'">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
+    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Tests\**</DefaultItemExcludes>
+    <SatelliteResourceLanguages>en-US;id-ID;de-DE;fr-FR;ar-SA;fil-PH;vi-VN;zh-CN;zh-TW;th-TH;ru-RU;uk-UA;pt-PT;ja-JP;ko-KR;ur-PK;ta-IN;hi-IN;ms-MY;sv-SE;es-ES</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\NaufalWindowsPowertoys.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Keep the same branding assets beside the unpackaged executable. This is
+         required by AppWindow.SetIcon and keeps package/shortcut branding in sync. -->
+    <Content Update="Assets\*.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Retain the full-resolution user source in the repository only; runtime
+         uses the ICO and derived package assets above. -->
+    <Content Update="Assets\BrandingSource.png" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!--
+    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
+    Tools extension to be activated for this project even if the Windows App SDK Nuget
+    package has not yet been restored.
+  -->
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+  </ItemGroup>
+
+  <!--
+    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
+    Explorer "Package and Publish" context menu entry to be enabled for this project even if
+    the Windows App SDK Nuget package has not yet been restored.
+  -->
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <!-- Publish Properties -->
+  <PropertyGroup>
+    <!-- Native AOT is a Release/publish concern. Debug remains fast and editable. -->
+    <PublishAot Condition="'$(Configuration)' == 'Release'">True</PublishAot>
+    <SelfContained Condition="'$(Configuration)' == 'Release'">True</SelfContained>
+    <WindowsPackageType Condition="'$(Configuration)' == 'Release'">None</WindowsPackageType>
+    <WindowsAppSDKSelfContained Condition="'$(Configuration)' == 'Release'">True</WindowsAppSDKSelfContained>
+    <WindowsAppSdkBootstrapInitialize Condition="'$(Configuration)' == 'Release'">False</WindowsAppSdkBootstrapInitialize>
+    <WindowsAppSdkDeploymentManagerInitialize Condition="'$(Configuration)' == 'Release'">False</WindowsAppSdkDeploymentManagerInitialize>
+    <PublishReadyToRun>False</PublishReadyToRun>
+    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+  </PropertyGroup>
+
+  <Target Name="RemoveObsoletePublishedBranding" AfterTargets="Publish">
+    <Delete Files="$(PublishDir)Naufal Tech's Windows Powertoys.exe;$(PublishDir)Naufal Techs Windows Powertoys.pdb;$(PublishDir)Naufal Windows Tech's Powertoys.pdb" />
+  </Target>
+
+  <Target Name="RemoveUnsupportedWinUiMuiLanguages" AfterTargets="Publish">
+    <ItemGroup>
+      <_UnsupportedWinUiMui Include="$(PublishDir)**\Microsoft.ui.xaml.dll.mui;$(PublishDir)**\Microsoft.UI.Xaml.Phone.dll.mui"
+                            Exclude="$(PublishDir)en-us\**\*.mui;$(PublishDir)id-ID\**\*.mui;$(PublishDir)de-DE\**\*.mui;$(PublishDir)fr-FR\**\*.mui;$(PublishDir)ar-SA\**\*.mui;$(PublishDir)fil-PH\**\*.mui;$(PublishDir)vi-VN\**\*.mui;$(PublishDir)zh-CN\**\*.mui;$(PublishDir)zh-TW\**\*.mui;$(PublishDir)th-TH\**\*.mui;$(PublishDir)ru-RU\**\*.mui;$(PublishDir)uk-UA\**\*.mui;$(PublishDir)pt-PT\**\*.mui;$(PublishDir)ja-JP\**\*.mui;$(PublishDir)ko-KR\**\*.mui;$(PublishDir)ur-PK\**\*.mui;$(PublishDir)ta-IN\**\*.mui;$(PublishDir)hi-IN\**\*.mui;$(PublishDir)ms-MY\**\*.mui;$(PublishDir)sv-SE\**\*.mui;$(PublishDir)es-ES\**\*.mui" />
+      <_UnsupportedWinUiLanguageDirectory Include="@(_UnsupportedWinUiMui->'%(RootDir)%(Directory)')" />
+    </ItemGroup>
+    <Delete Files="@(_UnsupportedWinUiMui)" />
+    <RemoveDir Directories="@(_UnsupportedWinUiLanguageDirectory)" />
+  </Target>
+
+</Project>

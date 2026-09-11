@@ -1,0 +1,58 @@
+# Structural integration checks only: no UI click, process launch or OS mutation.
+$ErrorActionPreference = 'Stop'
+$root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$main = Get-Content -LiteralPath (Join-Path $root 'MainWindow.xaml.cs') -Raw
+$progress = Get-Content -LiteralPath (Join-Path $root 'CatalogProgressWindow.cs') -Raw
+[xml]$app = Get-Content -LiteralPath (Join-Path $root 'App.xaml') -Raw
+[xml]$window = Get-Content -LiteralPath (Join-Path $root 'MainWindow.xaml') -Raw
+$count = 0
+function Assert([bool]$value, [string]$name) {
+    if (-not $value) { throw "FAILED: $name" }
+    $script:count++
+}
+# Reference Main UI order from the installed 7.8 application, not from the
+# generated current route list. Labels are canonical English localization keys.
+$routes = [ordered]@{
+    FullRepair = 'Full Repair'; QuickRepair = 'Quick Repair'
+    WindowsUpdateFix = 'Windows Update Fix'; MicrosoftStoreFix = 'Microsoft Store Fix'
+    ExplorerFix = 'Explorer Fix'; DiskInfo = 'Disk Info'; SystemReport = 'System Report'
+    WindowsActivation = 'Windows Activation'; OfficeActivation = 'Office Activation'
+    DisableDefender = 'Disable Defender'; RestoreDefender = 'Restore Defender'
+    BitLockerManager = 'BitLocker Manager'; SmartAppControl = 'Smart App Control'
+    EssentialTweaks = 'Essential Windows Tweaks'; GamingTweaks = 'Gaming Tweaks'
+    RuntimeCompatibility = 'Games Runtime & Compatibility Check'; GpuDriverManager = 'GPU Driver Manager'
+    Debloat = 'Advanced Windows Tweaks & De-Bloat'; MsiModeUtility = 'MSI Mode Utility'
+    LegacyWindowsPanels = 'Legacy Windows Panels'
+}
+$buttons = @($window.SelectNodes('//*[local-name()="Button"]'))
+$last = -1
+foreach ($route in $routes.GetEnumerator()) {
+    $matches = @($buttons | Where-Object { $_.GetAttribute('Click') -ceq ($route.Key + 'Button_Click') })
+    Assert ($matches.Count -eq 1) ("one reference button: " + $route.Key)
+    Assert ($matches[0].GetAttribute('Content') -ceq $route.Value) ("reference label: " + $route.Key)
+    $index = [array]::IndexOf($buttons, $matches[0])
+    Assert ($index -gt $last) ("reference order: " + $route.Key)
+    $last = $index
+}
+$ns = [Xml.XmlNamespaceManager]::new($app.NameTable)
+$ns.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
+$base = $app.SelectSingleNode('//*[local-name()="Style" and @x:Key="ReferenceButtonStyle"]', $ns)
+Assert ($null -ne $base) 'shared button style exists'
+foreach ($pair in @{ MinHeight='34'; Padding='10,4'; CornerRadius='0'; BorderThickness='1'; HorizontalContentAlignment='Center'; VerticalContentAlignment='Center' }.GetEnumerator()) {
+    $setter = $base.SelectSingleNode('*[local-name()="Setter" and @Property="' + $pair.Key + '"]')
+    Assert ($null -ne $setter -and $setter.GetAttribute('Value') -ceq $pair.Value) ("shared button metric: " + $pair.Key)
+}
+Assert ($null -ne $app.SelectSingleNode('//*[local-name()="Style" and @TargetType="Button" and not(@x:Key) and @BasedOn="{StaticResource ReferenceButtonStyle}"]', $ns)) 'dynamic buttons inherit the shared style'
+Assert ($window.OuterXml.Contains('BasedOn="{StaticResource ReferenceButtonStyle}"')) 'Main UI inherits the same button base'
+Assert ([regex]::Matches($main, 'await RunIndividualActionAsync\(async \(\) =>').Count -eq 2) 'both action directions use pre-confirmation guard'
+Assert ($main.Contains('window.IsBusy = () => applyInProgress || stateLoadInProgress || individualActionGate.IsBusy;')) 'catalog cannot close during individual confirmation/queue/work'
+Assert ([regex]::Matches($main, 'window.IsClosed \|\| (applyInProgress \|\| stateLoadInProgress|stateLoadInProgress \|\| applyInProgress) \|\| individualActionGate.IsBusy').Count -eq 3) 'analyze/apply/restore exclude individual work'
+Assert ($main.Contains('foreach (var item in individualButtons)')) 'action buttons participate in interaction locking'
+Assert ($main.Contains('actionService, action, restore: false, progressWindow.CreateReporter(action.Id)')) 'Apply reporter reaches shared worker'
+Assert ($main.Contains('actionService, action, restore: true, progressWindow.CreateReporter(action.Id)')) 'Restore reporter reaches shared worker'
+Assert (-not $main.Contains('await Task.Run(() => actionService.RestoreAsync(action))')) 'old reporter-less Restore route removed'
+Assert ($progress.Contains('_overallBar.IsIndeterminate = _progress.IsOverallIndeterminate;')) 'overall consumes honest activity state'
+Assert ($progress.Contains('UpdateOverall(_progress.Settled, update.Detail);')) 'live detail also updates export summary'
+Assert ($progress.Contains('_progress.HasFailures ? FailureBrush() : WorkingBrush()')) 'overall failures remain red while tasks continue'
+Assert ($progress.Contains('_overallBar.IsIndeterminate = false;')) 'terminal overall stops animating'
+Write-Output "PASS: $count static button/routing/progress assertions. Native layout and clicks are not certified."
