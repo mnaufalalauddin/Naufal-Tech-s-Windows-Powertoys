@@ -4,14 +4,14 @@
 
 Advanced Windows Tweaks & De-Bloat → Built-in Windows Apps → **Review apps**.
 This is an additional action; the existing 41 tweak definitions are unchanged.
-The review window has 31 unchecked app rows, Select all, De-select all,
+The review window has 32 unchecked app rows (31 Store apps plus Microsoft OneDrive), Select all, De-select all,
 Analyze / reload, **Uninstall selected**, **Restore selected**, and an individual
-Microsoft Store button for each app. Both batch actions require confirmation.
+Microsoft Store button for each Store app and a Microsoft website button for OneDrive. Both batch actions require confirmation.
 Missing apps remain selectable for restore. A read failure disables mutation;
 it is not interpreted as an empty inventory. App names remain product names;
 the new controls, scope, warnings and consent text have entries in all 23 languages.
 
-Scope is the current process's Windows account, including when the program is
+For the 31 Store apps, scope is the current process's Windows account, including when the program is
 started with credentials for another account. It does not uninstall packages
 from other accounts, remove provisioning, alter WindowsApps ACLs, remove app
 frameworks/resources, remove Microsoft Store/App Installer, or uninstall classic
@@ -40,7 +40,7 @@ data or necessarily the exact previously installed app version.
 
 ## Identity / Store recovery map
 
-All identities are exact package families. `8wekyb3d8bbwe` is the publisher suffix
+The original 31 entries use exact package families. `8wekyb3d8bbwe` is the publisher suffix
 unless explicitly shown. Teams accepts the two named package-family alternatives.
 Product IDs link to the corresponding Microsoft Store listing checked during
 implementation; links/availability can change independently of this application.
@@ -78,6 +78,67 @@ implementation; links/availability can change independently of this application.
 | Web Media Extensions | Microsoft.WebMediaExtensions | [9N5TDP8VCMHS](https://apps.microsoft.com/detail/9n5tdp8vcmhs) |
 | WebP Image Extension | Microsoft.WebpImageExtension | [9PG2DK419DRG](https://apps.microsoft.com/detail/9pg2dk419drg) |
 | Windows Notepad | Microsoft.WindowsNotepad | [9MSMLRH6LZF3](https://apps.microsoft.com/detail/9msmlrh6lzf3) |
+| Microsoft OneDrive | Desktop sync client, `Microsoft.OneDrive` | WinGet community source, exact ID and explicit installation scope; not the Store viewer |
+
+## Microsoft OneDrive — desktop client (added 12 September 2026)
+
+The 32nd entry uninstalls/restores the desktop sync client. The separate existing
+OneDrive startup tweak remains unchanged. Inventory reads the exact Microsoft
+OneDrive uninstall registration in HKCU/HKLM and both registry views, plus the
+client executable in Microsoft's standard installation directories. Read errors
+are not absence. A registration without an executable (or vice versa) needs
+repair; it is not a healthy installed client. Multiple scopes fail closed.
+
+Uninstall/restore uses WinGet's exact `Microsoft.OneDrive` identity with `--scope
+user` or `--scope machine` and the verified official `winget` source. No fuzzy
+search, forced process closure, hash bypass, reboot, source reset or Store-viewer
+substitution is performed. This requires WinGet for the running Windows account.
+If it is unavailable or the source/installer/readback fails, the operation reports
+that limitation and offers the Microsoft recovery page / Windows Installed apps;
+it does not report false success or silently download from a different source.
+
+Confirmation warns that a shared installation affects **all users**, requires
+finishing synchronization first and discloses source/package agreement acceptance.
+The observed scope is saved atomically before removal to
+`%LOCALAPPDATA%\Naufal Windows Powertoys\Backups\BuiltInApps\OneDrive-scope.txt`.
+Restore keeps an existing installation's scope; otherwise it uses that saved
+scope, or Microsoft's default per-user installation when no scope was saved.
+An invalid/unreadable scope file is an error, not permission to guess.
+
+Only Microsoft's installer/uninstaller, invoked by WinGet, changes the client.
+The application never cleans OneDrive sync folders or deletes cloud files. Restore
+does not recover deleted personal data; sign-in and sync-folder selection may
+still be required. A successful result requires fresh scoped registration and
+executable readback, not just a zero process exit. Progress is indeterminate while
+WinGet works and shares the same timeout/pending-deployment gate as other apps.
+
+Implementation references checked 12 September 2026:
+
+- [Microsoft: reinstall OneDrive and distinguish desktop client from Store viewer](https://support.microsoft.com/en-us/onedrive/reinstall-onedrive).
+- [Microsoft: default per-user and shared per-machine installation](https://learn.microsoft.com/en-us/sharepoint/per-machine-installation).
+- [Microsoft WinGet OneDrive installer manifest: exact package, user/machine scopes and official installers](https://github.com/microsoft/winget-pkgs/blob/master/manifests/m/Microsoft/OneDrive/26.022.0203.0006/Microsoft.OneDrive.installer.yaml). Runtime resolves the current compatible package; it does not pin this reference version.
+- [Microsoft: official WinGet source identity](https://learn.microsoft.com/en-us/windows/package-manager/winget/source).
+
+OneDrive verification: Debug build passed with 0 errors/0 warnings; 2,749
+functional assertions and 96,927 localization assertions passed. These include
+synthetic uninstall/restore, missing-app, scope and source-validation tests.
+No OneDrive installation or removal was executed on the user's PC. Updated Native
+AOT publish and Setup compile also succeeded on 12 September 2026:
+
+- Stage: `artifacts/publish/win-x64-20260912-141007-005` (payload hashes verified).
+- EXE: 19,905,536 bytes; SHA256
+  `916EDF3597A152E76CA4974B2697FED73B5A535AF3FAEDF914C94B3A0D8AB716`.
+- Setup: `artifacts/installer/Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe`,
+  38,072,079 bytes; SHA256
+  `68B207492BB0A01A66C1814A937F1A1093076082CF616F5306E77A25E91DE696`.
+- Version 8.0.0.0; company Naufal Tech's Ltd.; both unsigned.
+- 91 published icon checks, 80 catalog/routing checks, 18 AppData checks,
+  12 installer-location checks and 10 publish-stage checks passed.
+- The application and installer were built, not launched or installed in this test.
+
+The records in the final section below remain the **earlier 31-app baseline**,
+not OneDrive runtime evidence. The same-named Setup has now been rebuilt; its old
+checksum no longer describes the current file. Existing staged app payloads remain.
 
 ## Progress, audit and failure semantics
 

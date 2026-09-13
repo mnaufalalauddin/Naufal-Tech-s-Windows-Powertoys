@@ -5,9 +5,9 @@ internal static class BuiltInAppsTests
     internal static async Task RunAsync(Action<bool, string> check)
     {
         var targets = BuiltInAppsCatalog.Targets;
-        check(targets.Count == 31, "built-in apps exactly 31 rows");
-        check(targets.SelectMany(t => t.Families).Distinct().Count() == 32, "31 apps / 32 exact families including Teams variants");
-        check(targets.Select(t => t.Id).Distinct().Count() == 31, "stable unique app IDs");
+        check(targets.Count == 32, "built-in apps exactly 32 rows including OneDrive");
+        check(targets.SelectMany(t => t.Families).Distinct().Count() == 32, "31 Store apps / 32 exact families unchanged");
+        check(targets.Select(t => t.Id).Distinct().Count() == 32, "stable unique app IDs");
         foreach (var target in targets)
         foreach (string family in target.Families)
         {
@@ -31,7 +31,8 @@ internal static class BuiltInAppsTests
         foreach (var target in targets)
         {
             var uri = BuiltInAppsCatalog.StoreUri(target);
-            check(uri.Scheme == "ms-windows-store" && uri.Host == "pdp", "official Store link " + target.Id);
+            check(target.Kind == BuiltInAppKind.OneDriveDesktop ? uri.AbsoluteUri == OneDriveAppPolicy.RecoveryUrl
+                : uri.Scheme == "ms-windows-store" && uri.Host == "pdp", "official recovery link " + target.Id);
             if (BuiltInAppsCatalog.StoreProductId(target.Id) is string product)
             {
                 var args = BuiltInAppsCatalog.InstallArguments(target.Id);
@@ -53,11 +54,11 @@ internal static class BuiltInAppsTests
         Fake backend = new() { Packages = targets.Select(t => Package(t)).ToList() };
         var updates = new Updates();
         var removed = await BuiltInAppsRemoval.RunAsync(backend, targets.Select(t => t.Id), updates);
-        check(removed.Success && removed.Succeeded == 31 && backend.Packages.Count == 0, "all 31 uninstall verified");
-        check(backend.Saved && !backend.SavedRestore && backend.Log.Count == 31, "plan before removal and 31 result logs");
-        check(updates.Items.Count(u => u.State == "COMPLETED") == 31 && updates.Items.Any(u => u.State == "PROGRESS"), "per-app success and live progress");
+        check(removed.Success && removed.Succeeded == 32 && backend.Packages.Count == 0, "all 32 uninstall verified");
+        check(backend.Saved && !backend.SavedRestore && backend.Log.Count == 32, "plan before removal and 32 result logs");
+        check(updates.Items.Count(u => u.State == "COMPLETED") == 32 && updates.Items.Any(u => u.State == "PROGRESS"), "per-app success and live progress");
         var restored = await BuiltInAppsRemoval.RunAsync(backend, targets.Select(t => t.Id), updates, restore: true);
-        check(restored.Success && restored.Succeeded == 31 && backend.Packages.Count == 31, "restore all 31 missing apps verifies each family");
+        check(restored.Success && restored.Succeeded == 32 && backend.Packages.Count == 32, "restore all 32 missing apps verifies each identity");
         check(backend.SavedRestore, "restore saves audit before mutations");
         backend = new(); updates = new();
         removed = await BuiltInAppsRemoval.RunAsync(backend, ["Clock"], updates);
@@ -110,14 +111,93 @@ internal static class BuiltInAppsTests
         check(ui.Contains("primaryButtonText: \"Uninstall selected\"") && ui.Contains("secondaryButtonText: \"Restore selected\""), "both requested buttons wired");
         check(ui.Contains("new CatalogProgressWindow(window, verb") && ui.Contains("progressWindow.UnavailableItem"), "separate per-app progress and neutral absence");
         check(ui.Contains("IsChecked = false") && ui.Contains("CloseOnPrimary = true") && ui.IndexOf("confirmWindow.ShowAsync()") < ui.IndexOf("BuiltInAppsRemoval.RunAsync"), "no preselection / confirm before mutation");
+        await CheckOneDriveAsync(check, targets, service, ui, root);
     }
 
     private static BuiltInAppPackage Package(BuiltInAppTarget target, string? family = null)
     {
+        if (family is null && target.Kind == BuiltInAppKind.OneDriveDesktop)
+            return OneDriveAppPolicy.Installed("user", true);
         family ??= target.Families[0];
         int split = family.LastIndexOf('_');
         string name = family[..split];
         return new(name, family, name + "_1.0.0.0_x64_" + family[split..], false, false);
+    }
+
+    private static async Task CheckOneDriveAsync(Action<bool, string> check,
+        IReadOnlyList<BuiltInAppTarget> targets, string service, string ui, string root)
+    {
+        var target = targets.Single(t => t.Id == "OneDrive");
+        check(target.Name == "Microsoft OneDrive" && target.Families.Count == 0 &&
+            target.Kind == BuiltInAppKind.OneDriveDesktop, "OneDrive is desktop sync client, not invented AppX family");
+        check(OneDriveAppPolicy.ReadSavedScope(null) == "user", "new OneDrive defaults to current account");
+        check(OneDriveAppPolicy.ResolveScope(true, [], null) == "user", "restore without saved scope uses Microsoft default");
+        check(OneDriveAppPolicy.ResolveScope(true, [], "machine") == "machine", "restore preserves previous shared scope");
+        check(OneDriveAppPolicy.ResolveScope(true, ["user"], "machine") == "user", "existing scope overrides old journal");
+        check(OneDriveAppPolicy.ResolveScope(false, [], "machine") is null, "absent uninstall has no mutation scope");
+        foreach (bool restore in new[] { false, true })
+        {
+            check(await ThrowsAsync(() => Task.Run(() => OneDriveAppPolicy.ResolveScope(restore, ["user", "machine"], null))), "mixed scopes blocked");
+            check(await ThrowsAsync(() => Task.Run(() => OneDriveAppPolicy.ResolveScope(restore, ["unknown"], null))), "unknown installed scope blocked");
+        }
+        foreach (string scope in new[] { "user", "machine" })
+        {
+            check(OneDriveAppPolicy.ReadSavedScope(scope + "\r\n") == scope, "scope journal round-trip " + scope);
+            var installed = OneDriveAppPolicy.Installed(scope, true);
+            check(BuiltInAppsCatalog.Matches(target, installed), "desktop scope match " + scope);
+            foreach (var invalid in new[] { installed with { Kind = BuiltInAppKind.Appx }, installed with { Scope = "all" },
+                installed with { Name = "OneDrive" }, installed with { Family = "Microsoft.OneDrive_8wekyb3d8bbwe" },
+                installed with { FullName = "C:\\arbitrary.exe" }, installed with { IsFramework = true }, installed with { IsResource = true } })
+                check(!BuiltInAppsCatalog.Matches(target, invalid), "reject mismatched desktop identity");
+            foreach (bool restore in new[] { false, true })
+            {
+                var args = OneDriveAppPolicy.Arguments(restore, scope);
+                check(args[0] == (restore ? "install" : "uninstall"), "OneDrive verb");
+                check(args[Array.IndexOf(args, "--id") + 1] == "Microsoft.OneDrive" && args.Contains("--exact"), "OneDrive exact ID");
+                check(args[Array.IndexOf(args, "--scope") + 1] == scope, "OneDrive explicit scope");
+                check(args[Array.IndexOf(args, "--source") + 1] == "winget", "OneDrive not Store viewer");
+                check(args.Contains("--accept-package-agreements") == restore, "install-only package agreement flag");
+                check(!args.Any(a => a is "--force" or "--all" or "--override" or "--ignore-security-hash" or "--allow-reboot"), "OneDrive no bypass, broad removal or reboot");
+            }
+            var backend = new Fake { Packages = [installed] };
+            var updates = new Updates();
+            var result = await BuiltInAppsRemoval.RunAsync(backend, ["OneDrive"], updates);
+            check(result.Success && result.Succeeded == 1 && backend.RemoveCalls == 1, "OneDrive removal readback " + scope);
+            check(updates.Items.Any(u => u.State == "COMPLETED") && updates.Items.Any(u => u.State == "PROGRESS"), "OneDrive item progress " + scope);
+            backend = new Fake { Packages = [installed], KeepAfterRemove = true };
+            result = await BuiltInAppsRemoval.RunAsync(backend, ["OneDrive"], null);
+            check(!result.Success, "OneDrive still installed never green " + scope);
+        }
+        foreach (string invalid in new[] { "", "all", "Machine", "user --all", "C:\\file", "user\nmachine" })
+        {
+            check(await ThrowsAsync(() => Task.Run(() => OneDriveAppPolicy.ReadSavedScope(invalid))), "invalid scope journal fails closed");
+            check(await ThrowsAsync(() => Task.Run(() => OneDriveAppPolicy.Arguments(true, invalid))), "invalid command scope rejected");
+        }
+        const string trusted = """{"Name":"winget","Type":"Microsoft.PreIndexed.Package","Arg":"https://cdn.winget.microsoft.com/cache"}""";
+        check(OneDriveAppPolicy.IsOfficialSource(trusted), "OneDrive official source");
+        foreach (string invalid in new[] { "", "{}", "[]", "null", "broken", trusted.Replace("https:", "http:"),
+            trusted.Replace(".com/", ".com.attacker.test/"), trusted.Replace("\"winget\"", "\"msstore\""),
+            trusted.Replace("Microsoft.PreIndexed.Package", "Microsoft.Rest"), trusted.Replace("/cache", "/cache?redirect=evil") })
+            check(!OneDriveAppPolicy.IsOfficialSource(invalid), "OneDrive rejects source substitution");
+        var absent = await BuiltInAppsRemoval.RunAsync(new Fake(), ["OneDrive"], null);
+        check(absent.Success && absent.Unavailable == 1, "OneDrive absent uninstall neutral");
+        var restored = await BuiltInAppsRemoval.RunAsync(new Fake(), ["OneDrive"], null, true);
+        check(restored.Success && restored.Succeeded == 1, "OneDrive restore verified");
+        foreach (var backend in new[] { new Fake { NoRestore = true }, new Fake { RestoreUnhealthy = true },
+            new Fake { FailReadback = true }, new Fake { RestoreFailure = new TimeoutException("pending") } })
+        {
+            restored = await BuiltInAppsRemoval.RunAsync(backend, ["OneDrive"], null, true);
+            check(!restored.Success && restored.Unavailable == 0, "OneDrive unverified restore is not absence/success");
+        }
+        string desktop = File.ReadAllText(Path.Combine(root, "OneDriveAppService.cs"));
+        check(service.Contains(".Concat(OneDriveAppService.ReadInstalled())") && service.Contains("_oneDrive.ChangeAsync(false") &&
+            service.Contains("_oneDrive.ChangeAsync(true"), "desktop backend wired into both actions and inventory");
+        check(desktop.Contains("RegistryHive.CurrentUser : RegistryHive.LocalMachine") && desktop.Contains("RegistryView.Registry32"), "both OneDrive scopes and registry views");
+        check(!desktop.Contains("Directory.Delete") && !desktop.Contains("File.Delete") && !desktop.Contains("SetValue") &&
+            !desktop.Contains("UninstallString"), "no personal file/registry cleanup or registry command execution");
+        check(desktop.Contains("IsOfficialSource(source.StandardOutput)") && desktop.Contains("Timeout.InfiniteTimeSpan"), "verified source and deployment gate");
+        check(ui.Contains("OneDriveAppPolicy.Warning") && ui.Contains("OneDriveAppPolicy.SourceConsent") &&
+            ui.Contains("OneDriveAppPolicy.RestoreNotice") && ui.Contains("{BuiltInAppsCatalog.Targets.Count}"), "OneDrive warning, consent, restore and dynamic count");
     }
     private static async Task<bool> ThrowsAsync(Func<Task> action)
     { try { await action(); return false; } catch { return true; } }

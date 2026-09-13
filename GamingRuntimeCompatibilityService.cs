@@ -58,7 +58,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             AddModernVisualCpp(rows, uninstallEntries, "x86");
             AddVulkan(rows, systemFolders);
             AddMediaFoundation(rows, windows);
-            AddWebView2(rows, uninstallEntries);
 
             AddSection(rows, "LEGACY / GAME-DEPENDENT");
             AddLegacyVisualCpp(rows, uninstallEntries);
@@ -274,7 +273,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             if (component.Contains("PhysX", StringComparison.OrdinalIgnoreCase)) return "PhysX";
             if (component.StartsWith("Vulkan", StringComparison.OrdinalIgnoreCase)) return "Vulkan";
             if (component.StartsWith("Windows Media Foundation", StringComparison.OrdinalIgnoreCase)) return "MediaFoundation";
-            if (component.Contains("WebView2", StringComparison.OrdinalIgnoreCase)) return "WebView2";
             if (component.Contains("Gaming Services", StringComparison.OrdinalIgnoreCase)) return "GamingServices";
             if (component.StartsWith("Windows Installer", StringComparison.OrdinalIgnoreCase)) return "msiserver";
             if (component.StartsWith("Cryptographic Services", StringComparison.OrdinalIgnoreCase)) return "cryptsvc";
@@ -290,7 +288,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             "NetFx3" => "https://learn.microsoft.com/en-us/dotnet/framework/install/dotnet-35-windows-11",
             "DotNet4" => "https://dotnet.microsoft.com/en-us/download/dotnet-framework/net481",
             "VCRedistx64" or "VCRedistx86" or "VCLegacy" => "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
-            "WebView2" => "https://developer.microsoft.com/en-us/microsoft-edge/webview2/",
             "XNA4" => "https://www.microsoft.com/en-us/download/details.aspx?id=27598",
             "OpenAL" => "https://www.openal.org/downloads/",
             "PhysX" => "https://www.nvidia.com/en-us/drivers/physx/physx-9-26-0703-driver/",
@@ -461,15 +458,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 : found > 0
                     ? $"PARTIAL — core files detected: {found}/{files.Length}."
                     : "MISSING — Windows N/KN editions may require Media Feature Pack.");
-        }
-
-        private static void AddWebView2(List<SystemReportEntry> rows, IReadOnlyList<UninstallEntry> entries)
-        {
-            UninstallEntry? entry = entries.FirstOrDefault(item =>
-                item.DisplayName.Contains("Microsoft Edge WebView2 Runtime", StringComparison.OrdinalIgnoreCase));
-            AddRow(rows, "Microsoft Edge WebView2 Runtime", entry is null
-                ? "MISSING — many modern launchers and embedded login interfaces require WebView2."
-                : $"READY — version {Fallback(entry.DisplayVersion, "detected")}." );
         }
 
         private static void AddGamingServices(List<SystemReportEntry> rows)

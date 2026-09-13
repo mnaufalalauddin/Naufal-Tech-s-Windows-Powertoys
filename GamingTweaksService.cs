@@ -82,7 +82,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     "Game Mode",
                     "Controls Windows Game Mode for the current user. ON allows Windows to prioritize detected games and reduce background activity; OFF disables automatic Game Mode activation without removing Xbox or capture components.",
                     true,
-                    false)
+                    false,
+                    IsFeatureSwitch: true)
             };
 
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() => Definitions;
@@ -156,7 +157,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         before);
                 }
 
-                if (targetOn)
+                if (definition.Id == "GameMode")
+                {
+                    GameModeSetting.Apply(targetOn,
+                        () => CaptureRegistryValue(definition.Id, "AutoGameModeEnabled", RegistryHive.CurrentUser, GameModePath, "AutoGameModeEnabled"),
+                        value => SetDword(RegistryHive.CurrentUser, GameModePath, "AutoGameModeEnabled", value));
+                }
+                else if (targetOn)
                 {
                     await RestoreAsync(definition.Id);
                 }
@@ -167,7 +174,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
                 ToolToggleState after = await ReadStateAsync(definition);
                 bool verified = after.IsAvailable && after.IsOn == targetOn;
-                if (targetOn && verified) DeleteBackup(definition.Id);
+                if (targetOn && verified && !definition.IsFeatureSwitch) DeleteBackup(definition.Id);
                 string restartNote = verified && definition.RestartRecommended
                     ? " Restart Windows before evaluating the result."
                     : string.Empty;

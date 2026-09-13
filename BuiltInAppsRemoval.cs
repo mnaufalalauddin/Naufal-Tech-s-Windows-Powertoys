@@ -63,12 +63,17 @@ internal static class BuiltInAppsRemoval
                     var after = await backend.ReadAsync();
                     bool present = after.Any(p => BuiltInAppsCatalog.Matches(target, p) && (!restore || p.Healthy));
                     if (present != restore)
-                        throw new InvalidOperationException(restore
+                        throw new InvalidOperationException(target.Kind == BuiltInAppKind.OneDriveDesktop
+                            ? "OneDrive installation state was not verified. Use the Microsoft website button or Windows Installed apps, then analyze again."
+                            : restore
                             ? "A healthy app package could not be verified. Use this app's Microsoft Store button to complete recovery, then analyze again."
                             : "Package is still registered for this Windows account.");
                     removed++;
                     state = "COMPLETED";
-                    detail = target.Name + (restore ? ": Installed and verified for this Windows account. Personal data was not restored."
+                    detail = target.Kind == BuiltInAppKind.OneDriveDesktop
+                        ? target.Name + (restore ? ": Installation verified. Sign in and choose sync folders again. Personal files were not restored."
+                            : ": Uninstall verified. Syncing stopped; no OneDrive file cleanup was performed by this tool.")
+                        : target.Name + (restore ? ": Installed and verified for this Windows account. Personal data was not restored."
                         : ": Uninstalled and verified for this Windows account.");
                 }
                 catch (Exception exception)

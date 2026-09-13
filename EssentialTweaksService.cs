@@ -46,29 +46,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             @"SYSTEM\CurrentControlSet\Control\Session Manager\Environment";
         private const string ServiceControlPath =
             @"SYSTEM\CurrentControlSet\Control";
-        private const string PhotoViewerCapabilitiesPath =
-            @"SOFTWARE\Microsoft\Windows Photo Viewer\Capabilities";
-        private const string PhotoViewerAssociationsPath =
-            @"SOFTWARE\Microsoft\Windows Photo Viewer\Capabilities\FileAssociations";
-        private const string RegisteredApplicationsPath =
-            @"SOFTWARE\RegisteredApplications";
-
-        private static readonly PhotoAssociation[] PhotoAssociations =
-        {
-            new(".cr2", "PhotoViewer.FileAssoc.Tiff"),
-            new(".jpg", "PhotoViewer.FileAssoc.Jpeg"),
-            new(".wdp", "PhotoViewer.FileAssoc.Wdp"),
-            new(".jfif", "PhotoViewer.FileAssoc.JFIF"),
-            new(".dib", "PhotoViewer.FileAssoc.Bitmap"),
-            new(".png", "PhotoViewer.FileAssoc.Png"),
-            new(".jxr", "PhotoViewer.FileAssoc.Wdp"),
-            new(".bmp", "PhotoViewer.FileAssoc.Bitmap"),
-            new(".jpe", "PhotoViewer.FileAssoc.Jpeg"),
-            new(".jpeg", "PhotoViewer.FileAssoc.Jpeg"),
-            new(".gif", "PhotoViewer.FileAssoc.Gif"),
-            new(".tif", "PhotoViewer.FileAssoc.Tiff"),
-            new(".tiff", "PhotoViewer.FileAssoc.Tiff")
-        };
+        private static PhotoViewerEntry[] PhotoViewerPlan() =>
+            PhotoViewerRegistration.CreatePlan(PhotoViewerRegistration.ViewerDll, Environment.SystemDirectory);
 
         private static readonly RegistryTarget[] TelemetryTargets =
         {
@@ -258,10 +237,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         $"Cannot apply or restore {definition.Name}: current state is unavailable. {before.Error}", before);
                 if (before.IsAvailable && before.IsOn == targetOn)
                 {
+                    if (definition.Id == "PhotoViewer" && targetOn) OpenPhotoViewerDefaultApps();
                     return new ToolToggleOperationResult(
                         true,
                         true,
-                        $"{definition.Name} is already {(targetOn ? "ON" : "OFF")}.",
+                        $"{definition.Name} is already {(targetOn ? "ON" : "OFF")}." +
+                        (definition.Id == "PhotoViewer" && targetOn ? " " + before.ActualValue : ""),
                         before);
                 }
 
@@ -279,22 +260,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 if (!targetOn && verified) DeleteBackup(definition.Id);
                 if (verified && targetOn && definition.Id == "PhotoViewer")
                 {
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = "ms-settings:defaultapps?registeredAppMachine=Windows%20Photo%20Viewer",
-                            UseShellExecute = true
-                        });
-                    }
-                    catch
-                    {
-                        // The registration remains valid even if Settings cannot be opened.
-                    }
+                    OpenPhotoViewerDefaultApps();
                 }
                 string restartNote = verified && definition.RestartRecommended
                     ? " Restart Explorer, sign out, or reboot to make the UI change visible."
                     : string.Empty;
+                if (verified && targetOn && definition.Id == "PhotoViewer")
+                    restartNote += " " + after.ActualValue;
                 return new ToolToggleOperationResult(
                     verified,
                     verified,
@@ -447,9 +419,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             "SvcHostSplitThresholdInKB");
                         break;
                     case "PhotoViewer":
-                        // The reference Windows-default path only clears its
-                        // applied marker; the Windows registration is retained.
-                        break;
+                        // Windows registrations vary by installation. Restore
+                        // the saved registration; never manufacture a default
+                        // or clear a marker while leaving all changes applied.
+                        return await RestoreOriginalAsync(definition);
                     case "Widgets":
                         await ReinstallWidgetsAsync();
                         break;
@@ -565,10 +538,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     break;
 
                 case "PhotoViewer":
-                    string viewerDll = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                        "Windows Photo Viewer",
-                        "PhotoViewer.dll");
+                    string viewerDll = PhotoViewerRegistration.ViewerDll;
                     if (!File.Exists(viewerDll))
                     {
                         throw new FileNotFoundException(
@@ -576,17 +546,19 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             viewerDll);
                     }
 
-                    CaptureRegistryValue(id, "ApplicationName", RegistryHive.LocalMachine, PhotoViewerCapabilitiesPath, "ApplicationName");
-                    CaptureRegistryValue(id, "RegisteredApplication", RegistryHive.LocalMachine, RegisteredApplicationsPath, "Windows Photo Viewer");
-                    SetString(RegistryHive.LocalMachine, PhotoViewerCapabilitiesPath, "ApplicationName", "Windows Photo Viewer");
-                    SetString(RegistryHive.LocalMachine, RegisteredApplicationsPath, "Windows Photo Viewer", PhotoViewerCapabilitiesPath);
-                    foreach (PhotoAssociation association in PhotoAssociations)
-                    {
-                        CaptureRegistryValue(id, $"Association{association.Extension}", RegistryHive.LocalMachine, PhotoViewerAssociationsPath, association.Extension);
-                        SetString(RegistryHive.LocalMachine, PhotoViewerAssociationsPath, association.Extension, association.ProgId);
-                    }
+                    PhotoViewerRegistration.Apply(PhotoViewerPlan(),
+                        entry => CaptureRegistryValue(id, entry.Tag, RegistryHive.LocalMachine, entry.Path, entry.Name),
+                        () =>
+                        {
+                            using RegistryKey snapshot = Registry.CurrentUser.CreateSubKey($@"{BackupRoot}\{id}", writable: true);
+                            snapshot.SetValue(PhotoViewerRegistration.SchemaKey, 2, RegistryValueKind.DWord);
+                            snapshot.Flush();
+                        },
+                        entry => SetString(RegistryHive.LocalMachine, entry.Path, entry.Name, entry.Value),
+                        PhotoViewerRegistration.NotifyShell);
                     using (RegistryKey backup = Registry.CurrentUser.CreateSubKey($@"{BackupRoot}\{id}", writable: true))
                     {
+                        // Retained for compatibility, never used as proof of ON.
                         backup.SetValue("Applied", 1, RegistryValueKind.DWord);
                     }
                     break;
@@ -704,11 +676,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
                 case "PhotoViewer":
                     EnsureBackupExists(id);
-                    RestoreRegistryValue(id, "ApplicationName", RegistryHive.LocalMachine, PhotoViewerCapabilitiesPath, "ApplicationName");
-                    RestoreRegistryValue(id, "RegisteredApplication", RegistryHive.LocalMachine, RegisteredApplicationsPath, "Windows Photo Viewer");
-                    foreach (PhotoAssociation association in PhotoAssociations)
+                    using (RegistryKey snapshot = Registry.CurrentUser.OpenSubKey($@"{BackupRoot}\{id}", writable: false)!)
                     {
-                        RestoreRegistryValue(id, $"Association{association.Extension}", RegistryHive.LocalMachine, PhotoViewerAssociationsPath, association.Extension);
+                        try
+                        {
+                            foreach (var entry in PhotoViewerRegistration.RestoreEntries(PhotoViewerPlan(), key => snapshot.GetValue(key)))
+                                RestoreRegistryValue(id, entry.Tag, RegistryHive.LocalMachine, entry.Path, entry.Name);
+                        }
+                        finally { PhotoViewerRegistration.NotifyShell(); }
                     }
                     break;
 
@@ -863,10 +838,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private static ToolToggleState ReadPhotoViewerState()
         {
-            string viewerDll = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                "Windows Photo Viewer",
-                "PhotoViewer.dll");
+            string viewerDll = PhotoViewerRegistration.ViewerDll;
             if (!CatalogAvailability.FileIsPresent(viewerDll))
             {
                 return new ToolToggleState(
@@ -876,43 +848,27 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     "This Windows installation does not contain the legacy Photo Viewer DLL.", UnavailableOnThisPc: true);
             }
 
-            using RegistryKey? backup = Registry.CurrentUser.OpenSubKey(
-                $@"{BackupRoot}\PhotoViewer",
-                writable: false);
-            bool markedApplied = Convert.ToInt32(
-                backup?.GetValue("Applied", 0) ?? 0,
-                CultureInfo.InvariantCulture) == 1;
-            string? registered = Convert.ToString(
-                ReadRegistryValue(
-                    RegistryHive.LocalMachine,
-                    RegisteredApplicationsPath,
-                    "Windows Photo Viewer"),
-                CultureInfo.InvariantCulture);
-            int matching = 0;
-            foreach (PhotoAssociation association in PhotoAssociations)
-            {
-                string? actual = Convert.ToString(
-                    ReadRegistryValue(
-                        RegistryHive.LocalMachine,
-                        PhotoViewerAssociationsPath,
-                        association.Extension),
-                    CultureInfo.InvariantCulture);
-                if (string.Equals(actual, association.ProgId, StringComparison.OrdinalIgnoreCase))
-                {
-                    matching++;
-                }
-            }
+            PhotoViewerStatus status = PhotoViewerRegistration.Inspect(PhotoViewerPlan(), PhotoViewerRegistration.ReadNative);
+            return new ToolToggleState(status.Ready, true, status.Detail);
+        }
 
-            bool applied = markedApplied &&
-                           matching == PhotoAssociations.Length &&
-                           string.Equals(
-                               registered,
-                               PhotoViewerCapabilitiesPath,
-                               StringComparison.OrdinalIgnoreCase);
-            return new ToolToggleState(
-                applied,
-                true,
-                $"Registration={matching}/{PhotoAssociations.Length}, Marker={(markedApplied ? "present" : "absent")}");
+        private static void OpenPhotoViewerDefaultApps()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)
+                        ? "ms-settings:defaultapps?registeredAppMachine=Windows%20Photo%20Viewer"
+                        : "ms-settings:defaultapps",
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Readback still reports registration only, not a new default.
+                // The result explains how to choose defaults manually.
+            }
         }
 
         private static readonly BoundedReadProbe<IReadOnlyList<Package>> WidgetInventory = new();
@@ -1224,7 +1180,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 "Location" => new[] { "ServiceStart", "Consent", "Sensor", "Maps" },
                 "Telemetry" => TelemetryTargets.Select(RegistryTargetTag).Concat(new[] { "PeriodInNanoSeconds", "PowerShellTelemetry" }).ToArray(),
                 "ServicesManual" => new[] { "SvcHostSplitThresholdInKB" },
-                "PhotoViewer" => new[] { "ApplicationName", "RegisteredApplication" }.Concat(PhotoAssociations.Select(a => $"Association{a.Extension}")).ToArray(),
+                "PhotoViewer" => PhotoViewerRegistration.RestoreEntries(PhotoViewerPlan(), key => backup.GetValue(key)).Select(entry => entry.Tag).ToArray(),
                 "ExplorerHomeGallery" => new[] { "LaunchTo", "HomePinned", "GalleryPinned" },
                 _ => throw new InvalidOperationException("Unsupported original-state snapshot.")
             });
@@ -1412,10 +1368,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             string Name,
             int StartValue,
             string ScStartMode);
-
-        private readonly record struct PhotoAssociation(
-            string Extension,
-            string ProgId);
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         private struct MemoryStatusEx

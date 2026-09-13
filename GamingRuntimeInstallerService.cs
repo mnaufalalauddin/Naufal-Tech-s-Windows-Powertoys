@@ -648,7 +648,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 "VCRedistx64" => CreateExecutable(id, "Visual C++ 2015-2022 x64", "vc_redist.x64.exe", "https://aka.ms/vc14/vc_redist.x64.exe", new[] { "Microsoft" }, new[] { "/install", "/quiet", "/norestart" }, new[] { "/repair", "/quiet", "/norestart" }),
                 "VCRedistx86" => CreateExecutable(id, "Visual C++ 2015-2022 x86", "vc_redist.x86.exe", "https://aka.ms/vc14/vc_redist.x86.exe", new[] { "Microsoft" }, new[] { "/install", "/quiet", "/norestart" }, new[] { "/repair", "/quiet", "/norestart" }),
                 "DotNet4" => CreateExecutable(id, ".NET Framework 4.8.1", "NDP481-x86-x64-AllOS-ENU.exe", "https://download.microsoft.com/download/4/b/2/cd00d4ed-ebdd-49ee-8a33-eabc3d1030e3/NDP481-x86-x64-AllOS-ENU.exe", new[] { "Microsoft" }, new[] { "/q", "/norestart" }, new[] { "/repair", "/q", "/norestart" }),
-                "WebView2" => CreateExecutable(id, "Microsoft Edge WebView2 Runtime", "MicrosoftEdgeWebview2Setup.exe", "https://go.microsoft.com/fwlink/p/?LinkId=2124703", new[] { "Microsoft" }, new[] { "/silent", "/install" }, Array.Empty<string>()),
                 "VCLegacy" => new PackageDefinition(
                     id, "Visual C++ Legacy Redistributables", string.Empty, null,
                     new[] { "Microsoft" }, InstallerMode.LegacyVisualCppBundle,

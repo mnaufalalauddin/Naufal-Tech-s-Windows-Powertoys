@@ -150,14 +150,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 }
                 if (id == "NtfsPerformance")
                 {
-                    using RegistryKey? key = OpenLocalMachineKey(FileSystemPath, writable: false);
-                    object? lastAccess = key?.GetValue("NtfsDisableLastAccessUpdate");
-                    object? shortNames = key?.GetValue("NtfsDisable8dot3NameCreation");
-                    bool lastMatches = lastAccess is int a && a == 1;
-                    bool shortMatches = shortNames is int b && b == 1;
-                    return new(lastMatches && shortMatches, true,
-                        $"NtfsDisableLastAccessUpdate={lastAccess ?? "Windows default"}; NtfsDisable8dot3NameCreation={shortNames ?? "Windows default"}",
-                        HasAppliedParts: captured || lastMatches || shortMatches);
+                    var ntfs = ReadNtfsPerformanceState();
+                    return new(ntfs.IsApplied, true, ntfs.ActualValue,
+                        HasAppliedParts: captured || ntfs.LastAccessMatches || ntfs.ShortNamesMatch);
                 }
                 string scheme = await GetActivePowerSchemeGuidAsync();
                 StoragePowerState state = await ReadStoragePowerStateAsync(scheme);
@@ -609,21 +604,16 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 new[] { "behavior", "set", "disable8dot3", "1" },
                 TimeSpan.FromSeconds(20));
 
-            int? lastAccessValue = ReadLocalMachineDword(
-                FileSystemPath,
-                "NtfsDisableLastAccessUpdate");
-            int? shortNameValue = ReadLocalMachineDword(
-                FileSystemPath,
-                "NtfsDisable8dot3NameCreation");
-            bool verified = lastAccess.ExitCode == 0 &&
-                shortNames.ExitCode == 0 &&
-                lastAccessValue == 1 &&
-                shortNameValue == 1;
+            var state = ReadNtfsPerformanceState();
+            bool verified = NtfsPerformanceVerification.ApplySucceeded(lastAccess, shortNames, state);
             return new ToolActionResult(
                 verified,
                 verified
-                    ? $"NTFS options applied and verified. LastAccess={lastAccessValue}; 8dot3={shortNameValue}."
-                    : "NTFS options did not pass read-back verification. The original snapshot is retained for Restore.");
+                    ? "NTFS configuration applied and verified. " + state.ActualValue + ". Restart Windows for all changes to take effect."
+                    : "NTFS options did not pass read-back verification. The original snapshot is retained for Restore." +
+                        Environment.NewLine + state.ActualValue +
+                        Environment.NewLine + $"disablelastaccess: exit={lastAccess.ExitCode}; timedOut={lastAccess.TimedOut}. {lastAccess.CombinedOutput}" +
+                        Environment.NewLine + $"disable8dot3: exit={shortNames.ExitCode}; timedOut={shortNames.TimedOut}. {shortNames.CombinedOutput}");
         }
 
         private Task<ToolActionResult> RestoreNtfsPerformanceAsync()
@@ -936,20 +926,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
         }
 
-        private static int? ReadLocalMachineDword(string path, string name)
+        private static NtfsPerformanceState ReadNtfsPerformanceState()
         {
-            try
-            {
-                using RegistryKey? key = OpenLocalMachineKey(path, writable: false);
-                object? value = key?.GetValue(name);
-                return value is null
-                    ? null
-                    : Convert.ToInt32(value, CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                return null;
-            }
+            using RegistryKey? key = OpenLocalMachineKey(FileSystemPath, writable: false);
+            object? lastAccess = key?.GetValue("NtfsDisableLastAccessUpdate");
+            object? shortNames = key?.GetValue("NtfsDisable8dot3NameCreation");
+            return new(lastAccess, lastAccess is null ? null : key!.GetValueKind("NtfsDisableLastAccessUpdate"),
+                shortNames, shortNames is null ? null : key!.GetValueKind("NtfsDisable8dot3NameCreation"));
         }
 
         private static bool RegistryValuesEqual(object? expected, object? actual)

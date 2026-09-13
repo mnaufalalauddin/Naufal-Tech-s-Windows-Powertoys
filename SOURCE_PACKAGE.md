@@ -1,5 +1,8 @@
 # Source package — 12 September 2026
 
+> Historical record of the initial source export. For the current synchronized
+> source and its verification, see [13 September 2026 source sync](SOURCE_SYNC_2026-09-13.md).
+
 Prepared from the current development source of **Naufal Tech's Windows Powertoys
 8.0.0.0**, with company metadata **Naufal Tech's Ltd.** This is an independently
 usable source snapshot for a new GitHub repository, not a binary release or a

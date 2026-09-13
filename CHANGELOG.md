@@ -1,8 +1,9 @@
 # Naufal Tech's Windows Powertoys — Changelog
 
-Development history from **30 August 2026** through **12 September 2026**.
+Development history from **30 August 2026** through **13 September 2026**.
 
-**Snapshot cutoff:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
+**Original history snapshot:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
+Later development entries are appended below with their own dates.
 
 This is a reconstructed engineering changelog, not a Git commit log or a claim
 that every requested feature is finished. It consolidates dated project audits,
@@ -16,6 +17,168 @@ source changes. **Verification** describes the evidence available at that
 checkpoint, not a new execution of those tests while writing this file. A compiled
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
+
+## 13 September 2026 — Photo Viewer delivery follow-up
+
+- **Documentation:** Completed the delayed Photo Viewer delivery record and
+  rechecked the 12 September installer and complete publish-stage hashes.
+  No application source changes were made in this follow-up.
+- **Verification:** Re-ran 3,434 functional, 97,662 localization and 91 icon
+  assertions successfully. The functional harness must be launched using
+  `dotnet run`, not `dotnet <test.dll>`, because its child-process tests relaunch
+  the apphost. The initial DLL-host invocation failed for that reason.
+
+## 12 September 2026 — Legacy Photo Viewer PNG/JPG registration
+
+- **Fixed:** The previous toggle could report ON with only extension mappings
+  and an Applied marker, even when the PNG/JPG open commands were missing.
+  Register an implemented, application-owned handler plus Open with entries
+  for all 13 image extensions and verify all 36 registration values.
+- **Safety:** Preserve legacy and upgraded snapshots, capture before writes,
+  verify Restore, and refresh Shell associations. Do not overwrite UserChoice,
+  file-extension defaults, other apps' entries, or the built-in TIFF handler.
+  ON means registered; choosing the default viewer remains user-confirmed.
+- **Verification:** 3,434 functional, 97,662 localization, 80 static catalog and
+  91 published-icon assertions passed. Read-only native inspection confirmed
+  the DLL exists while the old PNG/JPG handlers are missing. No actual
+  association mutation or native image-opening UI test was performed.
+- **Delivery:** Native AOT publish and Inno Setup 7.1.0 packaging succeeded.
+  Stage: `artifacts/publish/win-x64-20260912-222959-396`.
+  Setup: `artifacts/installer/Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe`.
+  Version 8.0.0.0; publisher Naufal Tech's Ltd.; unsigned; 38,159,096 bytes.
+  SHA-256: `B32D19D04775DF9D3F84B0007639B6E8BA57AA0F7167D05A2498E21AC316C7B1`.
+  See [Photo Viewer repair notes](PHOTO_VIEWER_FIX.md) for user confirmation steps.
+
+## 12 September 2026 — Setup installer delivery requirement
+
+- **Workflow:** Recorded the user's requirement in `AGENTS.md`: every completed
+  batch of development changes must include a newly built Setup EXE, verification,
+  and an artifact link. Report packaging failures instead of handing off stale
+  installers. This does not authorize automatic installation or Windows changes.
+- **Packaging:** Inno Setup 7.1.0 successfully packaged the unchanged, hash-verified
+  Native AOT stage `win-x64-20260912-220437-859`; 91 icon assertions passed again.
+  The updated installer replaces the older artifact at
+  `artifacts/installer/Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe`.
+- **Artifact:** Version 8.0.0.0; company Naufal Tech's Ltd.; unsigned;
+  38,145,643 bytes. SHA-256:
+  `4EFBBAF69E34460414729201812893E1F7EE3C3613180D17A29B4D00FA75C31B`.
+  Installer execution and installation were not tested; no Windows settings
+  were changed during packaging.
+
+## 12 September 2026 — Native AOT toolchain and publish recovered
+
+- **Build:** After the user installed Visual Studio Community 18.10.0 with MSVC
+  14.51.36231 and .NET SDK 10.0.401, verified the Hostx64/x64 linker and restored
+  the new .NET runtime pack. Native AOT publish completed without reported
+  warnings or errors from the application publish step.
+- **Artifact:** `artifacts/publish/win-x64-20260912-220437-859` includes the
+  OneDrive scope, Game Mode toggle and runtime-catalog corrections. All staged
+  file hashes and 91 icon assertions passed. Version 8.0.0.0; unsigned.
+- **Regression:** 3,313 functional, 97,662 localization and 119 static wiring
+  assertions passed again. No app uninstall, Game Mode mutation or native UI
+  smoke test was performed in this follow-up.
+- **Initial packaging blocker (resolved above):** Inno Setup 7 was missing.
+  This initial invocation stopped after successful publish/staging; the later
+  Setup installer checkpoint completes packaging.
+
+## 12 September 2026 — OneDrive scope, Game Mode OFF, runtime catalog
+
+- **Fixed:** Per-user OneDrive commands now run without administrator privileges
+  in a verified same-account/session context. Source export and deployment share
+  that context; machine scope still uses the administrator path. Keep scope
+  backups, exact package/source restrictions and post-operation verification.
+- **Fixed:** Game Mode OFF explicitly disables the feature instead of restoring a
+  snapshot. ON explicitly enables it; the first-change backup remains available
+  for the separate Restore action, including while Game Mode is OFF.
+- **Removed:** Microsoft Edge WebView2 Runtime from Games Runtime & Compatibility
+  Check analysis and installer actions, without uninstalling Windows components.
+- **Verification:** Debug build clean; 3,313 functional and 97,662 localization
+  assertions passed, plus 119 static wiring checks. Final native elevated-parent
+  process probe verified a same-account, same-session non-admin child, output and
+  exit status. No real OneDrive uninstall/install or Game Mode mutation was run.
+- **Initial delivery limitation:** Native AOT was blocked by the missing C++
+  linker; the later toolchain checkpoint above resolves publish. Setup packaging
+  still requires Inno Setup 7. See
+  [the correction report](ONEDRIVE_GAMEMODE_FIX.md) for details and test commands.
+
+## 12 September 2026 — Text Scaling header recovery
+
+- **Fixed:** Text Scaling could be pushed beyond the right window edge. The
+  header reserved fixed 180/270-pixel columns and placed settings in an
+  unconstrained horizontal StackPanel, while native controls retained minimum
+  sizes. Header height and settings width now follow measured content.
+- **Changed:** Use a bounded Grid with separate language/theme/scaling columns.
+  Narrow windows move the clock to a separate row and constrain the language
+  selector instead of displacing the recovery controls.
+- **Accessibility:** Keep theme/scaling targets at least 32 DIP, their glyphs
+  readable, and scaling flyout text at least 14 DIP. Add Ctrl+0 to reset to 100%.
+  Catalog text still follows the selected scale; no preset was removed.
+- **Verification:** 5,656 native WinUI assertions passed across 512 layout cases
+  and eight real flyout openings, using the actual MainWindow XAML and shared
+  header implementation. The matrix covers forward/reverse scaling, four window
+  widths, both themes and English/German/Indonesian/Arabic. Test preferences are
+  isolated; no Windows repair/tweak backend is linked into the test host.
+  Full reruns with saved startup scale at 25% and 200% each passed 5,667 native
+  assertions, including the initial-window recovery-button hit-test.
+- **Preserved:** Task Monitoring, live performance graphs, all 23 languages and
+  existing catalog functionality. See `TEXT_SCALING_HEADER_FIX.md`.
+
+## 12 September 2026 — Task Monitoring and live performance graphs
+
+- **Changed:** Rename the task navigation button and window to Task Monitoring.
+  Show only RUNNING operations; remove completed, failed, warning and interrupted
+  operations from this live view without deleting diagnostic history. Queued
+  work remains in the scheduler and appears when it actually starts.
+- **Added:** Task Manager-style 60-second CPU, RAM, GPU 3D and network graphs,
+  using the existing one-second monitor. Network has solid RX and dashed TX
+  lines with a shared automatic Mbps scale; percentage graphs use 0–100%.
+- **Safety:** Missing readings and timer/suspend gaps are not drawn as zero.
+  History is time-limited and sample-count bounded. Existing live values,
+  profile details, task scheduling and catalog progress windows remain intact.
+- **Localization:** Added monitoring labels, empty-state text, count templates
+  and time-axis labels for all 23 languages. See `TASK_MONITORING_GRAPHS.md`
+  for verification evidence and remaining visual-test limitations.
+
+## 12 September 2026 — NTFS readback false failure
+
+- **Fixed:** Essential Windows Tweaks incorrectly rejected the valid DWORD
+  `0x80000001` (`-2147483647` as signed Int32) after applying NTFS Performance
+  Options. The catalog toggle and Apply verifier now share a decoder for
+  Microsoft's legacy and flagged last-access modes.
+- **Safety:** Only the requested user-managed disabled mode matches the preset;
+  unknown bits, wrong registry types, command failures and timeouts remain failures.
+  8.3-name verification still requires its own exact DWORD value of 1.
+- **Changed:** Show normalized last-access mode together with raw hexadecimal
+  data, and include actual fsutil output/exit status when verification fails.
+  Successful configuration verification explicitly notes the restart requirement.
+- **Restore:** Original snapshot values and their registry types remain exact;
+  display/verification normalization does not rewrite or discard saved bits.
+- **Verification:** 2,899 regression assertions passed, including 150 NTFS checks.
+  A read-only probe of this PC returned the applied preset as true for
+  `0x80000001` plus 8dot3 value 1, consistent with Windows' fsutil query.
+  No NTFS settings or original backups were changed during diagnosis/testing.
+  See `NTFS_READBACK_FIX.md` for references, build records and limits.
+- **Build:** Native AOT stage `win-x64-20260912-154700-908` and rebuilt Setup
+  completed successfully, retaining version 8.0.0.0 and the 32-app catalog.
+
+## 12 September 2026 — Microsoft OneDrive catalog entry
+
+- **Added:** Microsoft OneDrive as entry 32 in Built-in Windows Apps, with
+  Uninstall selected / Restore selected, separate task progress, readback and logs.
+- **Changed:** Recognize the desktop sync client independently of Store packages;
+  preserve user/machine installation scope for restore, with explicit shared-PC
+  warnings and a Microsoft recovery website link. No sync-folder cleanup.
+- **Safety:** Use the exact WinGet package and verified official source; reject
+  ambiguous scopes, missing WinGet and unverifiable outcomes. Absent uninstall
+  remains neutral. Missing scope backup defaults to Microsoft's per-user install.
+- **Localization:** Add scope, sync warning, restore and consent text in all 23
+  languages. Replace the fixed 31-app count with the actual catalog count.
+- **Verification:** Debug build passed with zero warnings/errors; regression and
+  localization checks passed. Real OneDrive uninstall/reinstall was not executed
+  on the user's PC. See `BUILT_IN_APPS.md` for checks, sources and limitations.
+- **Build:** Native AOT publication and Setup compilation completed; staged build
+  `win-x64-20260912-141007-005`, version 8.0.0.0. Both artifacts remain unsigned.
+  The previous same-named Setup was replaced by this newly compiled installer.
 
 ## Current application identity
 
@@ -728,7 +891,7 @@ This documentation-only update does not rebuild or replace either artifact.
   entry. [PORTING_STATUS.md](PORTING_STATUS.md) is cumulative and also contains
   historical statements superseded by newer checkpoints.
 - Early workspace evidence is retained under
-  `<private-analysis-workspace>/v78-static`, including
+  `<private-analysis-directory>/v78-static`, including
   `migration-map.md`, `feature-migration-matrix.md`, and `feature-parity-audit.md`.
   Initial analysis scripts and source snapshots corroborate the 30 August start.
 - The 3 September audit records the original EXE SHA-256 as

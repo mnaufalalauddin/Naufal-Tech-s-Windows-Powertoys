@@ -46,7 +46,7 @@ internal sealed class CatalogSelectionPlan
             {
                 toApply.Add(definition);
             }
-            if (state.IsOn || state.HasAppliedParts)
+            if (state.IsOn || state.HasAppliedParts || definition.IsFeatureSwitch)
             {
                 toRestore.Add(definition);
             }
@@ -59,7 +59,8 @@ internal enum CatalogOperation
 {
     Apply,
     RestoreSavedState,
-    RestoreWindowsDefaults
+    RestoreWindowsDefaults,
+    SetOff
 }
 
 internal static class CatalogOperationRunner
@@ -115,6 +116,8 @@ internal static class CatalogOperationRunner
         {
             CatalogOperation.Apply =>
                 await service.SetStateAsync(definition, targetOn: true),
+            CatalogOperation.SetOff =>
+                await service.SetStateAsync(definition, targetOn: false),
             CatalogOperation.RestoreWindowsDefaults =>
                 await service.RestoreWindowsDefaultAsync(definition),
             _ => throw new ArgumentOutOfRangeException(nameof(operation))

@@ -13,8 +13,9 @@ dotnet run --project .\Tests\ProfileVerification\ProfileVerification.Tests.cspro
 
 The suite started with 73 profile assertions and has expanded to cover catalog,
 repair, task, restore, WMI, app-management, and other regressions. The latest
-recorded development checkpoint contains 2,655 functional assertions. Consult
-the root SOURCE_PACKAGE.md for verification of this exported snapshot.
+recorded development checkpoint contains 3,434 functional assertions. Consult
+the root SOURCE_SYNC_2026-09-13.md for verification of the current source sync
+and SOURCE_PACKAGE.md for the historical initial export.
 
 The original profile coverage includes all three 23-check profiles, AC/DC
 mismatches, missing/read-denied values, partial matches, stale historical plan

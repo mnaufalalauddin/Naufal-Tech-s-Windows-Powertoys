@@ -15,6 +15,7 @@ internal static partial class UiTranslation
     // errors, commands, paths, package names, GUIDs or user-entered text.
     private static readonly TextPattern[] DisplayPatterns =
     {
+        Pattern("{0} running task(s).", true),
         Pattern("{0}% complete — {1}/{2}", true),
         Pattern("{0}% processed — {1}/{2}; errors or unverified items", true),
         Pattern("{0}% processed — {1}/{2}", true),
@@ -78,6 +79,8 @@ internal static partial class UiTranslation
             return Isolate(numbered.Groups[1].Value, code) + TranslateCore(numbered.Groups[2].Value, code, depth + 1);
         if (text.StartsWith("TASKS: ", StringComparison.Ordinal))
             return TranslateCore("Tasks", code, depth + 1) + ": " + TranslateCore(text[7..], code, depth + 1);
+        if (text.StartsWith("Task Monitoring: ", StringComparison.Ordinal))
+            return TranslateCore("Task Monitoring", code, depth + 1) + ": " + TranslateCore(text[17..], code, depth + 1);
         if (text.StartsWith("🔴 ", StringComparison.Ordinal))
             return "🔴 " + TranslateCore(text[3..], code, depth + 1);
         if (text.Length > 8 && text.StartsWith("=== ", StringComparison.Ordinal) && text.EndsWith(" ===", StringComparison.Ordinal))

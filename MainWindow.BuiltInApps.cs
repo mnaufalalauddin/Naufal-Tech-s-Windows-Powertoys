@@ -46,7 +46,10 @@ public sealed partial class MainWindow
             TextBlock label = AppText("Preparing...");
             detail.Children.Add(label);
             row.Children.Add(detail);
-            Button store = new() { Content = "Microsoft Store", VerticalAlignment = VerticalAlignment.Center };
+            if (target.Kind == BuiltInAppKind.OneDriveDesktop)
+                detail.Children.Add(AppText(OneDriveAppPolicy.Warning, warning: true));
+            Button store = new() { Content = target.Kind == BuiltInAppKind.OneDriveDesktop
+                ? OneDriveAppPolicy.RecoveryButton : "Microsoft Store", VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(store, 1);
             row.Children.Add(store);
             rows.Children.Add(new Border { Child = row, BorderThickness = new Thickness(1),
@@ -60,7 +63,8 @@ public sealed partial class MainWindow
                 try
                 {
                     if (!await Windows.System.Launcher.LaunchUriAsync(BuiltInAppsCatalog.StoreUri(target)))
-                        status.Text = "Microsoft Store could not be opened.";
+                        status.Text = target.Kind == BuiltInAppKind.OneDriveDesktop
+                            ? "Microsoft website could not be opened." : "Microsoft Store could not be opened.";
                 }
                 catch (Exception exception) { status.Text = exception.Message; }
                 // Opening a page never marks a package as restored. Analyze reads it again.
@@ -109,7 +113,7 @@ public sealed partial class MainWindow
                     : matches.Length > 0 ? Color.FromArgb(255, 196, 43, 28) : Color.FromArgb(255, 107, 114, 128));
             }
             inventoryKnown = true;
-            status.Text = $"Installed: {installed}/31";
+            status.Text = $"Installed: {installed}/{BuiltInAppsCatalog.Targets.Count}";
         }
         async Task ReloadAsync()
         {
@@ -139,7 +143,14 @@ public sealed partial class MainWindow
                 StackPanel confirmation = new() { Spacing = 10 };
                 confirmation.Children.Add(AppText(BuiltInAppsCatalog.Scope));
                 confirmation.Children.Add(AppText(restore ? BuiltInAppsCatalog.RestoreNotice : BuiltInAppsCatalog.Warning, warning: true));
-                if (restore) confirmation.Children.Add(AppText(BuiltInAppsCatalog.StoreConsent));
+                if (targets.Any(t => t.Kind == BuiltInAppKind.OneDriveDesktop))
+                {
+                    confirmation.Children.Add(AppText(OneDriveAppPolicy.Warning, warning: true));
+                    confirmation.Children.Add(AppText(OneDriveAppPolicy.SourceConsent));
+                    if (restore) confirmation.Children.Add(AppText(OneDriveAppPolicy.RestoreNotice));
+                }
+                if (restore && targets.Any(t => t.Kind == BuiltInAppKind.Appx))
+                    confirmation.Children.Add(AppText(BuiltInAppsCatalog.StoreConsent));
                 confirmation.Children.Add(AppText(string.Join(Environment.NewLine, targets.Select(t => "• " + t.Name))));
                 ToolWindow confirmWindow = new(window, button,
                     new ScrollViewer { Content = confirmation, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled },

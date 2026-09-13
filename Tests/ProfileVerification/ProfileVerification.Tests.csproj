@@ -7,7 +7,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\PhotoViewerRegistration.cs" Link="PhotoViewerRegistration.cs" />
     <Compile Include="..\..\BuiltInAppsCatalog.cs" Link="BuiltInAppsCatalog.cs" />
+    <Compile Include="..\..\OneDriveAppPolicy.cs" Link="OneDriveAppPolicy.cs" />
+    <Compile Include="..\..\GameModeSetting.cs" Link="GameModeSetting.cs" />
+    <Compile Include="..\..\OneDriveCommandSession.cs" Link="OneDriveCommandSession.cs" />
+    <Compile Include="..\..\SameUserProcessRunner.cs" Link="SameUserProcessRunner.cs" />
+    <Compile Include="..\..\UserExecutionPolicy.cs" Link="UserExecutionPolicy.cs" />
+    <Compile Include="..\..\NtfsPerformanceVerification.cs" Link="NtfsPerformanceVerification.cs" />
     <Compile Include="..\..\BuiltInAppsRemoval.cs" Link="BuiltInAppsRemoval.cs" />
     <Compile Include="..\..\AppDataPaths.cs" Link="AppDataPaths.cs" />
     <Compile Include="..\..\CatalogActionRunner.cs" Link="CatalogActionRunner.cs" />
@@ -47,6 +54,8 @@
     <Compile Include="..\..\RegistrySnapshotCommit.cs" Link="RegistrySnapshotCommit.cs" />
     <Compile Include="..\..\ServiceRestoreSnapshot.cs" Link="ServiceRestoreSnapshot.cs" />
     <Compile Include="..\..\TaskActivityService.cs" Link="TaskActivityService.cs" />
+    <Compile Include="..\..\LiveMetricHistory.cs" Link="LiveMetricHistory.cs" />
+    <Compile Include="..\..\HeaderLayoutPolicy.cs" Link="HeaderLayoutPolicy.cs" />
     <Compile Include="..\..\CatalogSelectionPlan.cs" Link="CatalogSelectionPlan.cs" />
     <Compile Include="..\..\ToggleCatalogModels.cs" Link="ToggleCatalogModels.cs" />
     <Compile Include="..\..\PerformanceProfileVerification.cs" Link="PerformanceProfileVerification.cs" />

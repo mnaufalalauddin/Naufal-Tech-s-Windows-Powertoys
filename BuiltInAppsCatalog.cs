@@ -5,15 +5,17 @@ using System.Text.Json;
 
 namespace Naufal_Windows_Tech_s_Powertoys;
 
-internal sealed record BuiltInAppTarget(string Id, string Name, IReadOnlyList<string> Families);
-internal sealed record BuiltInAppPackage(string Name, string Family, string FullName, bool IsFramework, bool IsResource, bool Healthy = true);
+internal enum BuiltInAppKind { Appx, OneDriveDesktop }
+internal sealed record BuiltInAppTarget(string Id, string Name, IReadOnlyList<string> Families, BuiltInAppKind Kind = BuiltInAppKind.Appx);
+internal sealed record BuiltInAppPackage(string Name, string Family, string FullName, bool IsFramework, bool IsResource,
+    bool Healthy = true, BuiltInAppKind Kind = BuiltInAppKind.Appx, string? Scope = null);
 
 internal static class BuiltInAppsCatalog
 {
     internal const string Title = "Built-in Windows Apps";
     internal const string Description = "Select Windows apps to uninstall or restore.";
     internal const string Warning = "Uninstalling may delete local app data and disable app features. Back up your files first.";
-    internal const string Scope = "Only this Windows account is changed. Classic desktop apps, other accounts and provisioned apps are unchanged.";
+    internal const string Scope = "Store apps affect this account only. OneDrive follows its installation scope; a shared installation affects all users.";
     internal const string RestoreNotice = "Restore reinstalls apps, not deleted personal data. Internet, Store availability and a valid license may be required.";
     internal const string StoreConsent = "Continuing allows Microsoft Store downloads and accepts the Store and package agreements. No purchases will be made.";
 
@@ -36,6 +38,8 @@ internal static class BuiltInAppsCatalog
     internal static Uri StoreUri(BuiltInAppTarget target)
     {
         var approved = ResolveSelection([target.Id]).Single();
+        if (approved.Kind == BuiltInAppKind.OneDriveDesktop)
+            return new Uri(OneDriveAppPolicy.RecoveryUrl);
         return new Uri("ms-windows-store://pdp/?" + (StoreProductId(approved.Id) is string product
             ? "ProductId=" + product : "PFN=" + Uri.EscapeDataString(approved.Families[0])));
     }
@@ -98,7 +102,8 @@ internal static class BuiltInAppsCatalog
         App("Weather", "Weather", "Microsoft.BingWeather"),
         App("WebMedia", "Web Media Extensions", "Microsoft.WebMediaExtensions"),
         App("WebP", "WebP Image Extension", "Microsoft.WebpImageExtension"),
-        App("Notepad", "Windows Notepad", "Microsoft.WindowsNotepad")
+        App("Notepad", "Windows Notepad", "Microsoft.WindowsNotepad"),
+        new BuiltInAppTarget("OneDrive", "Microsoft OneDrive", Array.Empty<string>(), BuiltInAppKind.OneDriveDesktop)
     });
 
     private static BuiltInAppTarget App(string id, string name, string packageName) =>
@@ -106,6 +111,11 @@ internal static class BuiltInAppsCatalog
 
     internal static bool Matches(BuiltInAppTarget target, BuiltInAppPackage package)
     {
+        if (target.Kind != package.Kind) return false;
+        if (target.Kind == BuiltInAppKind.OneDriveDesktop)
+            return target.Id == "OneDrive" && package.Name == "Microsoft OneDrive" && package.Family.Length == 0 &&
+                !package.IsFramework && !package.IsResource && OneDriveAppPolicy.IsScope(package.Scope) &&
+                package.FullName == "Microsoft.OneDrive:" + package.Scope;
         if (package.IsFramework || package.IsResource ||
             !target.Families.Contains(package.Family, StringComparer.OrdinalIgnoreCase)) return false;
         int separator = package.Family.LastIndexOf('_');

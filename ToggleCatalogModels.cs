@@ -19,7 +19,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         bool RequiresAdministrator,
         bool RestartRecommended,
         ToolToggleTier SelectionTier = ToolToggleTier.Unspecified,
-        string Warning = "")
+        string Warning = "",
+        bool IsFeatureSwitch = false)
     {
         public string Name { get; init; } = CatalogDisplayNames.Simplify(Name);
     }

@@ -2,6 +2,22 @@ using Naufal_Windows_Tech_s_Powertoys;
 
 try
 {
+if (OneDriveExecutionTests.Child(args)) return;
+if (args.Contains("--onedrive-user-probe"))
+{
+    string? report = args.Contains("--probe-report") ? args[Array.IndexOf(args, "--probe-report") + 1] : null;
+    try
+    {
+        await OneDriveExecutionTests.ProbeAsync(args[Array.IndexOf(args, "--onedrive-user-probe") + 1], args.Contains("--require-elevated"));
+        if (report is not null) File.WriteAllText(report, "PASS: same-account medium-integrity child; stdout/stderr, exit code and literal argv verified. Parent elevation required=" + args.Contains("--require-elevated"));
+    }
+    catch (Exception exception)
+    {
+        if (report is not null) File.WriteAllText(report, "FAIL: " + exception);
+        throw;
+    }
+    return;
+}
 if (await AuditRegressionTests.RunChildAsync(args)) return;
 if (args.Contains("--wizard-wmi-read-probe"))
 {
@@ -16,6 +32,16 @@ if (args.Contains("--wizard-wmi-read-probe"))
 if (args.Contains("--restore-read-probe"))
 {
     RestoreFollowupTests.ProbeReadOnly();
+    return;
+}
+if (args.Contains("--ntfs-read-probe"))
+{
+    NtfsPerformanceTests.ProbeReadOnly();
+    return;
+}
+if (args.Contains("--photo-viewer-read-probe"))
+{
+    PhotoViewerTests.ProbeReadOnly();
     return;
 }
 if (args.Contains("--print-store-reset-script"))
@@ -101,6 +127,12 @@ PowerPolicyReaderTests.Run(Assert);
 AppDataPathTests.Run(Assert);
 await WmiPrerequisiteTests.RunAsync(Assert);
 await BuiltInAppsTests.RunAsync(Assert);
+await OneDriveExecutionTests.RunAsync(Assert);
+await GameModeToggleTests.RunAsync(Assert);
+NtfsPerformanceTests.Run(Assert);
+PhotoViewerTests.Run(Assert);
+await MonitoringTests.RunAsync(Assert);
+HeaderLayoutTests.Run(Assert);
 RuntimePrerequisiteTests.Run(Assert);
 EssentialSnapshotTests.Run(Assert);
 RscResultTests.Run(Assert);

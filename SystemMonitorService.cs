@@ -177,7 +177,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         {
             if (!GetSystemTimes(out FileTime idle, out FileTime kernel, out FileTime user))
             {
-                return 0;
+                _hasCpuSample = false;
+                return double.NaN;
             }
 
             ulong idleTime = idle.ToUInt64();
@@ -190,7 +191,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 _previousKernelTime = kernelTime;
                 _previousUserTime = userTime;
                 _hasCpuSample = true;
-                return 0;
+                return double.NaN;
             }
 
             ulong idleDelta = idleTime - _previousIdleTime;
@@ -204,7 +205,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             if (totalDelta == 0)
             {
-                return 0;
+                return double.NaN;
             }
 
             ulong busyDelta = totalDelta > idleDelta ? totalDelta - idleDelta : 0;
@@ -221,7 +222,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             if (!GlobalMemoryStatusEx(ref memory) || memory.TotalPhysical == 0)
             {
-                return (0, 0, 0);
+                return (double.NaN, double.NaN, 0);
             }
 
             ulong usedBytes = memory.TotalPhysical - memory.AvailablePhysical;
@@ -265,7 +266,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 _previousSentBytes = sentBytes;
                 _previousNetworkTimestamp = timestamp;
                 _hasNetworkSample = true;
-                return (0, 0);
+                return (double.NaN, double.NaN);
             }
 
             double elapsedSeconds =
@@ -280,7 +281,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             if (elapsedSeconds <= 0)
             {
-                return (0, 0);
+                return (double.NaN, double.NaN);
             }
 
             double receiveMbps = receivedDelta * 8d / elapsedSeconds / BitsPerMegabit;

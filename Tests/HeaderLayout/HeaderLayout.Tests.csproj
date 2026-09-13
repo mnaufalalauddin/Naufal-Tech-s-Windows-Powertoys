@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>Naufal_Windows_Tech_s_Powertoys</RootNamespace>
+    <AssemblyName>HeaderLayout.Tests</AssemblyName>
+    <Platforms>x64</Platforms>
+    <Platform>x64</Platform>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SelfContained>true</SelfContained>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <WindowsAppSdkBootstrapInitialize>false</WindowsAppSdkBootstrapInitialize>
+    <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <ApplicationDefinition Include="..\..\App.xaml" Link="App.xaml" />
+    <Page Include="..\..\MainWindow.xaml" Link="MainWindow.xaml" />
+    <Compile Include="..\..\MainWindow.HeaderLayout.cs" Link="MainWindow.HeaderLayout.cs" />
+    <Compile Include="..\..\HeaderLayoutPolicy.cs" Link="HeaderLayoutPolicy.cs" />
+    <Compile Include="..\..\UiDisplaySettings.cs" Link="UiDisplaySettings.cs" />
+    <Compile Include="..\..\UiTranslation*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="..\..\NativeUiCatalog*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="..\..\UiLocalizedValue.cs" Link="UiLocalizedValue.cs" />
+    <Compile Include="..\..\UiLocalizationLifetime.cs" Link="UiLocalizationLifetime.cs" />
+    <Compile Include="..\..\SupplementalUiCatalog.cs" Link="SupplementalUiCatalog.cs" />
+    <Compile Include="..\..\CatalogDisplayNames.cs" Link="CatalogDisplayNames.cs" />
+    <Compile Include="..\..\UiTextKeys.cs" Link="UiTextKeys.cs" />
+  </ItemGroup>
+</Project>

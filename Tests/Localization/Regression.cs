@@ -22,6 +22,7 @@ internal static class Regression
         var english = UiTranslation.GetLanguageTable("en");
         string[] required =
         [
+            "Task Monitoring", "No tasks are currently running.", "{0} running task(s).", "60 seconds",
             "Full Repair", "Quick Repair", "Windows Update Fix", "Microsoft Store Fix", "Explorer Fix",
             "Disk Info", "System Report", "Windows Activation", "Office Activation", "Disable Defender",
             "Restore Defender", "BitLocker Manager", "Smart App Control", "Essential Windows Tweaks",
@@ -53,6 +54,14 @@ internal static class Regression
             string badgeTranslated = badge.Resolve("33 out of 41 have been verified, but 8 tweaks can't be applied due to unavailability on this PC.", code, UiTranslation.Translate);
             Check(badge.Resolve(badgeTranslated, "en", UiTranslation.Translate) == "33 out of 41 have been verified, but 8 tweaks can't be applied due to unavailability on this PC.", code + " availability badge English round trip");
             Check(UiTranslation.IsSupportedLanguage(code), code + " supported");
+            string monitoring = UiTranslation.Translate("7 running task(s).", code);
+            Check(monitoring.Contains('7') && !monitoring.Contains('{'), code + " monitoring count formatted");
+            if (code != "en") Check(monitoring != "7 running task(s).", code + " monitoring count translated");
+            UiLocalizedValue monitorLabel = new();
+            string localizedMonitor = monitorLabel.Resolve("Task Monitoring", code, UiTranslation.Translate);
+            Check(monitorLabel.Resolve(localizedMonitor, "en", UiTranslation.Translate) == "Task Monitoring", code + " stable monitoring label round trip");
+            string monitorTooltip = UiTranslation.Translate("Task Monitoring: IDLE", code);
+            Check(monitorTooltip.StartsWith(UiTranslation.Translate("Task Monitoring", code), StringComparison.Ordinal), code + " monitoring tooltip prefix translated without truncation");
             Check(table.Count == english.Count, code + " key count");
             Check(UiTranslation.GetCulture(code).Name == option.CultureName, code + " date culture");
             Check(!string.IsNullOrEmpty(new DateTime(2026, 9, 7).ToString("D", UiTranslation.GetCulture(code))), code + " date formatting");

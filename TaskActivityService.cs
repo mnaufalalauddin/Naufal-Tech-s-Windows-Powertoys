@@ -193,6 +193,18 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
         }
 
+        // Keep the diagnostic history separate from the running-only monitor.
+        public IReadOnlyList<TaskActivityEntry> RunningSnapshot()
+        {
+            lock (_sync)
+            {
+                return _entries
+                    .Where(entry => entry.State == "RUNNING" && entry.CompletedAt is null)
+                    .OrderByDescending(entry => entry.Sequence)
+                    .ToArray();
+            }
+        }
+
         public IReadOnlyList<TaskActivityEntry> Snapshot()
         {
             lock (_sync)

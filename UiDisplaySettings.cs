@@ -82,6 +82,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             { 25, 50, 75, 100, 125, 150, 175, 200 };
 
         private static readonly ConditionalWeakTable<FrameworkElement, ElementBaseline> ElementBaselines = new();
+        private static readonly ConditionalWeakTable<FrameworkElement, object> RecoveryControls = new();
         private static readonly ConditionalWeakTable<ColumnDefinition, ColumnBaseline> ColumnBaselines = new();
         private static readonly ConditionalWeakTable<RowDefinition, RowBaseline> RowBaselines = new();
         private static readonly string PreferenceDirectory = AppDataPaths.SettingsDirectory;
@@ -111,6 +112,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
         };
 
         public static event EventHandler? Changed;
+
+        // Only the theme/scaling recovery controls opt in, not catalog content.
+        internal static void KeepRecoveryControlUsable(FrameworkElement element) =>
+            RecoveryControls.GetValue(element, static _ => new object());
 
         public static void ToggleTheme()
         {
@@ -324,6 +329,20 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     toggleSwitch.FontSize * 1.45 + 8d);
                 toggleSwitch.MinHeight = Math.Max(toggleSwitch.MinHeight, templateHeight);
                 toggleSwitch.MinWidth = Math.Max(toggleSwitch.MinWidth, 112d * geometryScale);
+            }
+
+            if (RecoveryControls.TryGetValue(element, out _))
+            {
+                if (element is TextBlock glyph)
+                    glyph.FontSize = Math.Max(glyph.FontSize, HeaderLayoutPolicy.RecoveryFontMinimum);
+                if (element is Control recovery)
+                {
+                    recovery.FontSize = Math.Max(recovery.FontSize, HeaderLayoutPolicy.RecoveryFontMinimum);
+                    recovery.MinWidth = Math.Max(recovery.MinWidth, HeaderLayoutPolicy.RecoveryTargetMinimum);
+                    recovery.MinHeight = Math.Max(recovery.MinHeight, HeaderLayoutPolicy.RecoveryTargetMinimum);
+                    if (!double.IsNaN(recovery.Width)) recovery.Width = Math.Max(recovery.Width, recovery.MinWidth);
+                    if (!double.IsNaN(recovery.Height)) recovery.Height = Math.Max(recovery.Height, recovery.MinHeight);
+                }
             }
         }
 

@@ -75,6 +75,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
         public MainWindow()
         {
             InitializeComponent();
+            UiDisplaySettings.KeepRecoveryControlUsable(ThemeButton);
+            UiDisplaySettings.KeepRecoveryControlUsable(TextScaleButton);
+            UiDisplaySettings.KeepRecoveryControlUsable(TextScaleGlyph);
+            InitializeLiveCharts();
             AppWindowIcon.Apply(AppWindow);
 
             // Keep direct references to resolved XAML styles. Dynamic lookups through
@@ -84,7 +88,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             UiDisplaySettings.Changed += UiDisplaySettings_Changed;
             UiTranslation.Observe(RootLayout);
-            RootLayout.Loaded += (_, _) => UiDisplaySettings.Apply(RootLayout);
+            RootLayout.Loaded += (_, _) =>
+            {
+                UiDisplaySettings.Apply(RootLayout);
+                UpdateHeaderLayout();
+            };
             foreach (UiLanguageOption language in UiTranslation.LanguageOptions)
             {
                 LanguageComboBox.Items.Add(new ComboBoxItem
@@ -300,13 +308,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     stages);
                 setupProgress = progressWindow;
                 progressWindow.Show();
-                TaskStatusButton.Content = "TASKS: FIRST-RUN SETUP";
+                TaskStatusMessage = "TASKS: FIRST-RUN SETUP";
                 FirstRunPrerequisiteResult operation =
                     await _firstRunPrerequisiteService.RunAsync(
                         restorePoint.IsChecked == true,
                         winGet.IsChecked == true,
                         progressWindow.Progress);
-                TaskStatusButton.Content = operation.Success
+                TaskStatusMessage = operation.Success
                     ? operation.WarningCount > 0 ? "TASKS: WARNING" : "TASKS: COMPLETE"
                     : "TASKS: FAILED";
                 progressWindow.Complete(
@@ -411,42 +419,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
         }
 
-        private void TextScaleButton_Click(object sender, RoutedEventArgs e)
-        {
-            MenuFlyout flyout = new();
-            int[] scaleOptions = { 25, 50, 75, 100, 125, 150, 175, 200 };
-            foreach (int percent in scaleOptions)
-            {
-                int selectedPercent = percent;
-                ToggleMenuFlyoutItem item = new()
-                {
-                    Text = $"{percent}%",
-                    IsChecked = UiDisplaySettings.TextScalePercent == percent,
-                    FontSize = Math.Max(
-                        4d,
-                        14d * UiDisplaySettings.TextScalePercent / 100d)
-                };
-                item.Click += (_, _) => UiDisplaySettings.SetTextScale(selectedPercent);
-                flyout.Items.Add(item);
-            }
-
-            flyout.Items.Add(new MenuFlyoutSeparator());
-            MenuFlyoutItem resetItem = new()
-            {
-                Text = "Reset to 100%",
-                FontSize = Math.Max(
-                    4d,
-                    14d * UiDisplaySettings.TextScalePercent / 100d)
-            };
-            resetItem.Click += (_, _) => UiDisplaySettings.SetTextScale(100);
-            flyout.Items.Add(resetItem);
-
-            // Keep the popup in the window's authored tree, including while
-            // closed, so language changes retain its canonical captions.
-            Microsoft.UI.Xaml.Controls.Primitives.FlyoutBase.SetAttachedFlyout(TextScaleButton, flyout);
-            UiTranslation.Apply(RootLayout, UiDisplaySettings.LanguageCode);
-            flyout.ShowAt(TextScaleButton);
-        }
 
         private async void TaskStatusButton_Click(object sender, RoutedEventArgs e)
         {
@@ -486,7 +458,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             TextBlock summary = new()
             {
-                Text = "No application tasks have been recorded in this session.",
+                Text = "No tasks are currently running.",
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = new SolidColorBrush(Color.FromArgb(255, 49, 70, 95))
             };
@@ -495,7 +467,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             ToolWindow window = new(
                 this,
-                "Active Tasks",
+                "Task Monitoring",
                 contentGrid,
                 closeButtonText: "Close",
                 initialWidth: 1080,
@@ -506,13 +478,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             void RefreshTaskList()
             {
-                IReadOnlyList<TaskActivityEntry> entries = _taskActivityService.Snapshot();
+                IReadOnlyList<TaskActivityEntry> entries = _taskActivityService.RunningSnapshot();
                 list.Items.Clear();
                 DateTimeOffset now = DateTimeOffset.Now;
-                int running = 0;
-                int queued = 0;
-                int warning = 0;
-                int failed = 0;
                 foreach (TaskActivityEntry entry in entries)
                 {
                     Grid row = CreateTaskActivityGrid();
@@ -535,18 +503,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         Padding = new Thickness(0),
                         Margin = new Thickness(0)
                     });
-                    switch (entry.State)
-                    {
-                        case "RUNNING": running++; break;
-                        case "QUEUED": queued++; break;
-                        case "WARNING": warning++; break;
-                        case "FAILED": failed++; break;
-                    }
                 }
 
                 summary.Text = entries.Count == 0
-                    ? "No application tasks have been recorded in this session."
-                    : $"Showing {entries.Count} task(s) | Running {running} | Queued {queued} | Warning {warning} | Failed {failed}.";
+                    ? "No tasks are currently running."
+                    : $"{entries.Count} running task(s).";
                 UiDisplaySettings.Apply(list);
             }
 
@@ -623,6 +584,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private void UiDisplaySettings_Changed(object? sender, EventArgs e)
         {
             UiDisplaySettings.Apply(RootLayout);
+            RenderLiveCharts();
+            UpdateHeaderLayout();
             UpdateDisplaySettingButtons();
             ApplyLiveStatusColors();
             UpdateClock();
@@ -659,7 +622,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private void RefreshManagedTaskHeader()
         {
-            TaskStatusButton.Content = _taskActivityService.HasActiveTask
+            TaskStatusMessage = _taskActivityService.HasActiveTask
                 ? _taskActivityService.HeaderStatus
                 : "TASKS: IDLE";
         }
@@ -720,14 +683,17 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 _latestSystemSnapshot = snapshot;
                 _systemStatusError = string.Empty;
 
-                CpuValueText.Text = $"{snapshot.CpuPercent:0}%";
+                CpuValueText.Text = double.IsFinite(snapshot.CpuPercent) ? $"{snapshot.CpuPercent:0}%" : "Unavailable";
                 GpuValueText.Text = snapshot.GpuPercent.HasValue
                     ? $"{snapshot.GpuPercent.Value:0}%"
                     : "Unavailable";
-                RamValueText.Text = $"{snapshot.MemoryPercent:0}% | {snapshot.MemoryUsedGigabytes:0.0} GB";
-                NetworkValueText.Text = $"{snapshot.ReceiveMegabitsPerSecond:0.00} / {snapshot.SendMegabitsPerSecond:0.00} Mbps";
+                RamValueText.Text = double.IsFinite(snapshot.MemoryPercent)
+                    ? $"{snapshot.MemoryPercent:0}% | {snapshot.MemoryUsedGigabytes:0.0} GB" : "Unavailable";
+                NetworkValueText.Text = double.IsFinite(snapshot.ReceiveMegabitsPerSecond) && double.IsFinite(snapshot.SendMegabitsPerSecond)
+                    ? $"{snapshot.ReceiveMegabitsPerSecond:0.00} / {snapshot.SendMegabitsPerSecond:0.00} Mbps" : "Unavailable";
                 ProcessValueText.Text = snapshot.ProcessCount.ToString(CultureInfo.InvariantCulture);
                 UptimeValueText.Text = FormatUptime(snapshot.Uptime);
+                AppendLiveCharts(snapshot);
 
                 ApplyLiveStatusColors();
                 RenderDetailText();
@@ -735,6 +701,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
             catch (Exception exception)
             {
                 _systemStatusError = exception.Message;
+                _latestSystemSnapshot = null;
+                CpuValueText.Text = RamValueText.Text = GpuValueText.Text = NetworkValueText.Text = "Unavailable";
+                CpuValueText.Foreground = RamValueText.Foreground = GpuValueText.Foreground = NetworkValueText.Foreground = GetLiveStatusBrush("muted");
+                AppendLiveCharts(null);
                 RenderDetailText();
             }
         }
@@ -784,12 +754,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
             if (_latestSystemSnapshot.HasValue)
             {
                 SystemSnapshot system = _latestSystemSnapshot.Value;
-                CpuValueText.Foreground = system.CpuPercent >= 90
+                CpuValueText.Foreground = !double.IsFinite(system.CpuPercent) ? GetLiveStatusBrush("muted") : system.CpuPercent >= 90
                     ? GetLiveStatusBrush("danger")
                     : system.CpuPercent >= 70
                         ? GetLiveStatusBrush("warning")
                         : GetLiveStatusBrush("success");
-                RamValueText.Foreground = system.MemoryPercent >= 90
+                RamValueText.Foreground = !double.IsFinite(system.MemoryPercent) ? GetLiveStatusBrush("muted") : system.MemoryPercent >= 90
                     ? GetLiveStatusBrush("danger")
                     : system.MemoryPercent >= 80
                         ? GetLiveStatusBrush("warning")
@@ -799,7 +769,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     : system.GpuPercent.Value >= 95
                         ? GetLiveStatusBrush("warning")
                         : GetLiveStatusBrush("success");
-                NetworkValueText.Foreground = GetLiveStatusBrush("success");
+                NetworkValueText.Foreground = GetLiveStatusBrush(
+                    double.IsFinite(system.ReceiveMegabitsPerSecond) && double.IsFinite(system.SendMegabitsPerSecond) ? "success" : "muted");
                 ProcessValueText.Foreground = GetLiveStatusBrush("text");
                 UptimeValueText.Foreground = GetLiveStatusBrush("text");
             }
@@ -934,7 +905,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
     
                 _profileApplyInProgress = true;
                 _gamingStatusTimer.Stop();
-                TaskStatusButton.Content = "TASKS: APPLYING";
+                TaskStatusMessage = "TASKS: APPLYING";
                 UpdateProfileSelectionUi();
     
                 try
@@ -957,7 +928,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     progressWindow.UpdateOverall(1, result.Message);
                     progressWindow.Complete(result.Success, result.Message);
     
-                    TaskStatusButton.Content = result.Success
+                    TaskStatusMessage = result.Success
                         ? "TASKS: COMPLETE"
                         : result.RolledBack
                             ? "TASKS: ROLLED BACK"
@@ -971,7 +942,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 }
                 catch (Exception exception)
                 {
-                    TaskStatusButton.Content = "TASKS: FAILED";
+                    TaskStatusMessage = "TASKS: FAILED";
                     progressWindow.CompleteItem(
                         "PerformanceProfile",
                         success: false,
@@ -1194,7 +1165,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
 
             _utilityTaskInProgress = true;
-            TaskStatusButton.Content = mode == WindowsRepairMode.Full
+            TaskStatusMessage = mode == WindowsRepairMode.Full
                 ? "TASKS: FULL REPAIR"
                 : "TASKS: QUICK REPAIR";
             UpdateProfileSelectionUi();
@@ -1221,7 +1192,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 WindowsRepairResult result = await _windowsRepairService.RunAsync(
                     mode,
                     progressWindow.Progress);
-                TaskStatusButton.Content = result.Success
+                TaskStatusMessage = result.Success
                     ? result.HasWarnings ? "TASKS: WARNING" : "TASKS: COMPLETE"
                     : "TASKS: FAILED";
                 progressWindow.Complete(
@@ -1245,7 +1216,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 progressWindow.Complete(
                     false,
                     0,
@@ -1283,7 +1254,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
 
             _utilityTaskInProgress = true;
-            TaskStatusButton.Content = "TASKS: UPDATE FIX";
+            TaskStatusMessage = "TASKS: UPDATE FIX";
             UpdateProfileSelectionUi();
 
             MaintenanceProgressWindow progressWindow = new(
@@ -1306,7 +1277,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 taskLease.UpdateDetail("Repairing Windows Update services and caches.");
                 MaintenanceOperationResult result = await _windowsUpdateRepairService.RunAsync(
                     progressWindow.Progress);
-                TaskStatusButton.Content = result.Success
+                TaskStatusMessage = result.Success
                     ? result.WarningCount > 0 ? "TASKS: WARNING" : "TASKS: COMPLETE"
                     : "TASKS: FAILED";
                 progressWindow.Complete(
@@ -1328,7 +1299,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 progressWindow.Complete(
                     false,
                     0,
@@ -1366,7 +1337,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
 
             _utilityTaskInProgress = true;
-            TaskStatusButton.Content = "TASKS: STORE FIX";
+            TaskStatusMessage = "TASKS: STORE FIX";
             UpdateProfileSelectionUi();
 
             MaintenanceProgressWindow progressWindow = new(
@@ -1392,7 +1363,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 taskLease.UpdateDetail("Repairing Microsoft Store packages and services.");
                 MaintenanceOperationResult result = await _microsoftStoreRepairService.RunAsync(
                     progressWindow.Progress);
-                TaskStatusButton.Content = result.Success
+                TaskStatusMessage = result.Success
                     ? result.WarningCount > 0 ? "TASKS: WARNING" : "TASKS: COMPLETE"
                     : "TASKS: FAILED";
                 progressWindow.Complete(
@@ -1414,7 +1385,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 progressWindow.Complete(
                     false,
                     0,
@@ -1452,7 +1423,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
 
             _utilityTaskInProgress = true;
-            TaskStatusButton.Content = "TASKS: EXPLORER FIX";
+            TaskStatusMessage = "TASKS: EXPLORER FIX";
             UpdateProfileSelectionUi();
 
             MaintenanceProgressWindow progressWindow = new(
@@ -1476,7 +1447,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 taskLease.UpdateDetail("Repairing Windows Explorer and taskbar.");
                 MaintenanceOperationResult result = await _explorerRepairService.RunAsync(
                     progressWindow.Progress);
-                TaskStatusButton.Content = result.Success
+                TaskStatusMessage = result.Success
                     ? result.WarningCount > 0 ? "TASKS: WARNING" : "TASKS: COMPLETE"
                     : "TASKS: FAILED";
                 progressWindow.Complete(
@@ -1498,7 +1469,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 progressWindow.Complete(
                     false,
                     0,
@@ -1517,14 +1488,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void RuntimeCompatibilityButton_Click(object sender, RoutedEventArgs e)
         {
-            TaskStatusButton.Content = "TASKS: RUNTIME CHECK";
+            TaskStatusMessage = "TASKS: RUNTIME CHECK";
             try
             {
                 await ShowGamingRuntimeCompatibilityWindowAsync();
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync(
                     "Games Runtime & Compatibility Check failed",
                     exception.Message);
@@ -1738,7 +1709,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     {
                         list.SelectedIndex = 0;
                     }
-                    TaskStatusButton.Content = "TASKS: COMPLETE";
+                    TaskStatusMessage = "TASKS: COMPLETE";
                     progressWindow.CompleteItem(
                         "RuntimeCompatibility",
                         success: true,
@@ -1755,7 +1726,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     progressWindow.Complete(success: false, exception.Message);
                     statusText.Text = $"Analysis failed: {exception.Message}";
                     statusText.Foreground = new SolidColorBrush(Color.FromArgb(255, 185, 28, 28));
-                    TaskStatusButton.Content = "TASKS: FAILED";
+                    TaskStatusMessage = "TASKS: FAILED";
                 }
                 finally
                 {
@@ -1800,7 +1771,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 analyzeButton.IsEnabled = false;
                 repairSelectedButton.IsEnabled = false;
                 UpdateSelection();
-                TaskStatusButton.Content = repairMode ? "TASKS: RUNTIME REPAIR" : "TASKS: RUNTIME INSTALL";
+                TaskStatusMessage = repairMode ? "TASKS: RUNTIME REPAIR" : "TASKS: RUNTIME INSTALL";
                 MaintenanceProgressWindow progressWindow = new(
                     window,
                     $"{action}: {entry.Component}",
@@ -1830,7 +1801,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                               (result.RestartRequired ? " Restart Windows to finish pending changes." : string.Empty)
                             : $"{entry.Component} did not pass the final verification.",
                         result.Report);
-                    TaskStatusButton.Content = result.Success && result.Verified
+                    TaskStatusMessage = result.Success && result.Verified
                         ? "TASKS: COMPLETE"
                         : "TASKS: FAILED";
                     taskLease.Complete(
@@ -1843,7 +1814,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 {
                     string report = $"{action.ToUpperInvariant()} FAILED{Environment.NewLine}{exception}";
                     progressWindow.Complete(false, 0, exception.Message, report);
-                    TaskStatusButton.Content = "TASKS: FAILED";
+                    TaskStatusMessage = "TASKS: FAILED";
                     taskLease.Complete("FAILED", exception.Message);
                 }
                 finally
@@ -1897,7 +1868,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 loadInProgress = true;
                 analyzeButton.IsEnabled = false;
                 UpdateSelection();
-                TaskStatusButton.Content = "TASKS: RUNTIME REPAIR";
+                TaskStatusMessage = "TASKS: RUNTIME REPAIR";
                 MaintenanceProgressWindow progressWindow = new(
                     window,
                     $"Repair / enable: {entry.Component}",
@@ -1969,7 +1940,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         result.RestartRecommended ? 1 : 0,
                         completionDetail,
                         report);
-                    TaskStatusButton.Content = awaitingRestart ? "TASKS: WARNING" : verified ? "TASKS: COMPLETE" : "TASKS: FAILED";
+                    TaskStatusMessage = awaitingRestart ? "TASKS: WARNING" : verified ? "TASKS: COMPLETE" : "TASKS: FAILED";
                     taskLease.Complete(
                         awaitingRestart ? "WARNING" : verified ? "COMPLETED" : "FAILED",
                         completionDetail);
@@ -1982,7 +1953,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         0,
                         exception.Message,
                         $"WINDOWS PREREQUISITE REPAIR FAILED{Environment.NewLine}{exception}");
-                    TaskStatusButton.Content = "TASKS: FAILED";
+                    TaskStatusMessage = "TASKS: FAILED";
                     taskLease.Complete("FAILED", exception.Message);
                 }
                 finally
@@ -2093,7 +2064,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void GamingTweaksButton_Click(object sender, RoutedEventArgs e)
         {
-            TaskStatusButton.Content = "TASKS: GAMING TWEAKS";
+            TaskStatusMessage = "TASKS: GAMING TWEAKS";
 
             try
             {
@@ -2114,7 +2085,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync("Gaming Tweaks failed", exception.Message);
             }
             finally
@@ -2126,7 +2097,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void EssentialTweaksButton_Click(object sender, RoutedEventArgs e)
         {
-            TaskStatusButton.Content = "TASKS: ESSENTIAL TWEAKS";
+            TaskStatusMessage = "TASKS: ESSENTIAL TWEAKS";
 
             try
             {
@@ -2155,7 +2126,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync("Essential Windows Tweaks failed", exception.Message);
             }
             finally
@@ -2166,7 +2137,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void DebloatButton_Click(object sender, RoutedEventArgs e)
         {
-            TaskStatusButton.Content = "TASKS: DE-BLOAT PREVIEW";
+            TaskStatusMessage = "TASKS: DE-BLOAT PREVIEW";
             try
             {
                 await ShowToggleCatalogDialogAsync(
@@ -2184,7 +2155,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync("Windows De-bloat failed", exception.Message);
             }
             finally
@@ -3154,9 +3125,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     {
                         return;
                     }
-                    if (requestedOn)
+                    if (CatalogTogglePolicy.FromSwitch(definition, requestedOn) != CatalogOperation.RestoreSavedState)
                     {
-                        await RunApplyItemsAsync(new[] { definition });
+                        await RunApplyItemsAsync(new[] { definition }, requestedOn);
                     }
                     else
                     {
@@ -3171,7 +3142,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             window.PrimaryButton.Click += async (_, _) =>
                 await RunApplyItemsAsync(SelectedPlan().Selected);
 
-            async Task RunApplyItemsAsync(IReadOnlyList<ToolToggleDefinition> items)
+            async Task RunApplyItemsAsync(IReadOnlyList<ToolToggleDefinition> items, bool targetOn = true)
             {
                 if (window.IsClosed || applyInProgress || stateLoadInProgress || individualActionGate.IsBusy)
                 {
@@ -3191,7 +3162,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
                     CatalogSelectionPlan plan = CatalogSelectionPlan.Create(
                         items, currentStates, _ => true);
-                    IReadOnlyList<ToolToggleDefinition> changes = plan.ToApply;
+                    IReadOnlyList<ToolToggleDefinition> changes = targetOn ? plan.ToApply
+                        : plan.Selected.Where(item => item.IsFeatureSwitch && currentStates[item.Id].IsOn).ToArray();
 
                     if (changes.Count == 0)
                     {
@@ -3220,11 +3192,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     SetCatalogInteraction(false);
                     if (!await ShowConfirmationWindowAsync(
                             $"{title} - Apply selected",
-                            $"Apply {changes.Count} selected tweak(s)? {plan.AlreadyAppliedCount} already-applied item(s) will be skipped." +
+                            $"Apply {changes.Count} selected tweak(s)? {plan.Selected.Count - changes.Count} already-applied item(s) will be skipped." +
                             Environment.NewLine + Environment.NewLine +
-                            string.Join(Environment.NewLine, changes.Select(item => "• " + item.Name)) +
+                            string.Join(Environment.NewLine, changes.Select(item => "• " + item.Name + (item.IsFeatureSwitch ? (targetOn ? ": ON" : ": OFF") : ""))) +
                             Environment.NewLine + Environment.NewLine +
-                            "ON means the tweak is applied, not that the affected Windows service or feature is enabled.",
+                            (changes.All(item => item.IsFeatureSwitch) ? string.Empty :
+                            "ON means the tweak is applied, not that the affected Windows service or feature is enabled."),
                             UiTextKeys.ApplySelected))
                     {
                         return;
@@ -3276,7 +3249,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             result = await CatalogOperationRunner.ExecuteAsync(
                                 service,
                                 definition,
-                                CatalogOperation.Apply,
+                                targetOn ? CatalogOperation.Apply : CatalogOperation.SetOff,
                                 progressWindow.CreateReporter(definition.Id));
                             progressWindow.VerifyItem(definition.Id);
                         }
@@ -3853,7 +3826,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void MsiModeUtilityButton_Click(object sender, RoutedEventArgs e)
         {
-            TaskStatusButton.Content = "TASKS: READING PCI";
+            TaskStatusMessage = "TASKS: READING PCI";
 
             try
             {
@@ -3861,7 +3834,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync("MSI Mode Utility failed", exception.Message);
             }
             finally
@@ -4457,14 +4430,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void GpuDriverManagerButton_Click(object sender, RoutedEventArgs e)
         {
-            TaskStatusButton.Content = "TASKS: GPU INVENTORY";
+            TaskStatusMessage = "TASKS: GPU INVENTORY";
             try
             {
                 await ShowGpuDriverManagerDialogAsync();
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync("GPU Driver Manager failed", exception.Message);
             }
             finally
@@ -4756,7 +4729,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     $"Official {selected.Vendor} driver workflow. The installer cannot run until its HTTPS source and digital signature pass verification.",
                     stages);
                 progressWindow.Show();
-                TaskStatusButton.Content = "TASKS: GPU DRIVER";
+                TaskStatusMessage = "TASKS: GPU DRIVER";
                 try
                 {
                     taskLease.UpdateDetail($"Running verified: {selected.Vendor} driver workflow.");
@@ -4764,7 +4737,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         selected,
                         mode,
                         progressWindow.Progress);
-                    TaskStatusButton.Content = result.Success
+                    TaskStatusMessage = result.Success
                         ? result.WarningCount > 0 || result.RestartRequired
                             ? "TASKS: WARNING"
                             : "TASKS: COMPLETE"
@@ -4787,7 +4760,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 }
                 catch (Exception exception)
                 {
-                    TaskStatusButton.Content = "TASKS: FAILED";
+                    TaskStatusMessage = "TASKS: FAILED";
                     taskLease.Complete("FAILED", exception.Message);
                     progressWindow.Complete(
                         false,
@@ -4905,7 +4878,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void LegacyWindowsPanelsButton_Click(object sender, RoutedEventArgs e)
         {
-            TaskStatusButton.Content = "TASKS: LEGACY PANELS";
+            TaskStatusMessage = "TASKS: LEGACY PANELS";
 
             try
             {
@@ -4992,7 +4965,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async Task ShowBitLockerManagerWindowAsync()
         {
-            TaskStatusButton.Content = "TASKS: BITLOCKER STATUS";
+            TaskStatusMessage = "TASKS: BITLOCKER STATUS";
 
             Grid contentGrid = new();
             contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -5324,7 +5297,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             try
             {
                 await ReloadAsync();
-                TaskStatusButton.Content = "TASKS: COMPLETE";
+                TaskStatusMessage = "TASKS: COMPLETE";
                 await window.ShowAsync();
             }
             finally
@@ -5521,7 +5494,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 new[] { new CatalogProgressItem("DefenderPolicy", "Microsoft Defender") });
             progressWindow.Show();
 
-            TaskStatusButton.Content = mode == DefenderPolicyMode.Disable
+            TaskStatusMessage = mode == DefenderPolicyMode.Disable
                 ? "TASKS: DISABLING DEFENDER"
                 : "TASKS: RESTORING DEFENDER";
 
@@ -5537,7 +5510,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     result.Message);
                 progressWindow.UpdateOverall(1, result.Message);
                 progressWindow.Complete(result.Success, result.Message);
-                TaskStatusButton.Content = result.Success
+                TaskStatusMessage = result.Success
                     ? "TASKS: COMPLETE"
                     : "TASKS: NOT VERIFIED";
                 await ShowTableReportDialogAsync(
@@ -5558,7 +5531,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 progressWindow.CompleteItem(
                     "DefenderPolicy",
                     success: false,
@@ -5580,7 +5553,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             Func<Task<IReadOnlyList<SystemReportEntry>>> reportFactory,
             Func<SecuritySettingsLaunchResult> openSettings)
         {
-            TaskStatusButton.Content = taskLabel;
+            TaskStatusMessage = taskLabel;
             CatalogProgressWindow progressWindow = new(
                 this,
                 "Reading",
@@ -5602,7 +5575,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     $"Loaded {rows.Count} report row(s).");
                 progressWindow.UpdateOverall(1, $"Loaded {dialogTitle}.");
                 progressWindow.Complete(success: true, $"Loaded {dialogTitle}.");
-                TaskStatusButton.Content = "TASKS: COMPLETE";
+                TaskStatusMessage = "TASKS: COMPLETE";
                 await ShowSecurityManagerDialogAsync(
                     dialogTitle,
                     settingsButtonText,
@@ -5616,7 +5589,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     success: false,
                     exception.Message);
                 progressWindow.Complete(success: false, exception.Message);
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync($"{dialogTitle} failed", exception.Message);
             }
             finally
@@ -5743,7 +5716,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     await ShowCloseWarningAsync();
                     return;
                 }
-                TaskStatusButton.Content = "TASKS: RESTARTING";
+                TaskStatusMessage = "TASKS: RESTARTING";
                 NativeCommandResult result = await _commandRunner.RunAsync(
                     "shutdown.exe", new[] { "/r", "/t", "0" }, TimeSpan.FromSeconds(10));
                 if (result.ExitCode != 0)
@@ -5753,7 +5726,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync("Restart failed", exception.Message);
             }
             finally
@@ -5762,7 +5735,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 {
                     _rebootInProgress = false;
                     RebootButton.IsEnabled = true;
-                    TaskStatusButton.Content = _taskActivityService.HeaderStatus;
+                    TaskStatusMessage = _taskActivityService.HeaderStatus;
                 }
             }
         }
@@ -5778,18 +5751,18 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
 
             _utilityTaskInProgress = true;
-            TaskStatusButton.Content = taskLabel;
+            TaskStatusMessage = taskLabel;
             UpdateProfileSelectionUi();
 
             try
             {
                 string report = await reportFactory();
-                TaskStatusButton.Content = "TASKS: COMPLETE";
+                TaskStatusMessage = "TASKS: COMPLETE";
                 await ShowReportDialogAsync(dialogTitle, report);
             }
             catch (Exception exception)
             {
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 await ShowMessageDialogAsync(
                     $"{dialogTitle} failed",
                     exception.Message);
@@ -5797,7 +5770,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             finally
             {
                 _utilityTaskInProgress = false;
-                TaskStatusButton.Content = "TASKS: IDLE";
+                TaskStatusMessage = "TASKS: IDLE";
                 UpdateProfileSelectionUi();
             }
         }
@@ -5818,7 +5791,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 return;
             }
 
-            TaskStatusButton.Content = taskLabel;
+            TaskStatusMessage = taskLabel;
             CatalogProgressWindow progressWindow = new(
                 this,
                 "Collecting",
@@ -5841,7 +5814,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     $"Loaded {rows.Count} report row(s).");
                 progressWindow.UpdateOverall(1, $"Loaded {dialogTitle}.");
                 progressWindow.Complete(success: true, $"Loaded {dialogTitle}.");
-                TaskStatusButton.Content = "TASKS: COMPLETE";
+                TaskStatusMessage = "TASKS: COMPLETE";
                 await ShowTableReportDialogAsync(
                     dialogTitle,
                     suggestedFileName,
@@ -5855,7 +5828,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     success: false,
                     exception.Message);
                 progressWindow.Complete(success: false, exception.Message);
-                TaskStatusButton.Content = "TASKS: FAILED";
+                TaskStatusMessage = "TASKS: FAILED";
                 taskLease.Complete("FAILED", exception.Message);
                 await ShowMessageDialogAsync(
                     $"{dialogTitle} failed",

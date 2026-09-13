@@ -13,6 +13,7 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
 {
     private static readonly BoundedReadProbe<IReadOnlyList<BuiltInAppPackage>> InventoryProbe = new();
     private string? _auditPath;
+    private readonly OneDriveAppService _oneDrive = new();
     internal string? AuditPath => _auditPath;
 
     public IReadOnlyList<ToolActionDefinition> GetActions() => [new(
@@ -34,7 +35,7 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
         return (IReadOnlyList<BuiltInAppPackage>)manager.FindPackagesForUser(string.Empty)
             .Where(p => BuiltInAppsCatalog.Targets.Any(t => t.Families.Contains(p.Id.FamilyName, StringComparer.OrdinalIgnoreCase)))
             .Select(p => new BuiltInAppPackage(p.Id.Name, p.Id.FamilyName, p.Id.FullName, p.IsFramework, p.IsResourcePackage, p.Status.VerifyIsOK()))
-            .ToArray();
+            .Concat(OneDriveAppService.ReadInstalled()).ToArray();
     }, TimeSpan.FromSeconds(30));
 
     public async Task RemoveAsync(BuiltInAppPackage package, IProgress<CatalogProgressUpdate>? progress)
@@ -44,6 +45,11 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
         var current = await ReadAsync();
         if (!current.Any(p => p.FullName == package.FullName && BuiltInAppsCatalog.Matches(target, p)))
             return; // changed/removed since preview; caller still verifies entire family
+        if (target.Kind == BuiltInAppKind.OneDriveDesktop)
+        {
+            await _oneDrive.ChangeAsync(false, progress, AppendResultAsync);
+            return;
+        }
         PackageManager manager = new();
         using var reporting = CatalogOperationProgress.Begin(progress);
         DeploymentResult result = await DeploymentOperationTimeout.AwaitAsync(
@@ -56,6 +62,11 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
     public async Task RestoreAppAsync(BuiltInAppTarget requested, IProgress<CatalogProgressUpdate>? progress)
     {
         var target = BuiltInAppsCatalog.ResolveSelection([requested.Id]).Single();
+        if (target.Kind == BuiltInAppKind.OneDriveDesktop)
+        {
+            await _oneDrive.ChangeAsync(true, progress, AppendResultAsync);
+            return;
+        }
         if ((await ReadAsync()).Any(p => BuiltInAppsCatalog.Matches(target, p) && p.Healthy)) return;
         using var reporting = CatalogOperationProgress.Begin(progress);
         List<string> failures = new();
@@ -103,13 +114,15 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
         string directory = Path.Combine(AppDataPaths.LocalRoot, "Logs", "BuiltInApps");
         Directory.CreateDirectory(directory);
         _auditPath = Path.Combine(directory, (restore ? "restore-" : "uninstall-") + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N") + ".txt");
-        string text = "BUILT-IN WINDOWS APPS — CURRENT USER ONLY" + Environment.NewLine +
+        string text = "BUILT-IN WINDOWS APPS — STORE: CURRENT USER; ONEDRIVE: CONFIRMED INSTALLATION SCOPE" + Environment.NewLine +
             "Started UTC: " + DateTime.UtcNow.ToString("O") + Environment.NewLine +
             "Account: " + Environment.UserDomainName + "\\" + Environment.UserName + Environment.NewLine +
             "This is an inventory/operation log, NOT an app-data backup." + Environment.NewLine +
             "Selected: " + string.Join(", ", targets.Select(t => t.Name)) + Environment.NewLine +
             string.Join(Environment.NewLine, packages.Select(p => p.Family + " | " + p.FullName)) + Environment.NewLine;
         await File.WriteAllTextAsync(_auditPath, text, new UTF8Encoding(false));
+        if (targets.Any(t => t.Kind == BuiltInAppKind.OneDriveDesktop))
+            await _oneDrive.PrepareAsync(restore, packages);
     }
 
     public Task AppendResultAsync(string text) => File.AppendAllTextAsync(

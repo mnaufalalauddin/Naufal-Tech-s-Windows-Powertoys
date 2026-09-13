@@ -64,48 +64,57 @@
         </Grid.Resources>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="86"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- APPLICATION HEADER -->
-        <Border Grid.Row="0" Background="#F9FBFE" BorderBrush="#D2DAE5" BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" MinHeight="86" Background="#F9FBFE" BorderBrush="#D2DAE5" BorderThickness="0,0,0,1">
             <Grid>
                 <Border Width="6" HorizontalAlignment="Left" Background="#2E66E5"/>
 
-                <Grid Margin="24,10,20,10">
+                <Grid x:Name="HeaderLayout" Margin="24,10,20,10" SizeChanged="HeaderLayout_SizeChanged">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="180"/>
-                        <ColumnDefinition Width="270"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                    <StackPanel x:Name="HeaderClock" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="2" Margin="0,0,20,0">
                         <TextBlock x:Name="ClockText" Text="00:00:00" FontSize="25" FontWeight="SemiBold"
                                HorizontalAlignment="Center"/>
                         <TextBlock x:Name="DateText" Text="Sunday, 30 August 2026" FontSize="11"
-                               Foreground="#34455C" HorizontalAlignment="Center"/>
+                               Foreground="#34455C" HorizontalAlignment="Center" TextWrapping="Wrap"/>
                         <TextBlock x:Name="SessionText" Text="Time spent 00:00:00" FontSize="11"
-                               Foreground="#1B4D91" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                               Foreground="#1B4D91" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap"/>
                     </StackPanel>
 
-                    <Grid Grid.Column="2" VerticalAlignment="Center" Margin="10,0">
+                    <Grid x:Name="HeaderSettings" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" ColumnSpacing="8" RowSpacing="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="Languages" FontSize="11" FontWeight="SemiBold"/>
-                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
-                            <ComboBox x:Name="LanguageComboBox" Width="160" Height="32"
+                        <TextBlock x:Name="LanguageLabel" Grid.Column="0" Text="Languages" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <ComboBox x:Name="LanguageComboBox" Grid.Row="1" Grid.Column="0" Width="160" MinWidth="0" Height="32"
                                       SelectionChanged="LanguageComboBox_SelectionChanged"/>
-                            <Button x:Name="ThemeButton" Content="☀" Width="38" Height="32" MinHeight="32" CornerRadius="0"
+                            <Button x:Name="ThemeButton" Grid.Row="1" Grid.Column="1" Content="☀" Width="38" Height="32" MinHeight="32" CornerRadius="0"
                                     Click="ThemeButton_Click" AutomationProperties.Name="Toggle light or dark mode"/>
-                            <Button x:Name="TextScaleButton" Width="38" Height="32" MinHeight="32" CornerRadius="0" FontWeight="Bold"
+                            <Button x:Name="TextScaleButton" Grid.Row="1" Grid.Column="2" Width="38" Height="32" MinHeight="32" CornerRadius="0" FontWeight="Bold"
                                     Click="TextScaleButton_Click" AutomationProperties.Name="Text scaling">
-                                <TextBlock Text="A" TextDecorations="Underline"/>
+                                <TextBlock x:Name="TextScaleGlyph" Text="A" TextDecorations="Underline"/>
+                                <Button.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="Number0" Modifiers="Control" Invoked="ResetTextScale_Invoked"/>
+                                </Button.KeyboardAccelerators>
                             </Button>
-                        </StackPanel>
                     </Grid>
 
                 </Grid>
@@ -140,10 +149,10 @@
                                        VerticalAlignment="Center"/>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
-                                <Button x:Name="TaskStatusButton" Content="TASKS: IDLE" Width="156" Height="32" MinHeight="32"
+                                <Button x:Name="TaskStatusButton" Content="Task Monitoring" MinWidth="156" Height="32" MinHeight="32"
                                         Style="{StaticResource ToolButtonStyle}" Margin="0"
                                         Click="TaskStatusButton_Click"
-                                        AutomationProperties.Name="Open Active Tasks"/>
+                                        AutomationProperties.Name="Task Monitoring"/>
                                 <Button x:Name="RebootButton" Content="Reboot" Width="92" Height="32" MinHeight="32"
                                         Click="RebootButton_Click"
                                         Style="{StaticResource DangerToolButtonStyle}" Margin="0"/>
@@ -328,24 +337,28 @@
                                     <StackPanel Spacing="6">
                                         <TextBlock Text="CPU LIVE" FontSize="10"/>
                                         <TextBlock x:Name="CpuValueText" Text="Initializing..." Foreground="#008A3C" FontSize="14"/>
+                                        <Grid x:Name="CpuGraphHost"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource MetricCardStyle}">
                                     <StackPanel Spacing="6">
                                         <TextBlock Text="RAM LIVE" FontSize="10"/>
                                         <TextBlock x:Name="RamValueText" Text="Initializing..." Foreground="#008A3C" FontSize="14"/>
+                                        <Grid x:Name="RamGraphHost"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource MetricCardStyle}">
                                     <StackPanel Spacing="6">
                                         <TextBlock Text="GPU 3D LIVE" FontSize="10"/>
                                         <TextBlock x:Name="GpuValueText" Text="Pending" Foreground="#315486" FontSize="14"/>
+                                        <Grid x:Name="GpuGraphHost"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Row="0" Grid.Column="3" Style="{StaticResource MetricCardStyle}">
                                     <StackPanel Spacing="6">
                                         <TextBlock Text="NETWORK RX / TX" FontSize="10"/>
                                         <TextBlock x:Name="NetworkValueText" Text="Initializing..." Foreground="#008A3C" FontSize="14"/>
+                                        <Grid x:Name="NetworkGraphHost"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Row="0" Grid.Column="4" Style="{StaticResource MetricCardStyle}">

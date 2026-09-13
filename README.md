@@ -6,7 +6,7 @@ A native Windows system-management and tuning application built with C#, WinUI 3
 and .NET 10. This repository contains the development source for **8.0.0.0**,
 published under the company metadata **Naufal Tech's Ltd.**
 
-**Development snapshot: 12 September 2026.** This is not a declaration of a
+**Development snapshot: 13 September 2026.** This is not a declaration of a
 stable release or complete behavioral parity with the original PowerShell tool.
 Read the [known limitations](#status-and-safety) before using administrative actions.
 
@@ -15,12 +15,17 @@ Read the [known limitations](#status-and-safety) before using administrative act
 - Full/Quick Repair, Windows Update Fix, Microsoft Store Fix, and Explorer Fix.
 - Disk/system reports, activation information, security and BitLocker workflows.
 - Essential Windows Tweaks, Gaming Tweaks, and Advanced Windows Tweaks & De-Bloat.
-- Performance profiles, live gaming/system status, and resource-aware task queuing.
+- Performance profiles, live CPU/RAM/GPU/network graphs, and resource-aware task queuing.
+- Task Monitoring focused on running work, with separate operation result windows.
 - GPU Driver Manager, MSI Mode Utility, runtime compatibility, and legacy panels.
 - Separate per-task/overall progress windows with elapsed time and verified outcomes.
 - Light/Dark themes, eight scaling choices from 25% to 200%, and 23 language catalogs.
-- Review, selected uninstall, and restore for 31 built-in Store apps. See
+- Review, selected uninstall, and restore for 31 built-in Store apps plus Microsoft
+  OneDrive (32 entries, with scope-aware desktop app handling). See
   [scope, package identities, and recovery limits](BUILT_IN_APPS.md).
+- Explicit Game Mode ON/OFF, adaptive Text Scaling header with Ctrl+0 reset, and
+  verified legacy Photo Viewer PNG/JPG registration (default-app choice remains
+  user-confirmed in Windows Settings).
 
 ## Build prerequisites
 
@@ -114,7 +119,8 @@ file is required to compile this application, and neither is distributed here:
 .\Tests\ParityAudit\Inspect-StaticParity.ps1 -ReferenceDirectory 'D:\PrivateReference'
 ```
 
-See [source-package verification](SOURCE_PACKAGE.md) for this export's checks and
+See [latest source sync](SOURCE_SYNC_2026-09-13.md) for this update's checks,
+[initial source-package verification](SOURCE_PACKAGE.md) for the first export, and
 [CHANGELOG.md](CHANGELOG.md) for historical development results. Assertions are
 not counts of independently tested user features or Windows mutations.
 
@@ -155,8 +161,9 @@ Windows test machines/VM snapshots before trusting Apply/Restore on a real PC.
 
 ## Upload, licensing and third-party dependencies
 
-Follow [GITHUB_UPLOAD.md](GITHUB_UPLOAD.md) to upload the extracted source folder.
-No repository has been created and no files have been uploaded by this export.
+This repository is the browsable development source. The initial
+[GITHUB_UPLOAD.md](GITHUB_UPLOAD.md) describes importing a fresh extracted source
+folder; do not reinitialize this existing checkout or force-push its history.
 
 **No open-source license has been selected or added.** The owner should choose
 the intended license before presenting this as an open-source release. This
