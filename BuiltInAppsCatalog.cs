@@ -5,10 +5,18 @@ using System.Text.Json;
 
 namespace Naufal_Windows_Tech_s_Powertoys;
 
-internal enum BuiltInAppKind { Appx, OneDriveDesktop }
-internal sealed record BuiltInAppTarget(string Id, string Name, IReadOnlyList<string> Families, BuiltInAppKind Kind = BuiltInAppKind.Appx);
+internal enum BuiltInAppKind { Appx, OneDriveDesktop, CopilotStore }
+internal sealed record BuiltInAppTarget(string Id, string Name, IReadOnlyList<string> Families, BuiltInAppKind Kind = BuiltInAppKind.Appx)
+{
+    public AppRemovalRecommendation Recommendation { get; init; } = AppRemovalRecommendation.Optional;
+    public string AppId { get; init; } = "";
+    public IReadOnlyList<string> ExactPackageNames { get; init; } = Array.Empty<string>();
+}
 internal sealed record BuiltInAppPackage(string Name, string Family, string FullName, bool IsFramework, bool IsResource,
-    bool Healthy = true, BuiltInAppKind Kind = BuiltInAppKind.Appx, string? Scope = null);
+    bool Healthy = true, BuiltInAppKind Kind = BuiltInAppKind.Appx, string? Scope = null)
+{
+    public string? InventoryError { get; init; }
+}
 
 internal static class BuiltInAppsCatalog
 {
@@ -32,7 +40,7 @@ internal static class BuiltInAppsCatalog
         "QuickAssist" => "9P7BP5VNWKX5", "Solitaire" => "9WZDNCRFHWD2", "Recorder" => "9WZDNCRFHWKN",
         "StartExperiences" => "9PC1H9VN18CM", "StickyNotes" => "9NBLGGH4QGHW", "VP9" => "9N4D0MSMP0PT",
         "Weather" => "9WZDNCRFJ3Q2", "WebMedia" => "9N5TDP8VCMHS", "WebP" => "9PG2DK419DRG",
-        "Notepad" => "9MSMLRH6LZF3", _ => null
+        "Notepad" => "9MSMLRH6LZF3", "Copilot" => "XP9CXNGPPJ97XX", _ => null
     };
 
     internal static Uri StoreUri(BuiltInAppTarget target)
@@ -40,6 +48,8 @@ internal static class BuiltInAppsCatalog
         var approved = ResolveSelection([target.Id]).Single();
         if (approved.Kind == BuiltInAppKind.OneDriveDesktop)
             return new Uri(OneDriveAppPolicy.RecoveryUrl);
+        if (StoreProductId(approved.Id) is null && approved.Families.Count == 0)
+            return new Uri("ms-windows-store://search/?query=" + Uri.EscapeDataString(approved.Name));
         return new Uri("ms-windows-store://pdp/?" + (StoreProductId(approved.Id) is string product
             ? "ProductId=" + product : "PFN=" + Uri.EscapeDataString(approved.Families[0])));
     }
@@ -70,7 +80,7 @@ internal static class BuiltInAppsCatalog
     // Exact family identities, not display-name matching or wildcards. The OEM
     // HEVC package is singular (VideoExtension); the paid plural package is not
     // implicitly included. Classic Win32 Paint/Notepad/Teams are not targets.
-    internal static readonly IReadOnlyList<BuiltInAppTarget> Targets = Array.AsReadOnly(new[]
+    internal static readonly IReadOnlyList<BuiltInAppTarget> Targets = BuiltInAppsExpansion.Merge(new[]
     {
         App("AV1", "AV1 Video Extension", "Microsoft.AV1VideoExtension"),
         App("AVC", "AVC Encoder Video Extension", "Microsoft.AVCEncoderVideoExtension"),
@@ -111,15 +121,27 @@ internal static class BuiltInAppsCatalog
 
     internal static bool Matches(BuiltInAppTarget target, BuiltInAppPackage package)
     {
+        if (target.Id == "Copilot" && target.Kind == BuiltInAppKind.Appx && package.Kind == BuiltInAppKind.CopilotStore)
+            return package.Name == "Microsoft Copilot" && package.Family.Length == 0 && package.Scope == "user" &&
+                package.FullName == CopilotStorePolicy.ProductId + ":user" && !package.IsFramework && !package.IsResource;
         if (target.Kind != package.Kind) return false;
         if (target.Kind == BuiltInAppKind.OneDriveDesktop)
             return target.Id == "OneDrive" && package.Name == "Microsoft OneDrive" && package.Family.Length == 0 &&
                 !package.IsFramework && !package.IsResource && OneDriveAppPolicy.IsScope(package.Scope) &&
                 package.FullName == "Microsoft.OneDrive:" + package.Scope;
-        if (package.IsFramework || package.IsResource ||
-            !target.Families.Contains(package.Family, StringComparer.OrdinalIgnoreCase)) return false;
+        bool exactFamily = target.Families.Contains(package.Family, StringComparer.OrdinalIgnoreCase);
+        bool exactName = target.ExactPackageNames.Contains(package.Name, StringComparer.OrdinalIgnoreCase);
+        // Microsoft package names require a Microsoft publisher ID. For explicitly
+        // listed third-party identities, preview/audit the complete family before removal.
+        if (exactName && (package.Name.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
+            package.Name.StartsWith("MicrosoftCorporationII.", StringComparison.OrdinalIgnoreCase) ||
+            package.Name.StartsWith("MicrosoftWindows.", StringComparison.OrdinalIgnoreCase)))
+            exactName = package.Family.EndsWith("_8wekyb3d8bbwe", StringComparison.OrdinalIgnoreCase) ||
+                package.Family.EndsWith("_cw5n1h2txyewy", StringComparison.OrdinalIgnoreCase);
+        if (package.IsFramework || package.IsResource || (!exactFamily && !exactName)) return false;
         int separator = package.Family.LastIndexOf('_');
-        return separator > 0 &&
+        return separator > 0 && package.Family.Length - separator == 14 &&
+            package.Family[(separator + 1)..].All(char.IsAsciiLetterOrDigit) &&
             string.Equals(package.Name, package.Family[..separator], StringComparison.OrdinalIgnoreCase) &&
             package.FullName.StartsWith(package.Name + "_", StringComparison.OrdinalIgnoreCase) &&
             package.FullName.EndsWith(package.Family[separator..], StringComparison.OrdinalIgnoreCase) &&

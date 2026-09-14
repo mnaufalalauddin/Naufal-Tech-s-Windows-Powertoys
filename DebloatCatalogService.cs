@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Naufal_Windows_Tech_s_Powertoys
 {
     /// <summary>
-    /// Presents the final feature-oriented 41-row de-bloat catalog. The source
+    /// Presents the feature-oriented de-bloat catalog. The source
     /// utility builds 49 atomic backends, then merges recommendation, privacy,
     /// taskbar, and Explorer children into four user-facing controls.
     /// </summary>
@@ -39,6 +39,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 "NvidiaOverlay", "TaskbarChatOff", "TaskViewButtonOff",
                 "NoNetCrawling", "StickyKeysHotkeysOff",
                 "ModernStandbyOverride", "TpmCpuBypass");
+            AddSelected(atomic, registryLab, "LocationAppAccess", "FindMyDevice", "LockScreenTips", "Settings365Ads",
+                "BingSearch", "PhoneLinkStart", "EdgePromotions", "EdgeAI", "BraveExtras", "PaintAI");
             AddSelected(atomic, networkStorage,
                 "Teredo", "StorageSense", "ReservedStorage");
             AddSelected(
@@ -53,7 +55,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
             List<CatalogItem> items = new()
             {
                 Direct(atomic, "Widgets", "Components", ToolToggleTier.Safe),
-                Direct(atomic, "WindowsAI", "Components", ToolToggleTier.Advanced),
+                Composite(atomic, atomic["WindowsAI"].Definition with
+                {
+                    SelectionTier = ToolToggleTier.Advanced,
+                    Description = "Configures the Copilot/Recall/Click to Do policy bundle, screen text/image analysis through those features, WSAIFabricSvc auto-start, Notepad AI and supported Paint AI policies. Removes current-user Copilot packages and the supported Recall feature. Restore preserves saved settings; package or feature recovery may require Store or Windows Update.",
+                    Warning = "Recall snapshot history and removed app data may be deleted and cannot be restored by this tool. WinGet checks the exact Copilot Store product. Policies are version-dependent; Click to Do policy support may require an Insider build. " + PrivacyPolicyCatalog.VerificationNotice
+                }, "WindowsAI", "PaintAI"),
                 Direct(atomic, "XboxComponents", "Components", ToolToggleTier.Advanced),
                 Direct(atomic, "NvidiaOverlay", "Startup", ToolToggleTier.Safe),
                 Direct(atomic, "StickyKeysHotkeysOff", "System / HIGH RISK", ToolToggleTier.Advanced),
@@ -63,10 +70,19 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 Direct(atomic, "StorageSense", "Storage / Experimental", ToolToggleTier.Advanced),
                 Direct(atomic, "ReservedStorage", "Storage / HIGH RISK", ToolToggleTier.Advanced),
                 Direct(atomic, "Telemetry", "Privacy / HIGH IMPACT", ToolToggleTier.VeryAggressive),
-                Direct(atomic, "Location", "Privacy / Advanced", ToolToggleTier.Advanced),
+                Composite(atomic, atomic["Location"].Definition with
+                {
+                    SelectionTier = ToolToggleTier.Advanced,
+                    Description = "Disables Windows location services and app location access on supported Windows editions.",
+                    Warning = "Location-dependent apps, maps, automatic time-zone detection and nearby-device functions can stop working."
+                }, "Location", "LocationAppAccess"),
                 Direct(atomic, "DeliveryOptimization", "Privacy / Safe", ToolToggleTier.Safe),
                 Direct(atomic, "EdgeBackground", "Startup / Safe", ToolToggleTier.Safe),
-                Direct(atomic, "OneDriveAutoStartup", "Startup / Safe", ToolToggleTier.Safe)
+                Direct(atomic, "OneDriveAutoStartup", "Startup / Safe", ToolToggleTier.Safe),
+                Direct(atomic, "FindMyDevice", "Privacy / Advanced", ToolToggleTier.Advanced),
+                Direct(atomic, "EdgePromotions", "Browser / Advanced", ToolToggleTier.Advanced),
+                Direct(atomic, "EdgeAI", "Browser / Advanced", ToolToggleTier.Advanced),
+                Direct(atomic, "BraveExtras", "Browser / HIGH IMPACT", ToolToggleTier.Advanced)
             };
 
             foreach (ToolToggleDefinition group in serviceGroups.GetDefinitions())
@@ -87,12 +103,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     "WindowsRecommendations",
                     "Components / Safe",
                     "Windows Recommendations / Suggested Content",
-                    "Disables Windows consumer promotions, tips, Start recommendations, Search Highlights, suggested Settings content and Microsoft Store recommended-search promotions as one consolidated cleanup.",
+                    "Disables Windows tips, lock-screen tips, Start suggestions, Bing web results, Search Highlights, Settings suggestions, supported Microsoft 365 promotions and Store app recommendations. Windows AI separately handles Copilot removal. Unsupported child policies are skipped.",
                     true,
                     true,
                     ToolToggleTier.Safe),
                 "ConsumerFeatures", "WindowsTips", "StartRecommendations",
-                "SearchHighlights", "SettingsSuggestedContent", "StoreSearch"));
+                "SearchHighlights", "SettingsSuggestedContent", "StoreSearch", "LockScreenTips", "Settings365Ads", "BingSearch"));
             items.Add(Composite(
                 atomic,
                 new ToolToggleDefinition(
@@ -110,11 +126,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     "TaskbarClutter",
                     "Components / Safe",
                     "Taskbar Optional Buttons / Clutter",
-                    "Hides the optional Task View and Chat/Teams taskbar buttons without uninstalling their Windows features or applications.",
+                    "Hides Task View, legacy Chat/Teams taskbar buttons and the Phone Link Start panel when available, without uninstalling these apps.",
                     false,
                     false,
                     ToolToggleTier.Safe),
-                "TaskbarChatOff", "TaskViewButtonOff"));
+                "TaskbarChatOff", "TaskViewButtonOff", "PhoneLinkStart"));
             items.Add(Composite(
                 atomic,
                 new ToolToggleDefinition(
@@ -127,10 +143,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     ToolToggleTier.Safe),
                 "ExplorerHomeGallery", "NoNetCrawling"));
 
-            if (items.Count != 41)
+            if (items.Count != 45)
             {
                 throw new InvalidOperationException(
-                    $"The final de-bloat catalog must contain 41 rows, but contains {items.Count}.");
+                    $"The final de-bloat catalog must contain 45 rows, but contains {items.Count}.");
             }
 
             _items = items.ToDictionary(

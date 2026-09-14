@@ -1,6 +1,6 @@
 # Naufal Tech's Windows Powertoys — Changelog
 
-Development history from **30 August 2026** through **13 September 2026**.
+Development history from **30 August 2026** through **14 September 2026**.
 
 **Original history snapshot:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
 Later development entries are appended below with their own dates.
@@ -17,6 +17,56 @@ source changes. **Verification** describes the evidence available at that
 checkpoint, not a new execution of those tests while writing this file. A compiled
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
+
+## 14 September 2026 — Copilot Microsoft Store source consent
+
+- **Fixed:** Windows AI and selected Copilot app operations now offer a dedicated
+  Microsoft Store source-agreement prompt before task admission or mutation.
+  The reported WinGet exit `-1978335162` (`0x8A150046`) was caused by a
+  non-interactive inventory query that did not accept source agreements.
+- **Changed:** The prompt links to the Microsoft terms, discloses transmission
+  of the PC's two-letter region code and possible retained WinGet acceptance,
+  and provides explicit Agree and continue / Cancel choices in all 23 languages.
+  No source agreement is accepted automatically during passive inventory.
+- **Safety:** Acceptance flags on both lookup and removal require a confirmed,
+  operation-scoped grant. Cancellation, completion and exceptions revoke it;
+  concurrent unrelated tasks and delayed children cannot reuse it. Exact product
+  identity, current-user scope, official-source validation and non-elevated
+  execution are retained. Agreement failures remain unverified, not unavailable.
+- **Verification:** 4,382 functional regression assertions and 99,732 localization
+  assertions passed; Debug x64 compiled with zero errors and warnings. This is
+  synthetic/static coverage, not a live Copilot uninstall or Windows AI apply.
+  See `COPILOT_STORE_CONSENT_2026-09-14.md` for delivery evidence and limitations.
+
+## 14 September 2026 — App catalog, privacy policies and automatic encryption
+
+- **Added:** 140 A–Z Built-in Windows Apps entries after merging the user's 131
+  requested app-list positions with the existing catalog. Old/new Teams and
+  Bing/Microsoft News are grouped. Green/yellow/red removal recommendations
+  include a legend, explanatory notes and extra confirmation for red entries.
+- **Added/merged:** Location access, Find My Device, lock-screen suggestions,
+  Settings consumer promotions, Bing search, Phone Link Start integration,
+  Edge promotions/AI, Brave extras and documented Paint AI policy settings.
+  Advanced now has 45 toggle rows; existing overlapping controls are reused.
+- **Added:** BitLocker Manager control to prevent future automatic device
+  encryption. It does not decrypt existing volumes or remove recovery keys.
+- **Fixed:** Fast Startup OFF is an explicit verified zero, not Restore.
+  New policy snapshots are captured before writes; default restoration checks
+  every value rather than treating a partially OFF bundle as successful.
+- **Fixed:** Exact Copilot Store-product handling and standard-user execution
+  for per-user Store operations. AI removal no longer uses fuzzy Copilot names,
+  force or all-user deprovisioning. Unrelated DISM failures do not mean Recall
+  is absent. Unknown inventory cannot authorize uninstall or restoration.
+- **Localization:** Legend, recommendation explanations and BitLocker entry/title
+  have entries in 23 languages. New long policy descriptions can fall back to
+  English; this is not full linguistic certification.
+- **Verification:** See CATALOG_EXPANSION_2026-09-14.md for sources, compatibility,
+  restoration limitations and test boundaries. No app uninstall, live tweak,
+  installation or encryption change was performed during development testing.
+- **Delivery:** 4,333 functional and 98,766 localization assertions passed.
+  Release x64 Native AOT and a fresh unsigned Setup EXE were generated and
+  hash-verified. See CATALOG_EXPANSION_DELIVERY_2026-09-14.md for artifact hashes,
+  file size, version and the full verification boundary.
 
 ## 13 September 2026 — Photo Viewer delivery follow-up
 

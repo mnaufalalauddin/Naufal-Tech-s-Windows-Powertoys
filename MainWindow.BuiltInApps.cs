@@ -11,6 +11,24 @@ namespace Naufal_Windows_Tech_s_Powertoys;
 
 public sealed partial class MainWindow
 {
+    private static Border AppRemovalBadge(AppRemovalRecommendation recommendation)
+    {
+        Color color = recommendation switch
+        {
+            AppRemovalRecommendation.Recommended => Color.FromArgb(255, 16, 124, 65),
+            AppRemovalRecommendation.NotRecommended => Color.FromArgb(255, 185, 28, 28),
+            _ => Color.FromArgb(255, 255, 211, 64)
+        };
+        var badge = CreateCatalogCategoryBadge(BuiltInAppsExpansion.Label(recommendation), color);
+        // Yellow uses dark ink in both themes; other badges keep white ink.
+        if (recommendation == AppRemovalRecommendation.Optional && badge.Child is TextBlock text)
+        {
+            text.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black);
+            text.Tag = "AppRemovalRecommendationInk";
+        }
+        return badge;
+    }
+
     private async Task ShowBuiltInAppsAsync(BuiltInAppsService service)
     {
         Grid root = new() { RowSpacing = 10 };
@@ -21,6 +39,15 @@ public sealed partial class MainWindow
         notes.Children.Add(AppText(BuiltInAppsCatalog.Scope));
         notes.Children.Add(AppText(BuiltInAppsCatalog.Warning, warning: true));
         notes.Children.Add(AppText(BuiltInAppsCatalog.RestoreNotice));
+        notes.Children.Add(AppText("Uninstall recommendation"));
+        Grid legend = new() { ColumnSpacing = 8 };
+        for (int i = 0; i < 3; i++)
+        {
+            legend.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+            var badge = AppRemovalBadge((AppRemovalRecommendation)i);
+            Grid.SetColumn(badge, i); legend.Children.Add(badge);
+        }
+        notes.Children.Add(legend);
         root.Children.Add(notes);
 
         StackPanel rows = new() { Spacing = 8 };
@@ -43,6 +70,9 @@ public sealed partial class MainWindow
             CheckBox check = new() { Content = AppText(target.Name), IsChecked = false,
                 HorizontalAlignment = HorizontalAlignment.Stretch };
             detail.Children.Add(check);
+            detail.Children.Add(AppRemovalBadge(target.Recommendation));
+            detail.Children.Add(AppText(BuiltInAppsExpansion.Reason(target.Recommendation)));
+            detail.Children.Add(AppText(target.AppId.Length > 0 ? target.AppId : string.Join(", ", target.Families)));
             TextBlock label = AppText("Preparing...");
             detail.Children.Add(label);
             row.Children.Add(detail);
@@ -108,8 +138,11 @@ public sealed partial class MainWindow
                 var matches = packages.Where(p => BuiltInAppsCatalog.Matches(target, p)).ToArray();
                 bool healthy = matches.Any(p => p.Healthy);
                 if (healthy) installed++;
-                labels[target.Id].Text = healthy ? "Installed" : matches.Length > 0 ? "Needs repair" : "Not installed";
-                labels[target.Id].Foreground = new SolidColorBrush(healthy ? Color.FromArgb(255, 0, 112, 60)
+                string? inventoryError = matches.FirstOrDefault(p => p.InventoryError is not null)?.InventoryError;
+                labels[target.Id].Text = (inventoryError is not null ? "Not verified" + Environment.NewLine + inventoryError
+                    : healthy ? "Installed" : matches.Length > 0 ? "Needs repair" : "Not installed") +
+                    (matches.Length > 0 ? Environment.NewLine + string.Join(Environment.NewLine, matches.Select(p => p.FullName)) : "");
+                labels[target.Id].Foreground = new SolidColorBrush(inventoryError is not null ? Color.FromArgb(255, 107, 114, 128) : healthy ? Color.FromArgb(255, 0, 112, 60)
                     : matches.Length > 0 ? Color.FromArgb(255, 196, 43, 28) : Color.FromArgb(255, 107, 114, 128));
             }
             inventoryKnown = true;
@@ -143,6 +176,13 @@ public sealed partial class MainWindow
                 StackPanel confirmation = new() { Spacing = 10 };
                 confirmation.Children.Add(AppText(BuiltInAppsCatalog.Scope));
                 confirmation.Children.Add(AppText(restore ? BuiltInAppsCatalog.RestoreNotice : BuiltInAppsCatalog.Warning, warning: true));
+                if (!restore && targets.Any(t => t.Recommendation == AppRemovalRecommendation.NotRecommended))
+                {
+                    confirmation.Children.Add(AppText(BuiltInAppsExpansion.Label(AppRemovalRecommendation.NotRecommended), warning: true));
+                    confirmation.Children.Add(AppText(BuiltInAppsExpansion.Reason(AppRemovalRecommendation.NotRecommended), warning: true));
+                    confirmation.Children.Add(AppText(string.Join(Environment.NewLine, targets
+                        .Where(t => t.Recommendation == AppRemovalRecommendation.NotRecommended).Select(t => "• " + t.Name)), warning: true));
+                }
                 if (targets.Any(t => t.Kind == BuiltInAppKind.OneDriveDesktop))
                 {
                     confirmation.Children.Add(AppText(OneDriveAppPolicy.Warning, warning: true));
@@ -157,6 +197,9 @@ public sealed partial class MainWindow
                     primaryButtonText: button, closeButtonText: "Cancel", initialHeight: 560)
                     { CloseOnPrimary = true };
                 if (await confirmWindow.ShowAsync() != ToolWindowResult.Primary) return;
+                bool needsStoreConsent = targets.Any(t => t.Id == "Copilot");
+                if (needsStoreConsent && !await ConfirmCopilotSourceAsync(window)) return;
+                using var storeConsent = needsStoreConsent ? CopilotSourceConsent.BeginConfirmedOperation() : null;
                 lease = await AcquireManagedTaskAsync("BuiltInWindowsApps", verb + ": " + BuiltInAppsCatalog.Title,
                     ["SystemMutation", "AppxDeployment", "Catalog:Advanced Windows Tweaks & De-Bloat"]);
                 if (lease is null) return;

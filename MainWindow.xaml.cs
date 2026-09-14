@@ -3203,6 +3203,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         return;
                     }
 
+                    bool needsStoreConsent = targetOn && changes.Any(item => item.Id == "WindowsAI");
+                    if (needsStoreConsent && !await ConfirmCopilotSourceAsync(window)) return;
+                    using var storeConsent = needsStoreConsent ? CopilotSourceConsent.BeginConfirmedOperation() : null;
+
                     taskLease = await AcquireManagedTaskAsync(
                         $"Catalog:{title}",
                         $"{title} - Apply selected",
@@ -5016,7 +5020,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 decryptButton.Style = _primaryToolButtonStyle;
             }
             Grid.SetRow(actionGrid, 1);
-            contentGrid.Children.Add(actionGrid);
+            StackPanel bitLockerActions = new() { Spacing = 6 };
+            bitLockerActions.Children.Add(actionGrid);
+            Button automaticEncryptionButton = new() { Content = "Disable BitLocker automatic device encryption", HorizontalAlignment = HorizontalAlignment.Stretch };
+            bitLockerActions.Children.Add(automaticEncryptionButton);
+            Grid.SetRow(bitLockerActions, 1);
+            contentGrid.Children.Add(bitLockerActions);
 
             TextBlock reportText = new()
             {
@@ -5074,6 +5083,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 suspendButton.IsEnabled = enabled && hasVolume && WindowsPrivilegeService.IsAdministrator();
                 resumeButton.IsEnabled = enabled && hasVolume && WindowsPrivilegeService.IsAdministrator();
                 decryptButton.IsEnabled = enabled && hasVolume && WindowsPrivilegeService.IsAdministrator();
+                automaticEncryptionButton.IsEnabled = enabled;
                 volumeSelector.IsEnabled = enabled;
             }
 
@@ -5253,6 +5263,20 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
 
             volumeSelector.SelectionChanged += (_, _) => SetActionAvailability(!operationInProgress);
+            automaticEncryptionButton.Click += async (_, _) =>
+            {
+                if (operationInProgress || bitLockerLoading || bitLockerGate.IsBusy) return;
+                using var entry = bitLockerGate.TryEnter();
+                if (entry is null) return;
+                SetActionAvailability(false);
+                try
+                {
+                    await ShowToggleCatalogDialogAsync("BitLocker Automatic Device Encryption",
+                        new FilteredToolToggleService(_debloatRegistryLabService, "PreventDeviceEncryption"));
+                }
+                catch (Exception exception) { statusText.Text = exception.Message; }
+                finally { entry.Dispose(); if (!window.IsClosed) SetActionAvailability(true); }
+            };
             statusButton.Click += async (_, _) => await ReloadAsync();
             suspendButton.Click += async (_, _) => await RunOperationAsync(
                 "Suspend BitLocker",

@@ -22,6 +22,10 @@ internal static class Regression
         var english = UiTranslation.GetLanguageTable("en");
         string[] required =
         [
+            "Microsoft Store source agreement", "Agree and continue", "Read Microsoft Store terms",
+            "To check Microsoft Copilot, WinGet must use the Microsoft Store source.",
+            "Choosing Agree and continue accepts the Microsoft Store source terms and allows WinGet to send this PC's two-letter region code to Microsoft. WinGet may remember that acceptance.",
+            "Cancel stops this operation before any changes. Checking the source does not buy or install apps.",
             "Task Monitoring", "No tasks are currently running.", "{0} running task(s).", "60 seconds",
             "Full Repair", "Quick Repair", "Windows Update Fix", "Microsoft Store Fix", "Explorer Fix",
             "Disk Info", "System Report", "Windows Activation", "Office Activation", "Disable Defender",

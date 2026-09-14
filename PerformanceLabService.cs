@@ -39,7 +39,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
         }
 
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() =>
-            _catalog.Values.Select(lab => lab.Definition).ToArray();
+            _catalog.Values.Select(lab => lab.Definition.Id == "FastStartupEnable"
+                ? lab.Definition with { IsFeatureSwitch = true, Name = "Fast Startup", Description = "ON enables Fast Startup; OFF disables it by setting HiberbootEnabled=0. Restore is separate and replays the saved setting. Fast Startup also requires hibernation; disabling it can increase cold-start time." }
+                : lab.Definition).ToArray();
 
         public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
         {
@@ -82,9 +84,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
         }
 
-        public async Task<ToolToggleOperationResult> SetStateAsync(
+        public Task<ToolToggleOperationResult> SetStateAsync(ToolToggleDefinition definition, bool targetOn) =>
+            ChangeStateAsync(definition, targetOn, restoreOriginal: false);
+
+        private async Task<ToolToggleOperationResult> ChangeStateAsync(
             ToolToggleDefinition definition,
-            bool targetOn)
+            bool targetOn, bool restoreOriginal)
         {
             if (definition.RequiresAdministrator && !WindowsPrivilegeService.IsAdministrator())
             {
@@ -105,7 +110,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     return new ToolToggleOperationResult(false, false, unavailable, missing, SkippedUnavailable: true);
                 }
 
-                if (targetOn)
+                bool explicitOff = definition.Id == "FastStartupEnable" && !targetOn && !restoreOriginal;
+                if (explicitOff)
+                {
+                    Apply(lab, settings.Select(setting => setting with { Value = 0 }).ToArray());
+                }
+                else if (targetOn)
                 {
                     Apply(lab, settings);
                 }
@@ -122,8 +132,15 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 }
 
                 ToolToggleState after = await ReadStateAsync(definition);
-                bool verified = after.IsAvailable && (!targetOn || after.IsOn);
-                if (verified && !targetOn) DeleteVerifiedBackup(definition.Id);
+                bool verified = after.IsAvailable && (explicitOff
+                    ? settings.All(setting =>
+                    {
+                        using RegistryKey? key = OpenKey(setting.Hive, setting.Path, writable: false);
+                        return key?.GetValue(setting.Name) is int value && value == 0 &&
+                            key.GetValueKind(setting.Name) == RegistryValueKind.DWord;
+                    })
+                    : !targetOn || after.IsOn);
+                if (verified && !targetOn && !explicitOff) DeleteVerifiedBackup(definition.Id);
                 string restart = verified && definition.RestartRecommended
                     ? " Restart Windows before evaluating the result."
                     : string.Empty;
@@ -131,7 +148,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     verified,
                     verified,
                     verified
-                        ? $"{definition.Name} is now {(targetOn ? "APPLIED" : "RESTORED")}.{restart}"
+                        ? $"{definition.Name} is now {(explicitOff ? "OFF" : targetOn ? "APPLIED" : "RESTORED")}.{restart}"
                         : $"Verification did not match the requested state. Actual: {after.ActualValue}",
                     after);
             }
@@ -144,7 +161,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         public Task<ToolToggleOperationResult> RestoreOriginalAsync(
             ToolToggleDefinition definition) =>
-            SetStateAsync(definition, targetOn: false);
+            ChangeStateAsync(definition, targetOn: false, restoreOriginal: true);
 
         public async Task<ToolToggleOperationResult> RestoreWindowsDefaultAsync(
             ToolToggleDefinition definition)

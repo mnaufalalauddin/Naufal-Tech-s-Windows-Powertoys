@@ -1,5 +1,10 @@
 # Built-in Windows Apps — 2026-09-12
 
+> Historical baseline: the current catalog was expanded on 14 September 2026
+> to 140 A–Z entries with recommendation badges. Advanced now has 45 toggle rows.
+> See [the expansion record](CATALOG_EXPANSION_2026-09-14.md) for current behavior,
+> exact identity matching, Copilot Store-product support and recovery limits.
+
 ## Access and behavior
 
 Advanced Windows Tweaks & De-Bloat → Built-in Windows Apps → **Review apps**.

@@ -8,7 +8,8 @@ try
     foreach (var target in BuiltInAppsCatalog.Targets)
     {
         var found = packages.Where(p => BuiltInAppsCatalog.Matches(target, p)).ToArray();
-        Console.WriteLine($"{target.Name}: {found.Length} package(s), healthy={found.Count(p => p.Healthy)}");
+        Console.WriteLine($"{target.Name}: {found.Count(p => p.InventoryError is null)} package(s), healthy={found.Count(p => p.Healthy)}" +
+            (found.Any(p => p.InventoryError is not null) ? "; Store-product inventory deferred (not certified absent)" : ""));
     }
     if (service.AuditPath is not null) throw new InvalidOperationException("Read created a mutation audit.");
     Console.WriteLine("PASS: production current-user inventory completed. No app installed, removed, or re-registered.");

@@ -189,20 +189,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async Task ApplyAsync()
         {
-            NativeCommandResult wingetProbe = await _commandRunner.RunAsync(
-                "winget.exe",
-                new[] { "--version" },
-                TimeSpan.FromSeconds(20));
-            if (wingetProbe.ExitCode != 0)
-            {
-                throw new InvalidOperationException(
-                    "WinGet is required before Windows AI cleanup. Install or repair Microsoft App Installer first. " +
-                    wingetProbe.CombinedOutput);
-            }
-
+            var store = await CopilotStoreService.ProbeAsync();
+            if (store?.InventoryError is string inventoryError) throw new InvalidOperationException(inventoryError);
+            RecallState recall = await ReadRecallStateAsync();
+            if (recall == RecallState.Unknown) throw new InvalidOperationException("Recall availability could not be verified. No AI change was started.");
+            foreach (AiPolicySetting setting in PolicySettings)
+                CaptureValue(PolicyTag(setting), setting.Hive, setting.Path, setting.Name);
             foreach (AiPolicySetting setting in PolicySettings)
             {
-                CaptureValue(PolicyTag(setting), setting.Hive, setting.Path, setting.Name);
                 using RegistryKey key = CreateKey(setting.Hive, setting.Path);
                 key.SetValue(setting.Name, setting.Value, setting.Kind);
             }
@@ -210,28 +204,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             await CaptureAndDisableAiServiceAsync();
             await RemoveTargetPackagesAsync();
 
-            NativeCommandResult winget = await _commandRunner.RunAsync(
-                "winget.exe",
-                new[]
-                {
-                    "uninstall",
-                    "--exact",
-                    "--name", "Copilot",
-                    "--source", "winget",
-                    "--silent",
-                    "--force",
-                    "--accept-source-agreements",
-                    "--disable-interactivity"
-                },
-                TimeSpan.FromMinutes(2));
-            if (winget.ExitCode != 0 &&
-                !winget.CombinedOutput.Contains("No installed package", StringComparison.OrdinalIgnoreCase) &&
-                !winget.CombinedOutput.Contains("No package found", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException($"WinGet Copilot cleanup failed: {winget.CombinedOutput}");
-            }
-
-            RecallState recall = await ReadRecallStateAsync();
+            await CopilotStoreService.RemoveAsync(null, _ => Task.CompletedTask);
             if (recall == RecallState.Enabled)
             {
                 NativeCommandResult disableRecall = await _commandRunner.RunAsync(
@@ -246,7 +219,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         "/NoRestart"
                     },
                     TimeSpan.FromMinutes(8));
-                if (disableRecall.ExitCode != 0)
+                if (disableRecall.TimedOut || disableRecall.ExitCode is not (0 or 3010))
                 {
                     throw new InvalidOperationException(
                         $"Recall feature removal failed: {disableRecall.CombinedOutput}");
@@ -336,42 +309,25 @@ namespace Naufal_Windows_Tech_s_Powertoys
             PackageManager manager = new();
             return manager.FindPackagesForUser(string.Empty)
                 .Where(package =>
-                    IsCopilotPackage(package.Id.Name) ||
-                    package.Id.Name.Equals("MicrosoftWindows.Client.CoreAI", StringComparison.OrdinalIgnoreCase) ||
-                    package.Id.Name.Equals("Microsoft.MicrosoftOfficeHub", StringComparison.OrdinalIgnoreCase))
+                    IsCopilotPackage(package.Id.Name) && !package.IsFramework && !package.IsResourcePackage &&
+                    package.Id.FamilyName.Equals("Microsoft.Copilot_8wekyb3d8bbwe", StringComparison.OrdinalIgnoreCase))
                 .GroupBy(package => package.Id.FullName, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .ToList();
         }
 
         private static bool IsCopilotPackage(string packageName) =>
-            packageName.Contains("Copilot", StringComparison.OrdinalIgnoreCase);
+            packageName.Equals("Microsoft.Copilot", StringComparison.OrdinalIgnoreCase);
 
         private static async Task RemoveTargetPackagesAsync()
         {
             PackageManager manager = new();
             foreach (Package package in FindTargetPackages())
             {
-                if (package.Id.Name.Equals("MicrosoftWindows.Client.CoreAI", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    await DeploymentOperationTimeout.AwaitAsync(
-                        () => manager.DeprovisionPackageForAllUsersAsync(package.Id.FamilyName),
-                        $"Deprovisioning {package.Id.Name}");
-                }
-                catch
-                {
-                    // Removal below remains authoritative on builds lacking deprovision support.
-                }
-
                 DeploymentResult result = await DeploymentOperationTimeout.AwaitAsync(
                     () => manager.RemovePackageAsync(
                         package.Id.FullName,
-                        RemovalOptions.RemoveForAllUsers),
+                        RemovalOptions.None),
                     $"Removing {package.Id.Name}");
                 if (result.ExtendedErrorCode is not null &&
                     result.ExtendedErrorCode.HResult < 0)
@@ -389,9 +345,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 "dism.exe",
                 new[] { "/English", "/Online", "/Get-FeatureInfo", "/FeatureName:Recall" },
                 TimeSpan.FromSeconds(45));
+            if (result.TimedOut) return RecallState.Unknown;
             if (result.ExitCode != 0)
             {
-                return RecallState.NotPresent;
+                return result.ExitCode == unchecked((int)0x800F080C) ||
+                    result.CombinedOutput.Contains("0x800f080c", StringComparison.OrdinalIgnoreCase)
+                    ? RecallState.NotPresent : RecallState.Unknown;
             }
             if (result.StandardOutput.Contains("State : Enabled", StringComparison.OrdinalIgnoreCase))
             {

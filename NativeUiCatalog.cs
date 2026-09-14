@@ -14,6 +14,8 @@ internal static partial class NativeUiCatalog
         MergeRows(catalog, Wizard);
         MergeRows(catalog, WmiWizard);
         MergeRows(catalog, BuiltInApps);
+        MergeRows(catalog, AppExpansion);
+        MergeRows(catalog, CopilotConsent);
         MergeRows(catalog, OneDriveApps);
         MergeRows(catalog, Monitoring);
         MergeRows(catalog, Status);

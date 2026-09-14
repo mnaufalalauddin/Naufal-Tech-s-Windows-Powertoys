@@ -8,6 +8,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\BuiltInAppsCatalog.cs" Link="BuiltInAppsCatalog.cs" />
+    <Compile Include="..\..\BuiltInAppsExpansion.cs" Link="BuiltInAppsExpansion.cs" />
+    <Compile Include="..\..\CopilotStorePolicy.cs" Link="CopilotStorePolicy.cs" />
+    <Compile Include="..\..\CopilotSourceConsent.cs" Link="CopilotSourceConsent.cs" />
+    <Compile Include="..\..\CopilotStoreService.cs" Link="CopilotStoreService.cs" />
+    <Compile Include="..\..\OneDriveAppService.cs" Link="OneDriveAppService.cs" />
+    <Compile Include="..\..\OneDriveAppPolicy.cs" Link="OneDriveAppPolicy.cs" />
+    <Compile Include="..\..\OneDriveCommandSession.cs" Link="OneDriveCommandSession.cs" />
+    <Compile Include="..\..\SameUserProcessRunner.cs" Link="SameUserProcessRunner.cs" />
+    <Compile Include="..\..\UserExecutionPolicy.cs" Link="UserExecutionPolicy.cs" />
+    <Compile Include="..\..\AtomicDownloadFile.cs" Link="AtomicDownloadFile.cs" />
     <Compile Include="..\..\BuiltInAppsService.cs" Link="BuiltInAppsService.cs" />
     <Compile Include="..\..\BuiltInAppsRemoval.cs" Link="BuiltInAppsRemoval.cs" />
     <Compile Include="..\..\AppDataPaths.cs" Link="AppDataPaths.cs" />

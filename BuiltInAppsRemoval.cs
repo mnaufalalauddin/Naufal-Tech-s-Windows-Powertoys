@@ -14,6 +14,7 @@ internal sealed record BuiltInAppsResult(int Succeeded, int Unavailable, int Fai
 internal interface IBuiltInAppsBackend
 {
     Task<IReadOnlyList<BuiltInAppPackage>> ReadAsync();
+    Task<IReadOnlyList<BuiltInAppPackage>> ReadForTargetsAsync(IReadOnlyList<BuiltInAppTarget> targets) => ReadAsync();
     Task RemoveAsync(BuiltInAppPackage package, IProgress<CatalogProgressUpdate>? progress);
     Task RestoreAppAsync(BuiltInAppTarget target, IProgress<CatalogProgressUpdate>? progress);
     Task SavePlanAsync(bool restore, IReadOnlyList<BuiltInAppTarget> targets, IReadOnlyList<BuiltInAppPackage> packages);
@@ -28,7 +29,7 @@ internal static class BuiltInAppsRemoval
         IEnumerable<string> selectedIds, IProgress<BuiltInAppUpdate>? progress, bool restore = false)
     {
         var targets = BuiltInAppsCatalog.ResolveSelection(selectedIds);
-        var before = await backend.ReadAsync(); // failure aborts BEFORE any removal
+        var before = await backend.ReadForTargetsAsync(targets); // failure aborts BEFORE any removal
         var plan = targets.ToDictionary(t => t.Id, t => before.Where(p => BuiltInAppsCatalog.Matches(t, p))
             .DistinctBy(p => p.FullName, StringComparer.OrdinalIgnoreCase).ToArray());
         await backend.SavePlanAsync(restore, targets, plan.Values.SelectMany(p => p).ToArray());
@@ -55,12 +56,16 @@ internal static class BuiltInAppsRemoval
                 progress?.Report(new(target.Id, "RUNNING", (restore ? "Restoring: " : "Removing: ") + target.Name));
                 try
                 {
+                    if (plan[target.Id].FirstOrDefault(p => p.InventoryError is not null) is { } unknown)
+                        throw new InvalidOperationException(unknown.InventoryError);
                     var reporter = new ForwardProgress(update =>
                         progress?.Report(new(target.Id, "PROGRESS", update.Detail, update.Percent)));
                     if (restore) await backend.RestoreAppAsync(target, reporter);
                     else foreach (var package in plan[target.Id]) await backend.RemoveAsync(package, reporter);
                     progress?.Report(new(target.Id, "VERIFYING", "Verifying: " + target.Name));
-                    var after = await backend.ReadAsync();
+                    var after = await backend.ReadForTargetsAsync([target]);
+                    if (after.FirstOrDefault(p => BuiltInAppsCatalog.Matches(target, p) && p.InventoryError is not null) is { } uncertain)
+                        throw new InvalidOperationException(uncertain.InventoryError);
                     bool present = after.Any(p => BuiltInAppsCatalog.Matches(target, p) && (!restore || p.Healthy));
                     if (present != restore)
                         throw new InvalidOperationException(target.Kind == BuiltInAppKind.OneDriveDesktop

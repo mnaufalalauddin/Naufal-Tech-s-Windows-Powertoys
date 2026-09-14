@@ -9,6 +9,10 @@
   <ItemGroup>
     <Compile Include="..\..\PhotoViewerRegistration.cs" Link="PhotoViewerRegistration.cs" />
     <Compile Include="..\..\BuiltInAppsCatalog.cs" Link="BuiltInAppsCatalog.cs" />
+    <Compile Include="..\..\CopilotStorePolicy.cs" Link="CopilotStorePolicy.cs" />
+    <Compile Include="..\..\CopilotSourceConsent.cs" Link="CopilotSourceConsent.cs" />
+    <Compile Include="..\..\BuiltInAppsExpansion.cs" Link="BuiltInAppsExpansion.cs" />
+    <Compile Include="..\..\PrivacyPolicyCatalog.cs" Link="PrivacyPolicyCatalog.cs" />
     <Compile Include="..\..\OneDriveAppPolicy.cs" Link="OneDriveAppPolicy.cs" />
     <Compile Include="..\..\GameModeSetting.cs" Link="GameModeSetting.cs" />
     <Compile Include="..\..\OneDriveCommandSession.cs" Link="OneDriveCommandSession.cs" />

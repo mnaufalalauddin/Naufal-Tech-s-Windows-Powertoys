@@ -6,7 +6,7 @@ A native Windows system-management and tuning application built with C#, WinUI 3
 and .NET 10. This repository contains the development source for **8.0.0.0**,
 published under the company metadata **Naufal Tech's Ltd.**
 
-**Development snapshot: 13 September 2026.** This is not a declaration of a
+**Development snapshot: 14 September 2026.** This is not a declaration of a
 stable release or complete behavioral parity with the original PowerShell tool.
 Read the [known limitations](#status-and-safety) before using administrative actions.
 
@@ -20,9 +20,19 @@ Read the [known limitations](#status-and-safety) before using administrative act
 - GPU Driver Manager, MSI Mode Utility, runtime compatibility, and legacy panels.
 - Separate per-task/overall progress windows with elapsed time and verified outcomes.
 - Light/Dark themes, eight scaling choices from 25% to 200%, and 23 language catalogs.
-- Review, selected uninstall, and restore for 31 built-in Store apps plus Microsoft
-  OneDrive (32 entries, with scope-aware desktop app handling). See
-  [scope, package identities, and recovery limits](BUILT_IN_APPS.md).
+- Review, selected uninstall, and restore for **140 A–Z app entries**, including
+  scope-aware OneDrive and exact Copilot Store-product handling. Green/yellow/red
+  badges explain removal recommendations; duplicates such as Teams are merged.
+  See [scope, identities, and recovery limits](CATALOG_EXPANSION_2026-09-14.md).
+- Explicit, 23-language Microsoft Store source consent for Windows AI and
+  Copilot operations; passive inventory does not accept source agreements.
+  See [the source-agreement fix and its tests](COPILOT_STORE_CONSENT_2026-09-14.md).
+- Merged privacy, location, Windows/browser AI and suggested-content controls;
+  Advanced now has 45 toggle rows plus its action entries. Policy applicability
+  varies by Windows edition/build and browser version.
+- A BitLocker Manager option to prevent future automatic device encryption,
+  without decrypting currently encrypted drives. Fast Startup OFF is separate
+  from restoring its saved state.
 - Explicit Game Mode ON/OFF, adaptive Text Scaling header with Ctrl+0 reset, and
   verified legacy Photo Viewer PNG/JPG registration (default-app choice remains
   user-confirmed in Windows Settings).
@@ -119,7 +129,7 @@ file is required to compile this application, and neither is distributed here:
 .\Tests\ParityAudit\Inspect-StaticParity.ps1 -ReferenceDirectory 'D:\PrivateReference'
 ```
 
-See [latest source sync](SOURCE_SYNC_2026-09-13.md) for this update's checks,
+See [latest source sync](SOURCE_SYNC_2026-09-14.md) for this update's checks,
 [initial source-package verification](SOURCE_PACKAGE.md) for the first export, and
 [CHANGELOG.md](CHANGELOG.md) for historical development results. Assertions are
 not counts of independently tested user features or Windows mutations.
@@ -156,6 +166,8 @@ Windows test machines/VM snapshots before trusting Apply/Restore on a real PC.
 - Documented default restore is scoped; unknown vendor defaults are not guessed.
 - Restoring a removed Store app does not restore deleted personal app data.
 - Language coverage is not a professional linguistic or full visual certification.
+- Some new detailed policy descriptions fall back to English; Store recovery
+  cannot guarantee that retired or device/licensing-restricted apps remain available.
 - Current application/installer outputs are unsigned. Setting Company/Publisher
   metadata does not sign a file.
 

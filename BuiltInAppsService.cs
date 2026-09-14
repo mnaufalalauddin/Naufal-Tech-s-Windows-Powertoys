@@ -32,22 +32,40 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
         PackageManager manager = new();
         // Empty SID explicitly means current process user. Never enumerate all
         // users or deprovision the Windows image, even when running elevated.
-        return (IReadOnlyList<BuiltInAppPackage>)manager.FindPackagesForUser(string.Empty)
-            .Where(p => BuiltInAppsCatalog.Targets.Any(t => t.Families.Contains(p.Id.FamilyName, StringComparer.OrdinalIgnoreCase)))
+        var packages = manager.FindPackagesForUser(string.Empty)
             .Select(p => new BuiltInAppPackage(p.Id.Name, p.Id.FamilyName, p.Id.FullName, p.IsFramework, p.IsResourcePackage, p.Status.VerifyIsOK()))
+            .Where(p => BuiltInAppsCatalog.Targets.Any(t => BuiltInAppsCatalog.Matches(t, p)))
             .Concat(OneDriveAppService.ReadInstalled()).ToArray();
+        // Defer the network-backed Store-product check until this target is selected.
+        return (IReadOnlyList<BuiltInAppPackage>)packages.Append(CopilotStorePolicy.Package(CopilotStorePolicy.Deferred)).ToArray();
     }, TimeSpan.FromSeconds(30));
+
+    public async Task<IReadOnlyList<BuiltInAppPackage>> ReadForTargetsAsync(IReadOnlyList<BuiltInAppTarget> targets)
+    {
+        var packages = await ReadAsync();
+        if (!targets.Any(t => t.Id == "Copilot")) return packages;
+        var store = await CopilotStoreService.ProbeAsync();
+        return packages.Where(p => p.Kind != BuiltInAppKind.CopilotStore)
+            .Concat(store is null ? Array.Empty<BuiltInAppPackage>() : new[] { store }).ToArray();
+    }
 
     public async Task RemoveAsync(BuiltInAppPackage package, IProgress<CatalogProgressUpdate>? progress)
     {
         var target = BuiltInAppsCatalog.Targets.SingleOrDefault(t => BuiltInAppsCatalog.Matches(t, package))
             ?? throw new InvalidOperationException("Package is not an approved removal target.");
-        var current = await ReadAsync();
+        var current = await ReadForTargetsAsync([target]);
+        if (current.Any(p => BuiltInAppsCatalog.Matches(target, p) && p.InventoryError is not null))
+            throw new InvalidOperationException("The selected app's installation could not be verified. No removal was started.");
         if (!current.Any(p => p.FullName == package.FullName && BuiltInAppsCatalog.Matches(target, p)))
             return; // changed/removed since preview; caller still verifies entire family
         if (target.Kind == BuiltInAppKind.OneDriveDesktop)
         {
             await _oneDrive.ChangeAsync(false, progress, AppendResultAsync);
+            return;
+        }
+        if (package.Kind == BuiltInAppKind.CopilotStore)
+        {
+            await CopilotStoreService.RemoveAsync(progress, AppendResultAsync);
             return;
         }
         PackageManager manager = new();
@@ -72,7 +90,12 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
         List<string> failures = new();
         // Re-register only the approved family from Windows' own staged payload.
         // No guessed paths, unsigned downloads, data-directory deletion or ACL changes.
-        foreach (string family in target.Families)
+        // Read staged identities only; register the selected app for THIS user.
+        // Other users' registrations and the provisioned Windows image are not modified.
+        var staged = new PackageManager().FindPackages()
+            .Select(p => new BuiltInAppPackage(p.Id.Name, p.Id.FamilyName, p.Id.FullName, p.IsFramework, p.IsResourcePackage))
+            .Where(p => BuiltInAppsCatalog.Matches(target, p)).Select(p => p.Family);
+        foreach (string family in target.Families.Concat(staged).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             try
             {
@@ -96,12 +119,13 @@ internal sealed class BuiltInAppsService : IToolActionService, IBuiltInAppsBacke
             "Microsoft", "WindowsApps", "winget.exe");
         if (!File.Exists(winget))
             throw new InvalidOperationException("WinGet is unavailable for this account. Open this app's Microsoft Store button to reinstall it.");
-        var source = await new NativeCommandRunner().RunAsync(winget,
+        using var userRunner = new SameUserProcessRunner();
+        var source = await userRunner.RunAsync(winget,
             ["source", "export", "--name", "msstore", "--disable-interactivity"], TimeSpan.FromSeconds(30));
         if (source.ExitCode != 0 || source.TimedOut || !BuiltInAppsCatalog.IsMicrosoftStoreSource(source.StandardOutput))
             throw new InvalidOperationException("The official Microsoft Store source could not be verified. No download was started. Use the app's Microsoft Store button; sources were not reset or changed.");
         progress?.Report(new("Installing: " + target.Name + " (Microsoft Store)", null));
-        var install = await DeploymentOperationTimeout.AwaitExternalAsync(() => new NativeCommandRunner().RunAsync(
+        var install = await DeploymentOperationTimeout.AwaitExternalAsync(() => userRunner.RunAsync(
             winget, BuiltInAppsCatalog.InstallArguments(target.Id), Timeout.InfiniteTimeSpan), "Installing: " + target.Name);
         await AppendResultAsync("Microsoft Store " + target.Name + ": exit " + install.ExitCode + Environment.NewLine + install.CombinedOutput);
         if (install.ExitCode != 0 || install.TimedOut)

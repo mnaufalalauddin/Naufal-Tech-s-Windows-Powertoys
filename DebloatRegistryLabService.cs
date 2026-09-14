@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace Naufal_Windows_Tech_s_Powertoys
 {
-    internal sealed class DebloatRegistryLabService : IToolToggleService
+    internal sealed partial class DebloatRegistryLabService : IToolToggleService
     {
         private const string BackupRoot =
             @"Software\Naufal Windows Tech\Powertoys\Backups\DebloatRegistryLab";
 
         private static readonly IReadOnlyDictionary<string, RegistryLab> Catalog =
-            CreateCatalog().ToDictionary(item => item.Definition.Id, StringComparer.OrdinalIgnoreCase);
+            CreateCatalog().Concat(CreatePrivacyCatalog()).ToDictionary(item => item.Definition.Id, StringComparer.OrdinalIgnoreCase);
 
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() =>
             Catalog.Values.Select(item => item.Definition).ToArray();
@@ -23,6 +23,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             try
             {
                 RegistryLab lab = Catalog[definition.Id];
+                if (PrivacyUnavailable(definition.Id) is string unavailable)
+                    return Task.FromResult(ToolToggleState.Unavailable(unavailable));
                 if (definition.Id == "NvidiaOverlay")
                 {
                     using RegistryKey? nvidiaKey = OpenKey(
@@ -75,6 +77,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 RegistryLab lab = Catalog[definition.Id];
                 bool usedSnapshot = false;
+                if (PrivacyUnavailable(definition.Id) is string unavailable)
+                    return new(false, false, unavailable, ToolToggleState.Unavailable(unavailable), SkippedUnavailable: true);
                 if (targetOn)
                 {
                     Apply(lab);
@@ -89,7 +93,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     ? after.IsOn
                     : usedSnapshot
                         ? VerifySavedState(lab)
-                        : !after.IsOn);
+                        : VerifyWindowsDefaults(lab));
                 if (!targetOn && verified)
                 {
                     DeleteBackup(lab.Definition.Id);
@@ -130,9 +134,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
             try
             {
                 RegistryLab lab = Catalog[definition.Id];
+                if (PrivacyUnavailable(definition.Id) is string unavailable)
+                    return new(false, false, unavailable, ToolToggleState.Unavailable(unavailable), SkippedUnavailable: true);
                 RestoreWindowsDefaults(lab);
                 ToolToggleState after = await ReadStateAsync(definition);
-                bool verified = after.IsAvailable && !after.IsOn;
+                bool verified = after.IsAvailable && VerifyWindowsDefaults(lab);
                 if (verified)
                 {
                     DeleteBackup(lab.Definition.Id);
@@ -154,9 +160,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private static void Apply(RegistryLab lab)
         {
+            // Capture the entire plan before the first write. A mid-operation
+            // error must not turn an already-mutated value into a new baseline.
+            foreach (RegistryLabSetting setting in lab.Settings) Capture(lab.Definition.Id, setting);
             foreach (RegistryLabSetting setting in lab.Settings)
             {
-                Capture(lab.Definition.Id, setting);
                 using RegistryKey key = CreateKey(setting.Hive, setting.Path);
                 key.SetValue(setting.Name, setting.Value, setting.Kind);
             }
@@ -249,6 +257,24 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 {
                     return false;
                 }
+            }
+            return true;
+        }
+
+        private static bool VerifyWindowsDefaults(RegistryLab lab)
+        {
+            string[] accessibilityDefaults = { "510", "62", "126" };
+            for (int index = 0; index < lab.Settings.Count; index++)
+            {
+                RegistryLabSetting setting = lab.Settings[index];
+                using RegistryKey? key = OpenKey(setting.Hive, setting.Path, writable: false);
+                object? actual = key?.GetValue(setting.Name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                if (lab.Definition.Id == "StickyKeysHotkeysOff")
+                {
+                    if (actual is not string text || text != accessibilityDefaults[index] ||
+                        key!.GetValueKind(setting.Name) != RegistryValueKind.String) return false;
+                }
+                else if (actual is not null) return false;
             }
             return true;
         }

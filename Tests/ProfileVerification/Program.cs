@@ -127,6 +127,8 @@ PowerPolicyReaderTests.Run(Assert);
 AppDataPathTests.Run(Assert);
 await WmiPrerequisiteTests.RunAsync(Assert);
 await BuiltInAppsTests.RunAsync(Assert);
+CatalogExpansionTests.Run(Assert);
+await CopilotConsentTests.RunAsync(Assert);
 await OneDriveExecutionTests.RunAsync(Assert);
 await GameModeToggleTests.RunAsync(Assert);
 NtfsPerformanceTests.Run(Assert);

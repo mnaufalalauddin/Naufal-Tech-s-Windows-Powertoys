@@ -425,7 +425,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         {
             if (element is TextBlock textBlock)
             {
-                textBlock.Foreground = MapForeground(baseline.Foreground, dark);
+                textBlock.Foreground = textBlock.Tag as string == "AppRemovalRecommendationInk"
+                    ? baseline.Foreground : MapForeground(baseline.Foreground, dark);
             }
             if (element is Control control)
             {

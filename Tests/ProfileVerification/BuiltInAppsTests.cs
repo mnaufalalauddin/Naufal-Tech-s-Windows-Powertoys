@@ -5,9 +5,30 @@ internal static class BuiltInAppsTests
     internal static async Task RunAsync(Action<bool, string> check)
     {
         var targets = BuiltInAppsCatalog.Targets;
-        check(targets.Count == 32, "built-in apps exactly 32 rows including OneDrive");
-        check(targets.SelectMany(t => t.Families).Distinct().Count() == 32, "31 Store apps / 32 exact families unchanged");
-        check(targets.Select(t => t.Id).Distinct().Count() == 32, "stable unique app IDs");
+        check(targets.Count == 140, "140 merged apps retain original entries and all requested additions");
+        check(targets.SelectMany(t => t.Families).Distinct().Count() == 32, "original exact family allowlist retained");
+        check(targets.Select(t => t.Id).Distinct().Count() == targets.Count, "stable unique app IDs");
+        check(targets.Select(t => t.Name).SequenceEqual(targets.Select(t => t.Name).Order(StringComparer.OrdinalIgnoreCase)), "A-Z canonical ordering");
+        foreach (var target in targets.Where(t => t.ExactPackageNames.Count > 0))
+        foreach (string name in target.ExactPackageNames)
+        {
+            string family = name + "_8wekyb3d8bbwe";
+            var package = Package(target, family);
+            check(BuiltInAppsCatalog.Matches(target, package), "exact identity alias " + name);
+            check(!BuiltInAppsCatalog.Matches(target, Package(target, "Extra." + family)), "no substring matching " + name);
+            check(!BuiltInAppsCatalog.Matches(target, package with { IsFramework = true }), "framework alias excluded " + name);
+            check(!BuiltInAppsCatalog.Matches(target, package with { IsResource = true }), "resource alias excluded " + name);
+        }
+        check(targets.Single(t => t.Id == "News").ExactPackageNames.Contains("Microsoft.News"), "Bing and Microsoft News merged");
+        foreach (var target in targets.Where(t => t.ExactPackageNames.Any(n => n.StartsWith("Microsoft.") || n.StartsWith("MicrosoftCorporationII.") || n.StartsWith("MicrosoftWindows."))))
+        {
+            string name = target.ExactPackageNames.First(n => n.StartsWith("Microsoft"));
+            check(!BuiltInAppsCatalog.Matches(target, Package(target, name + "_evilpublisher")), "Microsoft publisher cannot be spoofed " + name);
+        }
+        check(targets.Single(t => t.Id == "XboxIdentity").Recommendation == AppRemovalRecommendation.NotRecommended, "Xbox dependency red");
+        check(targets.Single(t => t.Id == "HPPower").Recommendation == AppRemovalRecommendation.NotRecommended, "OEM power red");
+        check(targets.Single(t => t.Id == "CandyCrush").Recommendation == AppRemovalRecommendation.Recommended, "unused promotional game green");
+        check(targets.Single(t => t.Id == "Paint").Recommendation == AppRemovalRecommendation.Optional, "user-choice app yellow");
         foreach (var target in targets)
         foreach (string family in target.Families)
         {
@@ -25,18 +46,18 @@ internal static class BuiltInAppsTests
             "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe", "Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy",
             "MicrosoftWindows.Client.CBS_cw5n1h2txyewy", "Microsoft.HEVCVideoExtensions_8wekyb3d8bbwe" })
             check(!targets.Any(t => BuiltInAppsCatalog.Matches(t, Package(t, forbidden))), "excluded system/paid/third-party " + forbidden);
-        check(BuiltInAppsCatalog.ResolveSelection(["Clock", "AV1", "Clock"]).Select(t => t.Id).SequenceEqual(["AV1", "Clock"]), "selection canonical ordering and distinct IDs");
+        check(BuiltInAppsCatalog.ResolveSelection(["Clock", "AV1", "Clock"]).Select(t => t.Id).SequenceEqual(["Clock", "AV1"]), "selection canonical ordering and distinct IDs");
         foreach (string[] invalid in new[] { Array.Empty<string>(), new[] { "Clock", "WindowsStore" }, new[] { "*" }, new[] { "clock" } })
             check(await ThrowsAsync(() => Task.Run(() => BuiltInAppsCatalog.ResolveSelection(invalid))), "reject invalid selection");
         foreach (var target in targets)
         {
             var uri = BuiltInAppsCatalog.StoreUri(target);
             check(target.Kind == BuiltInAppKind.OneDriveDesktop ? uri.AbsoluteUri == OneDriveAppPolicy.RecoveryUrl
-                : uri.Scheme == "ms-windows-store" && uri.Host == "pdp", "official recovery link " + target.Id);
+                : uri.Scheme == "ms-windows-store" && (uri.Host == "pdp" || uri.Host == "search"), "official recovery link " + target.Id);
             if (BuiltInAppsCatalog.StoreProductId(target.Id) is string product)
             {
                 var args = BuiltInAppsCatalog.InstallArguments(target.Id);
-                check(product.Length == 12 && product.All(char.IsAsciiLetterOrDigit), "fixed product ID " + target.Id);
+                check(product.Length is 12 or 14 && product.All(char.IsAsciiLetterOrDigit), "fixed product ID " + target.Id);
                 check(args[Array.IndexOf(args, "--id") + 1] == product && args.Contains("--exact"), "exact restore ID " + target.Id);
                 check(args[Array.IndexOf(args, "--scope") + 1] == "user", "current-user Store install " + target.Id);
                 check(args[Array.IndexOf(args, "--source") + 1] == "msstore", "Store source only " + target.Id);
@@ -54,25 +75,25 @@ internal static class BuiltInAppsTests
         Fake backend = new() { Packages = targets.Select(t => Package(t)).ToList() };
         var updates = new Updates();
         var removed = await BuiltInAppsRemoval.RunAsync(backend, targets.Select(t => t.Id), updates);
-        check(removed.Success && removed.Succeeded == 32 && backend.Packages.Count == 0, "all 32 uninstall verified");
-        check(backend.Saved && !backend.SavedRestore && backend.Log.Count == 32, "plan before removal and 32 result logs");
-        check(updates.Items.Count(u => u.State == "COMPLETED") == 32 && updates.Items.Any(u => u.State == "PROGRESS"), "per-app success and live progress");
+        check(removed.Success && removed.Succeeded == targets.Count && backend.Packages.Count == 0, "all apps uninstall verified");
+        check(backend.Saved && !backend.SavedRestore && backend.Log.Count == targets.Count, "plan before removal and all result logs");
+        check(updates.Items.Count(u => u.State == "COMPLETED") == targets.Count && updates.Items.Any(u => u.State == "PROGRESS"), "per-app success and live progress");
         var restored = await BuiltInAppsRemoval.RunAsync(backend, targets.Select(t => t.Id), updates, restore: true);
-        check(restored.Success && restored.Succeeded == 32 && backend.Packages.Count == 32, "restore all 32 missing apps verifies each identity");
+        check(restored.Success && restored.Succeeded == targets.Count && backend.Packages.Count == targets.Count, "restore all missing apps verifies each identity");
         check(backend.SavedRestore, "restore saves audit before mutations");
         backend = new(); updates = new();
         removed = await BuiltInAppsRemoval.RunAsync(backend, ["Clock"], updates);
         check(removed.Success && removed.Unavailable == 1 && backend.RemoveCalls == 0 && updates.Items.Single().State == "UNAVAILABLE", "absent uninstall neutral, no mutation");
-        backend = new() { Packages = [Package(targets[2])], RemoveFailure = new UnauthorizedAccessException("denied") };
+        backend = new() { Packages = [Package(targets.Single(t => t.Id == "Clock"))], RemoveFailure = new UnauthorizedAccessException("denied") };
         removed = await BuiltInAppsRemoval.RunAsync(backend, ["Clock"], new Updates());
         check(!removed.Success && removed.Failed == 1 && removed.Unavailable == 0, "access denied not unavailable");
         backend = new() { ReadFailure = new UnauthorizedAccessException("inventory denied") };
         check(await ThrowsAsync(() => BuiltInAppsRemoval.RunAsync(backend, ["Clock"], null)) && backend.RemoveCalls == 0 && !backend.Saved, "failed inventory cannot uninstall or create empty success plan");
         check(await ThrowsAsync(() => BuiltInAppsRemoval.RunAsync(backend, ["Clock"], null, true)) && backend.RestoreCalls == 0, "failed inventory cannot restore");
-        backend = new() { SaveFailure = true, Packages = [Package(targets[2])] };
+        backend = new() { SaveFailure = true, Packages = [Package(targets.Single(t => t.Id == "Clock"))] };
         check(await ThrowsAsync(() => BuiltInAppsRemoval.RunAsync(backend, ["Clock"], null)) && backend.RemoveCalls == 0, "failed audit aborts before uninstall");
         check(await ThrowsAsync(() => BuiltInAppsRemoval.RunAsync(backend, ["Clock"], null, true)) && backend.RestoreCalls == 0, "failed audit aborts before restore");
-        backend = new() { Packages = [Package(targets[2])], KeepAfterRemove = true };
+        backend = new() { Packages = [Package(targets.Single(t => t.Id == "Clock"))], KeepAfterRemove = true };
         removed = await BuiltInAppsRemoval.RunAsync(backend, ["Clock"], null);
         check(!removed.Success && removed.Failed == 1, "uninstall return alone not success");
         backend = new() { NoRestore = true };
@@ -84,6 +105,13 @@ internal static class BuiltInAppsTests
         backend = new() { FailReadback = true };
         restored = await BuiltInAppsRemoval.RunAsync(backend, ["Clock"], null, true);
         check(!restored.Success && restored.Unavailable == 0, "readback failure not absent");
+        foreach (bool restore in new[] { false, true })
+        {
+            backend = new() { Packages = [CopilotStorePolicy.Package("Store inventory denied")] };
+            var uncertain = await BuiltInAppsRemoval.RunAsync(backend, ["Copilot"], null, restore);
+            check(!uncertain.Success && uncertain.Failed == 1 && uncertain.Unavailable == 0 &&
+                backend.RemoveCalls == 0 && backend.RestoreCalls == 0, "unknown Store identity blocks mutation, never absent " + restore);
+        }
         foreach (Exception failure in new Exception[] { new TimeoutException("Windows still busy"), new PendingDeploymentException("busy") })
         {
             backend = new() { Packages = targets.Select(t => Package(t)).ToList(), RemoveFailure = failure };
@@ -118,7 +146,7 @@ internal static class BuiltInAppsTests
     {
         if (family is null && target.Kind == BuiltInAppKind.OneDriveDesktop)
             return OneDriveAppPolicy.Installed("user", true);
-        family ??= target.Families[0];
+        family ??= target.Families.FirstOrDefault() ?? target.ExactPackageNames[0] + "_8wekyb3d8bbwe";
         int split = family.LastIndexOf('_');
         string name = family[..split];
         return new(name, family, name + "_1.0.0.0_x64_" + family[split..], false, false);
