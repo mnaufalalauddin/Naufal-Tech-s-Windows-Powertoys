@@ -1,14 +1,20 @@
-param([switch]$NoBuild, [ValidateSet(25,50,75,100,125,150,175,200)][int]$StartupScale = 100)
+param([switch]$NoBuild, [switch]$NativeAot, [ValidateSet(25,50,75,100,125,150,175,200)][int]$StartupScale = 100,
+    [ValidateSet('Light','Dark')][string]$StartupTheme = 'Light')
 $ErrorActionPreference = 'Stop'
 if (-not $NoBuild) {
-    & dotnet build (Join-Path $PSScriptRoot 'HeaderLayout.Tests.csproj') -c Debug -p:Platform=x64 --no-restore
+    if ($NativeAot) {
+        & dotnet publish (Join-Path $PSScriptRoot 'HeaderLayout.Tests.csproj') -c Release -p:Platform=x64 -p:PublishAot=true
+    } else {
+        & dotnet build (Join-Path $PSScriptRoot 'HeaderLayout.Tests.csproj') -c Debug -p:Platform=x64 --no-restore
+    }
     if ($LASTEXITCODE -ne 0) { throw 'Header layout test host did not build.' }
 }
 $output = Join-Path $PSScriptRoot 'bin\x64\Debug\net10.0-windows10.0.19041.0\win-x64'
+if ($NativeAot) { $output = Join-Path $PSScriptRoot 'bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\publish' }
 $exe = Join-Path $output 'HeaderLayout.Tests.exe'
 $report = Join-Path $output 'header-layout-results.txt'
 $started = [DateTime]::UtcNow
-$testProcess = Start-Process -FilePath $exe -ArgumentList "--startup-scale=$StartupScale" -WindowStyle Hidden -PassThru
+$testProcess = Start-Process -FilePath $exe -ArgumentList "--startup-scale=$StartupScale", "--startup-theme=$StartupTheme" -WindowStyle Hidden -PassThru
 if (-not $testProcess.WaitForExit(60000)) {
     # Only this newly created, backend-free test host may be stopped.
     $testProcess.Kill()

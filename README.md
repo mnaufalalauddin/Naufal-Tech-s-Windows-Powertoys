@@ -1,185 +1,168 @@
-# Naufal Tech's Windows Powertoys
+<p align="center">
+  <img src="Assets/BrandingSource.png" alt="Naufal Tech's logo" width="180">
+</p>
 
-![Naufal Tech's logo](Assets/BrandingSource.png)
+<h1 align="center">Naufal Tech's Windows Powertoys</h1>
 
-A native Windows system-management and tuning application built with C#, WinUI 3,
-and .NET 10. This repository contains the development source for **8.0.0.0**,
-published under the company metadata **Naufal Tech's Ltd.**
+<p align="center">
+  A native Windows dashboard for system repair, tuning, app management and live performance monitoring.
+</p>
 
-**Development snapshot: 14 September 2026.** This is not a declaration of a
-stable release or complete behavioral parity with the original PowerShell tool.
-Read the [known limitations](#status-and-safety) before using administrative actions.
+<p align="center">
+  <img src="https://img.shields.io/badge/source-8.0.0.0-2563eb?style=flat-square" alt="Source version 8.0.0.0">
+  <img src="https://img.shields.io/badge/build-Windows_x64-0078d4?style=flat-square" alt="Windows x64 build">
+  <img src="https://img.shields.io/badge/UI-WinUI_3-7952b3?style=flat-square" alt="WinUI 3">
+  <img src="https://img.shields.io/badge/runtime-.NET_10-512bd4?style=flat-square" alt=".NET 10">
+  <img src="https://img.shields.io/badge/status-in_development-d97706?style=flat-square" alt="In development">
+</p>
 
-## Features represented in this source
+<p align="center">
+  <a href="https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases">Published releases</a>
+  · <a href="#quick-start">Quick start</a>
+  · <a href="#explore-the-toolbox">Features</a>
+  · <a href="#documentation">Documentation</a>
+  · <a href="https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues">Report an issue</a>
+</p>
 
-- Full/Quick Repair, Windows Update Fix, Microsoft Store Fix, and Explorer Fix.
-- Disk/system reports, activation information, security and BitLocker workflows.
-- Essential Windows Tweaks, Gaming Tweaks, and Advanced Windows Tweaks & De-Bloat.
-- Performance profiles, live CPU/RAM/GPU/network graphs, and resource-aware task queuing.
-- Task Monitoring focused on running work, with separate operation result windows.
-- GPU Driver Manager, MSI Mode Utility, runtime compatibility, and legacy panels.
-- Separate per-task/overall progress windows with elapsed time and verified outcomes.
-- Light/Dark themes, eight scaling choices from 25% to 200%, and 23 language catalogs.
-- Review, selected uninstall, and restore for **140 A–Z app entries**, including
-  scope-aware OneDrive and exact Copilot Store-product handling. Green/yellow/red
-  badges explain removal recommendations; duplicates such as Teams are merged.
-  See [scope, identities, and recovery limits](CATALOG_EXPANSION_2026-09-14.md).
-- Explicit, 23-language Microsoft Store source consent for Windows AI and
-  Copilot operations; passive inventory does not accept source agreements.
-  See [the source-agreement fix and its tests](COPILOT_STORE_CONSENT_2026-09-14.md).
-- Merged privacy, location, Windows/browser AI and suggested-content controls;
-  Advanced now has 45 toggle rows plus its action entries. Policy applicability
-  varies by Windows edition/build and browser version.
-- A BitLocker Manager option to prevent future automatic device encryption,
-  without decrypting currently encrypted drives. Fast Startup OFF is separate
-  from restoring its saved state.
-- Explicit Game Mode ON/OFF, adaptive Text Scaling header with Ctrl+0 reset, and
-  verified legacy Photo Viewer PNG/JPG registration (default-app choice remains
-  user-confirmed in Windows Settings).
+### Dashboard preview
 
-## Build prerequisites
+| Light Mode | Dark Mode |
+| :---: | :---: |
+| ![Main dashboard in Light Mode, showing repair and tuning menus, performance profiles, and live CPU, memory, GPU and network graphs](docs/images/dashboard-light.png) | ![Main dashboard in Dark Mode, showing repair and tuning menus, performance profiles, and live CPU, memory, GPU and network graphs](docs/images/dashboard-dark.png) |
 
-Build on **Windows x64**. The source includes other platform configurations, but
-the maintained installer flow and recorded release verification use x64.
+<p align="center"><sub>Actual application screenshots supplied on 14 September 2026. The dashboard uses live system measurements; no performance data is simulated.</sub></p>
 
-- .NET SDK **10.0.400** or a later patch in its feature band (`global.json`).
-- Visual Studio / Build Tools compatible with that SDK, including the Windows
-  app development/XAML tooling and **Desktop development with C++** for Native AOT.
-  See [Microsoft's Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot).
-- A Windows SDK and access to NuGet for the first restore. The project pins
-  `Microsoft.WindowsAppSDK` **2.4.0** and
-  `Microsoft.Windows.SDK.BuildTools` **10.0.28000.2705**.
-- **Inno Setup 7** for the EXE installer; `ISCC.exe` must be installed in a location
-  recognized by `build-installer.ps1`, or available on PATH.
+> [!IMPORTANT]
+> This is development source, not a claim of complete 1:1 parity or a stable release.
+> Administrative actions can change services, registry values, boot settings,
+> apps and security configuration. Read each warning and test on a backed-up
+> system or disposable Windows VM first.
 
-The project targets `net10.0-windows10.0.19041.0` and declares a platform minimum
-of `10.0.17763.0`. These declarations do not prove support for every old Windows
-build, driver, runtime dependency, or tweak. Windows 10/11 runtime testing remains
-necessary. Do not change package versions solely to make restore succeed without
-checking compatibility and regression results.
+## Quick start
 
-## Build the application
+### Try a published build
 
-Open a Developer PowerShell in this repository directory. Do not copy `bin` or
-`obj` from another computer; restore dependencies on the new machine.
+1. Open [GitHub Releases](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases)
+   and read the release notes.
+2. Download the release's **x64 Setup EXE** and verify its published hash, if supplied.
+3. Run Setup, then open **Naufal Tech's Windows Powertoys** and review the first-run wizard.
+4. Open a catalog and let analysis finish. Review availability, descriptions and
+   warnings before selecting an action.
 
-```powershell
-dotnet --version
-dotnet restore "Naufal Tech's Windows Powertoys.csproj" -p:Platform=x64
-dotnet build "Naufal Tech's Windows Powertoys.csproj" -c Debug -p:Platform=x64 --no-restore
-```
+> [!NOTE]
+> **Source and installer releases are separate.** As checked on 14 September 2026,
+> the published v8.0.0.0 installer predates the latest source fixes, including the
+> Light Mode header contrast correction. A matching version number alone does not
+> mean two builds contain identical code. Build the current source for these changes.
 
-Open `Naufal Tech's Windows Powertoys.slnx` in a compatible Visual Studio if you
-prefer the IDE. The solution contains the application; tests are separate projects.
-Build commands compile code; they do not run repair/tweak actions. Running the
-application requests Administrator privileges. Do not use `dotnet App.dll` as a
-replacement for launching the correctly bootstrapped WinUI executable.
+Current development outputs are **unsigned**. Company metadata is
+**Naufal Tech's Ltd.**; it is not a digital signature. Do not bypass a security
+warning unless you have independently verified the file and trust its source.
 
-## Publish and create Setup
+### Build the current source
+
+Open an **x64 Developer PowerShell** with .NET 10, Windows/XAML tooling,
+the MSVC C++ toolchain and Inno Setup 7 installed:
 
 ```powershell
+git clone https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys.git
+Set-Location -LiteralPath .\Naufal-Tech-s-Windows-Powertoys
 powershell -ExecutionPolicy Bypass -File .\build-installer.ps1
 ```
 
-This performs Native AOT publication, stages and verifies the complete application
-payload, checks its icons, and compiles Setup. It does **not** install Setup.
+The script builds a self-contained **Release x64 Native AOT** application and
+creates `artifacts/installer/Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe`.
+It does not install or run the application.
 
-- Application stages: `artifacts/publish/win-x64-<timestamp>/`
-- Application name: `Naufal Windows Powertoys.exe`
-- Installer: `artifacts/installer/Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe`
-- Default installation folder:
-  `C:\Program Files\Naufal Tech's Limited\Naufal Windows Powertoys`
-- App-owned user data: `%LOCALAPPDATA%\Naufal Windows Powertoys`
+See the [build and test guide](docs/BUILDING.md) for prerequisites, Debug builds,
+offline rebuilds and regression checks.
 
-Do not override `PublishDir` casually: the staged build script accounts for the
-previous Windows App SDK MSB3094 copy-target issue. `-SkipPublish` requires an
-existing completed, version/hash-verified stage, which is not supplied in this
-source-only repository. `-NoRestore` is only for an already-restored configuration.
+## Explore the toolbox
 
-More detail: [Installer guide](Installer/README.md).
-
-## Run regression checks
-
-The following two console suites use synthetic/test data by default; do not add
-the optional machine-probe flags when you only want regression tests.
-
-```powershell
-dotnet restore .\Tests\ProfileVerification\ProfileVerification.Tests.csproj --configfile .\Tests\ProfileVerification\NuGet.Config
-dotnet run --project .\Tests\ProfileVerification\ProfileVerification.Tests.csproj --no-restore
-dotnet restore .\Tests\Localization\Localization.Tests.csproj --configfile .\Tests\ProfileVerification\NuGet.Config
-dotnet run --project .\Tests\Localization\Localization.Tests.csproj --no-restore
-```
-
-Additional source/assets/staging checks (Windows PowerShell):
-
-```powershell
-.\Tests\ParityAudit\Test-CatalogInteraction.ps1
-.\Tests\ParityAudit\Test-AppDataRouting.ps1
-.\Tests\ParityAudit\Test-InstallerLocation.ps1
-.\Tests\ParityAudit\Test-PublishStage.ps1
-.\Tests\ParityAudit\Test-ReportExport.ps1
-.\Tests\ParityAudit\Test-AppIcons.ps1
-```
-
-`Inspect-StaticParity.ps1` is optional and requires a private reference directory
-containing the original `V78.ps1` and `Naufal Windows Powertoys V7.8.exe`. Neither
-file is required to compile this application, and neither is distributed here:
-
-```powershell
-.\Tests\ParityAudit\Inspect-StaticParity.ps1 -ReferenceDirectory 'D:\PrivateReference'
-```
-
-See [latest source sync](SOURCE_SYNC_2026-09-14.md) for this update's checks,
-[initial source-package verification](SOURCE_PACKAGE.md) for the first export, and
-[CHANGELOG.md](CHANGELOG.md) for historical development results. Assertions are
-not counts of independently tested user features or Windows mutations.
-
-## Repository layout
-
-| Path | Purpose |
+| Area | What's inside |
 | --- | --- |
-| `*.cs`, `*.xaml` | Application logic, UI, localization catalogs, native interop and services |
-| `*.csproj`, `*.slnx` | Build and solution definitions |
-| `app.manifest`, `Package.appxmanifest` | Windows application/package metadata |
-| `Assets/` | Branding source and derived PNG/ICO assets required by the application |
-| `Properties/` | Shared launch settings and publish profiles, not private IDE state |
-| `Installer/`, `build-installer.ps1` | Installer definition, staged publishing and icon tooling |
-| `Tests/` | Regression suites, source checks and optional read-only diagnostic probes |
-| `CHANGELOG.md`, dated `*AUDIT*.md` and other notes | Development evidence and known limitations |
-| `Collect-CrashDiagnostics.ps1` | Optional diagnostic collector; generated output is private |
+| **Repair & diagnostics** | Full/Quick Repair, Windows Update and Microsoft Store repair, Explorer Fix, disk/system reports and activation information. |
+| **Windows tuning** | Essential, Gaming and Advanced catalogs with analysis, selected actions, saved-state/default restoration and read-back verification. |
+| **Apps & privacy** | 140 A–Z app entries, merged duplicate app families, selected uninstall/restore, and Windows/browser privacy, AI and suggested-content controls. |
+| **Gaming & performance** | Competitive Gaming, Optimized Gaming and Balanced profiles; live CPU, RAM, GPU and network history graphs. |
+| **Security & devices** | BitLocker Manager, Defender and Smart App Control workflows, GPU Driver Manager, MSI Mode Utility and legacy Windows panels. |
+| **Task visibility** | Task Monitoring for active work, resource-aware queuing, and separate per-task/overall progress and result windows. |
+| **Personalization** | Light/Dark themes, 25–200% scaling with Ctrl+0 reset, and 23 language catalogs. |
 
-No compiled EXE/DLL, NuGet cache, `.vs`, `bin`, `obj`, runtime backups, logs, signing
-keys, or original reference binaries are included. The PNG/ICO files are source
-assets, not generated runtime cache. Historical audit notes contain prior build
-identities; the old output files and private analysis workspace are not included.
+### Review before applying
 
-## Status and safety
+- **Analyze first:** unavailable components are identified separately from failures.
+  An absent feature is not a reason to force a change.
+- **Choose deliberately:** read the option's description and warning, then select
+  only the changes you need. Some operations are immediate action buttons.
+- **Watch the outcome:** progress windows distinguish working, completed,
+  unavailable and failed/unverified results.
+- **Restore with context:** saved state is preferred where supported; documented
+  defaults are scoped. Restore cannot recreate deleted personal app data.
 
-The application contains privileged service, registry, boot, package, network,
-driver, and security operations. Review code and warnings and use disposable
-Windows test machines/VM snapshots before trusting Apply/Restore on a real PC.
+### Built-in Windows Apps: removal legend
 
-- Blank native UI text and an earlier unconfirmed native error dialog remain
-  recorded open issues; this source export does not fix them.
-- Source/routing and regression coverage do not certify 1:1 behavior on all
-  Windows 10/11 versions or hardware.
-- Documented default restore is scoped; unknown vendor defaults are not guessed.
-- Restoring a removed Store app does not restore deleted personal app data.
-- Language coverage is not a professional linguistic or full visual certification.
-- Some new detailed policy descriptions fall back to English; Store recovery
-  cannot guarantee that retired or device/licensing-restricted apps remain available.
-- Current application/installer outputs are unsigned. Setting Company/Publisher
-  metadata does not sign a file.
+| Badge | Meaning |
+| --- | --- |
+| 🟢 **Recommended** | Lower-impact removal candidates if you do not use them. Not a guarantee that removal suits every user. |
+| 🟡 **Optional** | Personal-choice apps or features; check your workflow before removing. |
+| 🔴 **Not recommended** | Keep by default: removal can disrupt dependent features, hardware utilities, accessibility or sign-in/gaming workflows. |
 
-## Upload, licensing and third-party dependencies
+The expanded list includes optional Store, OEM and third-party apps as well as
+Windows apps. Only entries found on the current PC can be acted on. Teams
+generations and other duplicate identities are grouped into one option.
 
-This repository is the browsable development source. The initial
-[GITHUB_UPLOAD.md](GITHUB_UPLOAD.md) describes importing a fresh extracted source
-folder; do not reinitialize this existing checkout or force-push its history.
+[Read the app catalog and restore notes →](BUILT_IN_APPS.md)
 
-**No open-source license has been selected or added.** The owner should choose
-the intended license before presenting this as an open-source release. This
-package does not automatically assign MIT, GPL, or another redistribution license.
-Review ownership/redistribution of code and artwork before making the repository
-public. NuGet packages and Microsoft/vendor components retain their own terms;
-they are restored separately, not bundled as source in this export.
+## Documentation
+
+- [Build, publish and test](docs/BUILDING.md) — prerequisites, commands and source layout.
+- [Installer guide](Installer/README.md) — packaging, deployment and signing boundaries.
+- [Development changelog](CHANGELOG.md) — dated changes and verification evidence.
+- [App and privacy catalog audit](CATALOG_EXPANSION_2026-09-14.md) — identities, policy scope and recovery limits.
+- [Microsoft Store source consent](COPILOT_STORE_CONSENT_2026-09-14.md) — explicit agreement flow for Copilot/Windows AI.
+- [Light Mode header fix](LIGHT_THEME_HEADER_FIX_2026-09-14.md) — reproduction, contrast checks and build evidence.
+- [Native header regression host](Tests/HeaderLayout/README.md) — theme, language and scaling layout tests.
+
+<details>
+<summary><strong>Compatibility, restoration and known limitations</strong></summary>
+
+- The intended platform is Windows 10/11. The maintained build/installer flow is
+  x64; declared target/minimum versions do not prove every feature works on every
+  Windows build, edition or hardware configuration.
+- Some policies require a specific Windows/browser version or edition. New long
+  descriptions may fall back to English; 23 catalogs are not a professional
+  linguistic or full visual certification.
+- Unknown vendor defaults are not guessed. Restoring Store apps depends on
+  availability, device eligibility and licensing; retired apps may not be recoverable.
+- BitLocker automatic-encryption prevention affects future automatic encryption.
+  It does not decrypt existing drives or remove recovery keys.
+- Legacy Photo Viewer registration supports PNG/JPG handlers; choosing a default
+  app remains a user-confirmed Windows Settings action.
+- The specific Light Mode header contrast defect has a regression fix. Historical
+  reports of other blank UI text and an unconfirmed native error are not declared
+  resolved by that fix.
+- Passing builds and synthetic assertions do not certify all privileged actions,
+  full original-tool parity or every install/upgrade/uninstall scenario.
+
+</details>
+
+## Feedback & contributions
+
+[Open an issue](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues)
+with the build date/hash, Windows edition/build, menu/option, exact steps and
+expected versus actual outcome. Screenshots and **redacted** logs help.
+Do not upload recovery keys, access tokens, private file paths or personal backups.
+
+For a source contribution, use a branch, keep the change focused, run relevant
+tests and describe what was **not** tested. Never run destructive tweaks merely
+to validate a documentation or UI change.
+
+## Project & licensing
+
+Developed by **Naufal Tech's Ltd.** This is an independent project, not Microsoft
+PowerToys and not affiliated with or endorsed by Microsoft.
+
+**No open-source license has been selected.** Public source availability does not
+grant an MIT/GPL or other license. Third-party dependencies and artwork retain
+their respective ownership and terms.

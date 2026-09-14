@@ -12,6 +12,7 @@
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
     <SelfContained>true</SelfContained>
     <WindowsPackageType>None</WindowsPackageType>
@@ -37,4 +38,12 @@
     <Compile Include="..\..\CatalogDisplayNames.cs" Link="CatalogDisplayNames.cs" />
     <Compile Include="..\..\UiTextKeys.cs" Link="UiTextKeys.cs" />
   </ItemGroup>
+  <!-- Linked XAML compiles to XBF in TargetDir, but is not automatically
+       included by the source-only host's Native AOT publish pipeline. -->
+  <Target Name="PublishLinkedHostXaml" AfterTargets="Publish">
+    <ItemGroup>
+      <_HostXaml Include="$(TargetDir)App.xbf;$(TargetDir)MainWindow.xbf;$(TargetDir)$(AssemblyName).pri" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_HostXaml)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

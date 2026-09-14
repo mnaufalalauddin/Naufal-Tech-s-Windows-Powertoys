@@ -13,7 +13,7 @@
                     <SolidColorBrush x:Key="NeutralButtonBorderBrush" Color="#BBC7D5"/>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="NeutralButtonBackgroundBrush" Color="#213043"/>
+                    <SolidColorBrush x:Key="NeutralButtonBackgroundBrush" Color="#1D2938"/>
                     <SolidColorBrush x:Key="NeutralButtonForegroundBrush" Color="#F3F6FA"/>
                     <SolidColorBrush x:Key="NeutralButtonBorderBrush" Color="#45566E"/>
                 </ResourceDictionary>
@@ -27,17 +27,17 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Shared flat, bordered reference buttons. Keep a canonical light
-                 palette here: UiDisplaySettings maps it to Dark from a stable
-                 baseline, including buttons created while Dark is active. -->
+            <!-- Shared neutral buttons use native theme resources, including
+                 implicit styles and buttons created while Dark is active.
+                 Do not replace these style values with local brush snapshots. -->
             <Style x:Key="ReferenceButtonStyle" TargetType="Button">
                 <Setter Property="MinHeight" Value="34"/>
                 <Setter Property="Padding" Value="10,4"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Background" Value="#EEF3F9"/>
-                <Setter Property="Foreground" Value="#0B1520"/>
-                <Setter Property="BorderBrush" Value="#BBC7D5"/>
+                <Setter Property="Background" Value="{ThemeResource NeutralButtonBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{ThemeResource NeutralButtonForegroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource NeutralButtonBorderBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="CornerRadius" Value="0"/>
             </Style>

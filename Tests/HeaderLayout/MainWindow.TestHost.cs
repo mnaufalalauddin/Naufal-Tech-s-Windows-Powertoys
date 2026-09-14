@@ -2,6 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.Graphics.Imaging;
 using Windows.Foundation;
 using Windows.Graphics;
 
@@ -12,6 +15,13 @@ public sealed partial class MainWindow : Window
     private int _checks;
     private int _cases;
     private string _case = "initialization";
+    private double _minimumHeaderContrast = double.MaxValue;
+    private double _minimumButtonContrast = double.MaxValue;
+    private readonly Border _catalogTestRoot = new()
+    {
+        Background = new SolidColorBrush(Microsoft.UI.Colors.White),
+        Child = new StackPanel { Spacing = 8 }
+    };
     public MainWindow()
     {
         InitializeComponent();
@@ -78,7 +88,9 @@ public sealed partial class MainWindow : Window
                 Check(popup.Items.OfType<ToggleMenuFlyoutItem>().All(item => item.FontSize >= 14), "readable flyout");
                 popup.Hide();
             }
-            File.AppendAllText(App.ResultPath, $"PASS: {_checks} native WinUI assertions, {_cases} layout cases, 8 flyouts. No Windows settings changed.\n");
+            await CheckDynamicButtonsAsync();
+            await SaveThemePreviewsAsync();
+            File.AppendAllText(App.ResultPath, $"PASS: {_checks} native WinUI assertions, {_cases} layout cases, 8 flyouts. Minimum header contrast: {_minimumHeaderContrast:F2}:1; button contrast: {_minimumButtonContrast:F2}:1. No Windows settings changed.\n");
             Environment.ExitCode = 0;
         }
         catch (Exception exception)
@@ -91,6 +103,8 @@ public sealed partial class MainWindow : Window
 
     private void CheckHeader()
     {
+        CheckThemePalette();
+        CheckButtons();
         foreach (FrameworkElement control in new FrameworkElement[] { TextScaleButton, ThemeButton, LanguageComboBox })
         {
             Rect bounds = control.TransformToVisual(RootLayout).TransformBounds(new Rect(0, 0, control.ActualWidth, control.ActualHeight));
@@ -111,6 +125,199 @@ public sealed partial class MainWindow : Window
     {
         if (!condition) throw new InvalidOperationException(_case + ": " + message);
         _checks++;
+    }
+
+    private void CheckThemePalette()
+    {
+        Check(RootLayout.Children[0] is Border, "header Border projection: " + RootLayout.Children[0].GetType().FullName);
+        var header = (Border)RootLayout.Children[0];
+        Check(header.Background is SolidColorBrush, "header brush projection: " + header.Background?.GetType().FullName);
+        var background = ((SolidColorBrush)header.Background!).Color;
+        foreach (var pair in new[]
+        {
+            ("Clock", ClockText.Foreground), ("Languages label", LanguageLabel.Foreground),
+            ("Languages selection", LanguageComboBox.Foreground),
+            ("Language item", ((ComboBoxItem)LanguageComboBox.SelectedItem).Foreground)
+        })
+        {
+            Check(pair.Item2 is SolidColorBrush, pair.Item1 + " has a solid text brush");
+            var foreground = ((SolidColorBrush)pair.Item2).Color;
+            double ratio = Contrast(foreground, background);
+            _minimumHeaderContrast = Math.Min(_minimumHeaderContrast, ratio);
+            Check(ratio >= 4.5, $"{pair.Item1} contrast >= 4.5:1, actual {ratio:F2}:1 in {UiDisplaySettings.Theme}");
+        }
+        Check(((SolidColorBrush)FullRepairButton.Foreground).Color == Microsoft.UI.Colors.White,
+            "explicit white text on primary colored buttons preserved");
+        Check(ClockText.ReadLocalValue(TextBlock.ForegroundProperty) == DependencyProperty.UnsetValue &&
+            LanguageLabel.ReadLocalValue(TextBlock.ForegroundProperty) == DependencyProperty.UnsetValue &&
+            LanguageComboBox.ReadLocalValue(Control.ForegroundProperty) == DependencyProperty.UnsetValue,
+            "theme-owned header foregrounds are never frozen as local values");
+        if (UiDisplaySettings.Theme == ElementTheme.Light)
+            Check(((SolidColorBrush)DateText.Foreground).Color == Windows.UI.Color.FromArgb(255, 52, 69, 92),
+                "explicit muted light text restored exactly");
+    }
+
+    private static IEnumerable<T> VisualDescendants<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match) yield return match;
+            foreach (T nested in VisualDescendants<T>(child)) yield return nested;
+        }
+    }
+
+    private void CheckButtons()
+    {
+        Button[] buttons = AuthoredButtons(RootLayout).Where(b => b.IsEnabled).ToArray();
+        Check(buttons.Length == 28, "all 28 enabled dashboard buttons are covered (not hidden WinUI template controls)");
+        foreach (Button button in buttons)
+            CheckButtonContrast(button);
+    }
+
+    private void CheckButtonContrast(Button button)
+    {
+        string name = string.IsNullOrEmpty(button.Name) ? button.Content?.ToString() ?? "button" : button.Name;
+        Check(button.Foreground is SolidColorBrush && button.Background is SolidColorBrush, name + " uses solid brushes");
+        var background = ((SolidColorBrush)button.Background).Color;
+        double ratio = Contrast(((SolidColorBrush)button.Foreground).Color, background);
+        _minimumButtonContrast = Math.Min(_minimumButtonContrast, ratio);
+        Check(ratio >= 4.5, $"{name} button contrast >= 4.5:1, actual {ratio:F2}:1 in {UiDisplaySettings.Theme}");
+        foreach (TextBlock label in VisualDescendants<TextBlock>(button).Where(t => !string.IsNullOrEmpty(t.Text)))
+        {
+            Check(label.Foreground is SolidColorBrush, name + " rendered label has a solid brush");
+            double textRatio = Contrast(((SolidColorBrush)label.Foreground).Color, background);
+            Check(textRatio >= 4.5, $"{name} rendered label contrast >= 4.5:1, actual {textRatio:F2}:1");
+        }
+    }
+
+    private static IEnumerable<Button> AuthoredButtons(DependencyObject parent)
+    {
+        if (parent is Button button) yield return button;
+        IEnumerable<DependencyObject> children = parent switch
+        {
+            Panel panel => panel.Children.Cast<DependencyObject>(),
+            Border border when border.Child is not null => new[] { border.Child },
+            ContentControl control when control.Content is DependencyObject content => new[] { content },
+            _ => Array.Empty<DependencyObject>()
+        };
+        foreach (DependencyObject child in children)
+            foreach (Button nested in AuthoredButtons(child)) yield return nested;
+    }
+
+    private async Task CheckDynamicButtonsAsync()
+    {
+        var panel = (StackPanel)_catalogTestRoot.Child;
+        // Catalogs use their own windows in production; do not detach/reparent
+        // the dashboard while testing a separate catalog's theme inheritance.
+        Window catalogWindow = new() { Content = _catalogTestRoot };
+        catalogWindow.Activate();
+        try
+        {
+        foreach (ElementTheme startingTheme in new[] { ElementTheme.Dark, ElementTheme.Light })
+        {
+            if (UiDisplaySettings.Theme != startingTheme) UiDisplaySettings.ToggleTheme();
+            UiDisplaySettings.Apply(_catalogTestRoot);
+            Button implicitButton = new() { Content = "Dynamic implicit button" };
+            Button styledButton = new() { Content = "Dynamic styled button", Style = QuickRepairButton.Style };
+            Button localButton = new()
+            {
+                Content = "Dynamic local colors",
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 11, 21, 32)),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 238, 243, 249))
+            };
+            panel.Children.Add(implicitButton);
+            panel.Children.Add(styledButton);
+            panel.Children.Add(localButton);
+            foreach (ElementTheme theme in new[] { startingTheme, ElementTheme.Light, ElementTheme.Dark, startingTheme })
+            {
+                _case = $"dynamic buttons created in {startingTheme}, current {theme}";
+                if (UiDisplaySettings.Theme != theme) UiDisplaySettings.ToggleTheme();
+                UiDisplaySettings.Apply(_catalogTestRoot);
+                await Task.Delay(40);
+                _catalogTestRoot.UpdateLayout();
+                foreach (Button button in new[] { implicitButton, styledButton, localButton })
+                {
+                    CheckButtonContrast(button);
+                    button.IsEnabled = false;
+                    button.IsEnabled = true;
+                    CheckButtonContrast(button);
+                }
+                foreach (Button button in new[] { implicitButton, styledButton })
+                {
+                    Check(button.ReadLocalValue(Control.ForegroundProperty) == DependencyProperty.UnsetValue &&
+                        button.ReadLocalValue(Control.BackgroundProperty) == DependencyProperty.UnsetValue &&
+                        button.ReadLocalValue(Control.BorderBrushProperty) == DependencyProperty.UnsetValue,
+                        "style-owned button colors are not frozen locally");
+                    button.Style = FullRepairButton.Style;
+                    UiDisplaySettings.Apply(_catalogTestRoot);
+                    await Task.Delay(20);
+                    Check(((SolidColorBrush)button.Foreground).Color == Microsoft.UI.Colors.White,
+                        "switch to primary style retains white text");
+                    Check(((SolidColorBrush)button.Background).Color == ((SolidColorBrush)FullRepairButton.Background).Color,
+                        "switch to primary style retains primary background");
+                    button.Style = QuickRepairButton.Style;
+                    UiDisplaySettings.Apply(_catalogTestRoot);
+                    await Task.Delay(20);
+                    CheckButtonContrast(button);
+                }
+            }
+            panel.Children.Clear();
+        }
+        }
+        finally
+        {
+            catalogWindow.Close();
+            UiTranslation.Release(_catalogTestRoot);
+        }
+    }
+
+    private async Task SaveThemePreviewsAsync()
+    {
+        UiDisplaySettings.SetLanguage("en");
+        UiDisplaySettings.SetTextScale(100);
+        AppWindow.Resize(new SizeInt32(1920, 1080));
+        foreach (ElementTheme theme in new[] { ElementTheme.Dark, ElementTheme.Light })
+        {
+            _case = "render preview " + theme;
+            if (UiDisplaySettings.Theme != theme) UiDisplaySettings.ToggleTheme();
+            UiDisplaySettings.Apply(RootLayout);
+            await Task.Delay(100);
+            RootLayout.UpdateLayout();
+            CheckHeader();
+            RenderTargetBitmap bitmap = new();
+            await bitmap.RenderAsync(RootLayout);
+            byte[] pixels = (await bitmap.GetPixelsAsync()).ToArray();
+            Check(bitmap.PixelWidth > 0 && bitmap.PixelHeight > 0, "preview has nonzero dimensions");
+            string path = Path.Combine(AppContext.BaseDirectory, $"theme-preview-{theme.ToString().ToLowerInvariant()}.png");
+            using var file = File.Create(path);
+            using var stream = file.AsRandomAccessStream();
+            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+            encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied,
+                (uint)bitmap.PixelWidth, (uint)bitmap.PixelHeight, 96, 96, pixels);
+            await encoder.FlushAsync();
+        }
+    }
+
+    private static double Contrast(Windows.UI.Color a, Windows.UI.Color b)
+    {
+        if (a.A < 255)
+        {
+            double opacity = a.A / 255d;
+            byte Blend(byte front, byte back) => (byte)Math.Round(front * opacity + back * (1 - opacity));
+            a = Windows.UI.Color.FromArgb(255, Blend(a.R, b.R), Blend(a.G, b.G), Blend(a.B, b.B));
+        }
+        static double Luminance(Windows.UI.Color c)
+        {
+            static double Channel(byte v)
+            {
+                double s = v / 255d;
+                return s <= 0.04045 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
+            }
+            return 0.2126 * Channel(c.R) + 0.7152 * Channel(c.G) + 0.0722 * Channel(c.B);
+        }
+        double x = Luminance(a), y = Luminance(b);
+        return (Math.Max(x, y) + 0.05) / (Math.Min(x, y) + 0.05);
     }
 
     private void ThemeButton_Click(object s, RoutedEventArgs e) => UiDisplaySettings.ToggleTheme();

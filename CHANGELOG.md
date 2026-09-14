@@ -18,6 +18,41 @@ checkpoint, not a new execution of those tests while writing this file. A compil
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
 
+## 14 September 2026 — Dark Mode button contrast follow-up
+
+- **Fixed:** Shared neutral buttons now use native Light/Dark theme resources.
+  The manual palette mapper no longer freezes style-owned foregrounds,
+  backgrounds or borders into local values. Explicit local catalog colors
+  still map correctly, and profile buttons can switch primary/neutral styles.
+- **Regression:** The first Light-header fix missed neutral and implicit-style
+  buttons. Expanded tests reproduced a 1.25:1 Dark theme-button contrast failure.
+- **Verification:** Native AOT tests now cover all 28 enabled Main UI buttons
+  and dynamic catalog/style changes. Saved Dark and saved Light runs passed
+  141,255 assertions in total across 1,024 layout cases and 16 flyout checks.
+  Minimum header/button contrasts were 16.61:1 and 4.61:1 respectively.
+  Both rendered theme previews were inspected; live backends were not run.
+- **Delivery:** Fresh unsigned Release x64 Native AOT Setup generated and
+  hash-verified. See `DARK_THEME_BUTTON_FIX_2026-09-14.md` for results, boundaries
+  and the new artifact hash. No GitHub push or installer execution was performed.
+
+## 14 September 2026 — Light Mode header and README presentation
+
+- **Fixed:** Default/inherited WinUI foregrounds are no longer frozen as local
+  values by the display settings mapper. Clock, Languages and selected language
+  text follow Light/Dark correctly after a saved Dark startup; authored button
+  and muted-text colors retain their intended treatment.
+- **Verification:** The native host reproduced 1.04:1 clock contrast before the
+  fix. Two passing runs now measure a minimum header contrast of 16.61:1 across
+  1,024 layout cases and 16 flyout checks (22,107 assertions in total).
+  Functional regression passed 4,382 assertions; localization passed 99,732.
+  Debug x64 built with zero errors and warnings. A fresh unsigned Release x64
+  Native AOT Setup was built and hash-verified.
+  See `LIGHT_THEME_HEADER_FIX_2026-09-14.md` for boundaries and artifact identity.
+- **Documentation:** Redesigned the README with branding, badges, the supplied
+  Dark dashboard screenshot, quick start, feature tables and a separate build
+  guide. The older published release is explicitly distinguished from current
+  source; the buggy Light screenshot is not used as a corrected-build preview.
+
 ## 14 September 2026 — Copilot Microsoft Store source consent
 
 - **Fixed:** Windows AI and selected Copilot app operations now offer a dedicated

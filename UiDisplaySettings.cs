@@ -51,6 +51,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
             public Brush? Foreground { get; set; }
 
+            public bool HasAuthoredForeground { get; set; }
+
+            public bool HasAuthoredBackground { get; set; }
+
+            public bool HasAuthoredBorderBrush { get; set; }
+
             public Brush? Background { get; set; }
 
             public Brush? BorderBrush { get; set; }
@@ -214,12 +220,16 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 baseline.TextBlockSize = textBlock.FontSize;
                 baseline.Foreground = textBlock.Foreground;
+                baseline.HasAuthoredForeground = HasLocalValue(textBlock, TextBlock.ForegroundProperty);
             }
             if (element is Control control)
             {
                 baseline.ControlSize = control.FontSize;
                 baseline.ControlPadding = control.Padding;
                 baseline.Foreground = control.Foreground;
+                baseline.HasAuthoredForeground = HasLocalValue(control, Control.ForegroundProperty);
+                baseline.HasAuthoredBackground = HasLocalValue(control, Control.BackgroundProperty);
+                baseline.HasAuthoredBorderBrush = HasLocalValue(control, Control.BorderBrushProperty);
                 baseline.Background = control.Background;
                 baseline.BorderBrush = control.BorderBrush;
             }
@@ -418,21 +428,31 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
         }
 
+        // Default/inherited text and shared button styles follow RequestedTheme.
+        // Only explicit local colors belong to this canonical-color mapper.
+        // In particular, never freeze implicit/ThemeResource style brushes or
+        // prevent a profile button from changing styles after first display.
+        private static bool HasLocalValue(FrameworkElement element, DependencyProperty property) =>
+            element.ReadLocalValue(property) != DependencyProperty.UnsetValue;
+
         private static void ApplyPalette(
             FrameworkElement element,
             ElementBaseline baseline,
             bool dark)
         {
-            if (element is TextBlock textBlock)
+            if (element is TextBlock textBlock && baseline.HasAuthoredForeground)
             {
                 textBlock.Foreground = textBlock.Tag as string == "AppRemovalRecommendationInk"
                     ? baseline.Foreground : MapForeground(baseline.Foreground, dark);
             }
             if (element is Control control)
             {
-                control.Foreground = MapForeground(baseline.Foreground, dark);
-                control.Background = MapBackground(baseline.Background, dark);
-                control.BorderBrush = MapBorder(baseline.BorderBrush, dark);
+                if (baseline.HasAuthoredForeground)
+                    control.Foreground = MapForeground(baseline.Foreground, dark);
+                if (control is not Button || baseline.HasAuthoredBackground)
+                    control.Background = MapBackground(baseline.Background, dark);
+                if (control is not Button || baseline.HasAuthoredBorderBrush)
+                    control.BorderBrush = MapBorder(baseline.BorderBrush, dark);
             }
             if (element is Panel panel)
             {

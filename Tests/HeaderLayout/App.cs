@@ -20,6 +20,10 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         File.WriteAllText(ResultPath, "RUNNING: " + DateTimeOffset.Now.ToString("O") + Environment.NewLine);
+        string theme = Environment.GetCommandLineArgs().Contains("--startup-theme=Dark") ? "Dark" : "Light";
+        Directory.CreateDirectory(AppDataPaths.SettingsDirectory);
+        File.WriteAllText(Path.Combine(AppDataPaths.SettingsDirectory, "ui-theme.txt"), theme);
+        File.AppendAllText(ResultPath, "Saved startup theme: " + theme + Environment.NewLine);
         string? startup = Environment.GetCommandLineArgs().FirstOrDefault(value => value.StartsWith("--startup-scale="));
         if (startup is not null && int.TryParse(startup[16..], out int scale) &&
             new[] { 25, 50, 75, 100, 125, 150, 175, 200 }.Contains(scale))

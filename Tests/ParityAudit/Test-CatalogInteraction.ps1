@@ -38,6 +38,15 @@ $ns = [Xml.XmlNamespaceManager]::new($app.NameTable)
 $ns.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
 $base = $app.SelectSingleNode('//*[local-name()="Style" and @x:Key="ReferenceButtonStyle"]', $ns)
 Assert ($null -ne $base) 'shared button style exists'
+foreach ($property in @('Foreground', 'Background', 'BorderBrush')) {
+    $setter = $base.SelectSingleNode('*[local-name()="Setter" and @Property="' + $property + '"]')
+    $key = if ($property -eq 'BorderBrush') { 'NeutralButtonBorderBrush' } else { 'NeutralButton' + $property + 'Brush' }
+    Assert ($null -ne $setter -and $setter.GetAttribute('Value') -ceq ('{ThemeResource ' + $key + '}')) ("shared button native theme resource: " + $property)
+    foreach ($theme in @('Light', 'Dark', 'Default')) {
+        $dictionary = $app.SelectSingleNode('//*[local-name()="ResourceDictionary" and @x:Key="' + $theme + '"]', $ns)
+        Assert ($null -ne $dictionary.SelectSingleNode('*[local-name()="SolidColorBrush" and @x:Key="' + $key + '"]', $ns)) ("button resource exists: $theme/$key")
+    }
+}
 foreach ($pair in @{ MinHeight='34'; Padding='10,4'; CornerRadius='0'; BorderThickness='1'; HorizontalContentAlignment='Center'; VerticalContentAlignment='Center' }.GetEnumerator()) {
     $setter = $base.SelectSingleNode('*[local-name()="Setter" and @Property="' + $pair.Key + '"]')
     Assert ($null -ne $setter -and $setter.GetAttribute('Value') -ceq $pair.Value) ("shared button metric: " + $pair.Key)
