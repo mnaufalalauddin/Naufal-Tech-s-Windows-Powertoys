@@ -60,8 +60,18 @@ foreach (var attribute in XDocument.Load(file).Descendants().Attributes().Where(
     uiCandidates.Add(attribute.Value);
 }
 var english = UiTranslation.GetLanguageTable("en");
+var surfaces = SurfaceCoverageAudit.Inspect(root);
 var report = new
 {
+    SurfaceScope = "Authored labels, constant descriptions/warnings, local metadata factories, action confirmations, service groups, dialogs, XAML and backend operation-result/state messages. Unchanged output is a review candidate, not automatically a failure: official names, acronyms and loanwords need explicit review. Unresolved expressions are reported separately and must not be counted as translated. Static analysis does not certify every runtime path or third-party diagnostic.",
+    SurfaceSummary = new
+    {
+        ResolvedOccurrences = surfaces.Count(s => s.Resolved),
+        UnresolvedOccurrences = surfaces.Count(s => !s.Resolved),
+        UnchangedReviewCandidates = surfaces.Where(s => s.Resolved && s.MissingLanguages.Length > 0)
+            .Select(s => s.Text).Distinct(StringComparer.Ordinal).Count()
+    },
+    Surfaces = surfaces,
     Note = "Static candidate coverage, not visual/linguistic certification. Candidates include technical strings requiring triage; diagnostic output must stay original.",
     Languages = options.Select(language =>
     {

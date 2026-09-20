@@ -6,7 +6,7 @@ internal static class PhotoViewerTests
     internal static void Run(Action<bool, string> check)
     {
         var plan = PhotoViewerRegistration.CreatePlan(@"C:\Program Files\Windows Photo Viewer\PhotoViewer.dll", @"C:\Windows\System32");
-        check(plan.Length == 36 && plan.Select(e => e.Tag).Distinct().Count() == 36, "Photo Viewer complete unique plan");
+        check(plan.Length == 37 && plan.Select(e => e.Tag).Distinct().Count() == 37, "Photo Viewer complete unique plan");
         check(plan.Count(e => e.Legacy) == 15, "Photo Viewer preserves all legacy snapshot tags");
         check(PhotoViewerRegistration.Extensions.Length == 13, "Photo Viewer preserves 13 image extensions");
         foreach (var ext in PhotoViewerRegistration.Extensions)
@@ -21,8 +21,10 @@ internal static class PhotoViewerTests
         check(plan.Where(e => e.Path.StartsWith(@"SOFTWARE\Classes\.")).All(e => e.Name.Length > 0),
             "Photo Viewer never replaces extension default or third-party Open with entries");
         string command = plan.Single(e => e.Tag == "HandlerCommand").Value;
-        check(command == "\"C:\\Windows\\System32\\rundll32.exe\" \"C:\\Program Files\\Windows Photo Viewer\\PhotoViewer.dll\", ImageView_Fullscreen \"%1\"",
-            "Photo Viewer quotes DLL, executable, and image paths");
+        check(command == "\"C:\\Windows\\System32\\rundll32.exe\" \"C:\\Program Files\\Windows Photo Viewer\\PhotoViewer.dll\", ImageView_Fullscreen %1",
+            "Photo Viewer preserves documented raw image argument and quotes executable/DLL paths");
+        check(plan.Single(e => e.Tag == "HandlerDropTarget").Value == PhotoViewerRegistration.DropTargetClsid,
+            "Photo Viewer registers documented Explorer DropTarget");
         var state = plan.ToDictionary(e => e.Tag, e => ((object?)e.Value, (RegistryValueKind?)RegistryValueKind.String));
         var ready = PhotoViewerRegistration.Inspect(plan, e => state[e.Tag]);
         check(ready.Ready && ready.Detail.Contains("Default Apps") && ready.Detail.Contains("PNG/JPG"),
@@ -81,6 +83,9 @@ internal static class PhotoViewerTests
         Capture(plan.Single(e => e.Tag == "HandlerName"));
         check(PhotoViewerRegistration.RestoreEntries(plan, k => backup.GetValueOrDefault(k)).Length == 16,
             "Photo Viewer incomplete upgrade preserves untouched new entries");
+        backup[PhotoViewerRegistration.SchemaKey] = 2;
+        check(!PhotoViewerRegistration.RestoreEntries(plan, k => backup.GetValueOrDefault(k)).Any(e => e.Tag == "HandlerDropTarget"),
+            "Photo Viewer v2 restore does not delete a DropTarget it never captured");
         foreach (var e in plan) Capture(e);
         backup[PhotoViewerRegistration.SchemaKey] = 2;
         var restoredEntries = PhotoViewerRegistration.RestoreEntries(plan, k => backup.GetValueOrDefault(k));
@@ -88,6 +93,27 @@ internal static class PhotoViewerTests
         check((string)backup["ApplicationName.Value"]! == "%OldPhotoViewer%",
             "Photo Viewer upgraded snapshot retains original legacy value");
         RegistryRestorePlan.RequireTags(k => backup.GetValueOrDefault(k), restoredEntries.Select(e => e.Tag), (s, _) => s);
+        backup[PhotoViewerRegistration.SchemaKey] = PhotoViewerRegistration.CurrentSchema;
+        var currentEntries = PhotoViewerRegistration.RestoreEntries(plan, k => backup.GetValueOrDefault(k));
+        check(currentEntries.Length == 37 && currentEntries.Any(e => e.Tag == "HandlerDropTarget"),
+            "Photo Viewer schema 3 requires the complete DropTarget registration snapshot");
+        RegistryRestorePlan.RequireTags(k => backup.GetValueOrDefault(k), currentEntries.Select(e => e.Tag), (s, _) => s);
+        foreach (object? marker in new object?[] { null, 0, "1" })
+        {
+            if (marker is null) backup.Remove("HandlerDropTarget.Captured");
+            else backup["HandlerDropTarget.Captured"] = marker;
+            bool rejected = false;
+            try
+            {
+                RegistryRestorePlan.RequireTags(k => backup.GetValueOrDefault(k),
+                    PhotoViewerRegistration.RestoreEntries(plan, k => backup.GetValueOrDefault(k)).Select(e => e.Tag), (s, _) => s);
+            }
+            catch (InvalidOperationException) { rejected = true; }
+            catch (InvalidDataException) { rejected = true; }
+            check(rejected, "Photo Viewer schema 3 rejects absent or corrupt DropTarget capture before restore");
+        }
+        backup["HandlerDropTarget.Captured"] = 1;
+        backup[PhotoViewerRegistration.SchemaKey] = 2;
         // Exercise exact value/kind restoration with an in-memory registry only.
         var targets = plan.ToDictionary(e => new RestoreRegistryTarget(RegistryHive.LocalMachine, e.Path, e.Name),
             e => ((object?)e.Value, (RegistryValueKind?)RegistryValueKind.String));
@@ -141,4 +167,3 @@ internal static class PhotoViewerTests
         Console.WriteLine("Read-only: no registration, settings, snapshots or defaults changed.");
     }
 }
-

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace Naufal_Windows_Tech_s_Powertoys;
 
-internal sealed record PhotoViewerEntry(string Tag, string Path, string Name, string Value, bool Legacy = false);
+internal sealed record PhotoViewerEntry(string Tag, string Path, string Name, string Value, bool Legacy = false, int IntroducedSchema = 2);
 internal sealed record PhotoViewerStatus(int Matching, int Total)
 {
     internal bool Ready => Matching == Total;
@@ -25,6 +25,8 @@ internal static class PhotoViewerRegistration
     internal const string Associations = Capabilities + @"\FileAssociations";
     internal const string RegisteredApps = @"SOFTWARE\RegisteredApplications";
     internal const string SchemaKey = "RegistrationSchema";
+    internal const int CurrentSchema = 3;
+    internal const string DropTargetClsid = "{FFE2A43C-56B9-4bf5-9A79-CC6D4285608A}";
     internal static readonly string[] Extensions =
         [".cr2", ".jpg", ".wdp", ".jfif", ".dib", ".png", ".jxr", ".bmp", ".jpe", ".jpeg", ".gif", ".tif", ".tiff"];
     internal static string ViewerDll => Path.Combine(
@@ -32,7 +34,11 @@ internal static class PhotoViewerRegistration
 
     internal static PhotoViewerEntry[] CreatePlan(string viewerDll, string systemDirectory)
     {
-        string command = $"\"{Path.Combine(systemDirectory, "rundll32.exe")}\" \"{viewerDll}\", ImageView_Fullscreen \"%1\"";
+        // Match the documented Windows WIC command and DropTarget registration,
+        // including its unquoted %1 argument. There is no cmd.exe expansion here.
+        // Explorer supplies selected files through the registered DropTarget.
+        // https://learn.microsoft.com/windows/win32/wic/-wic-integrationregentries
+        string command = $"\"{Path.Combine(systemDirectory, "rundll32.exe")}\" \"{viewerDll}\", ImageView_Fullscreen %1";
         string icon = $"\"{viewerDll}\",0";
         string handler = @"SOFTWARE\Classes\" + ProgId;
         var entries = new List<PhotoViewerEntry>
@@ -45,6 +51,7 @@ internal static class PhotoViewerRegistration
             new("HandlerIcon", handler + @"\DefaultIcon", "", icon),
             new("HandlerVerb", handler + @"\shell", "", "open"),
             new("HandlerCommand", handler + @"\shell\open\command", "", command),
+            new("HandlerDropTarget", handler + @"\shell\open\DropTarget", "Clsid", DropTargetClsid, IntroducedSchema: 3),
             new("HandlerApplicationName", handler + @"\Application", "ApplicationName", "Windows Photo Viewer"),
             new("HandlerApplicationIcon", handler + @"\Application", "ApplicationIcon", icon)
         };
@@ -80,12 +87,12 @@ internal static class PhotoViewerRegistration
         Func<string, object?> read)
     {
         object? schema = read(SchemaKey);
-        if (schema is not null && (schema is not int version || version != 2))
+        if (schema is not null && (schema is not int version || version is < 2 or > CurrentSchema))
             throw new InvalidDataException("The Photo Viewer registration snapshot version is unsupported. Backup retained.");
         // Pre-fix snapshots contain only the original 15 tags. Never guess that
         // newer, uncaptured keys were absent. Include partial pre-write captures
         // so an interrupted capture can still be restored without leaking edits.
-        return plan.Where(entry => schema is not null || entry.Legacy ||
+        return plan.Where(entry => (schema is int savedVersion && entry.IntroducedSchema <= savedVersion) || entry.Legacy ||
             read(entry.Tag + ".Captured") is not null).ToArray();
     }
 
@@ -105,4 +112,3 @@ internal static class PhotoViewerRegistration
     [DllImport("shell32.dll")]
     private static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
 }
-

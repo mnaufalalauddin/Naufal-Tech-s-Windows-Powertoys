@@ -1,6 +1,6 @@
-# Naufal Tech's Windows Powertoys — Changelog
+# Naufal Windows Powertoys — Changelog
 
-Development history from **30 August 2026** through **14 September 2026**.
+Development history from **30 August 2026** through **21 September 2026**.
 
 **Original history snapshot:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
 Later development entries are appended below with their own dates.
@@ -17,6 +17,87 @@ source changes. **Verification** describes the evidence available at that
 checkpoint, not a new execution of those tests while writing this file. A compiled
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
+
+## 21 September 2026 — Backend result localization and packaged checkpoint
+
+- **Localization:** Completed and registered 47 additional result/status keys in
+  all 23 languages, including service unavailability, registry read states,
+  Microsoft Store permissions, NTFS/SSD restoration and Gaming results. Canonical
+  technical identifiers and values remain unchanged. Catalog summaries now keep
+  message boundaries so nested result paragraphs can be translated independently.
+- **Verification:** 394,160 localization assertions passed with 990 entries per
+  language, no missing master keys, blank values or placeholder mismatches. Added
+  checks that these new resources match actual backend literals and that messages
+  retain their source when switching among all 23 languages.
+- **Native UI:** Rebuilt the backend-free Native AOT test host and passed 427,027
+  assertions across 2,944 layout cases and 48 flyout checks for all 23 languages,
+  including RTL, Light/Dark theme switching and text scaling. Minimum measured
+  header/button contrast was 16.61:1 / 4.61:1. No Windows tweaks were executed.
+- **Photo Viewer regression:** Added schema-3 full-plan restoration and missing,
+  invalid-number and wrong-type DropTarget capture tests. All 4,390 functional
+  assertions passed without changing Windows settings; 92 static catalog and 23
+  identity/license/installer assertions also passed. Actual image opening still
+  needs live validation; synthetic tests are not a substitute for that check.
+- **Build:** Fresh Release x64 Native AOT publish and Inno Setup 7.1.0 compilation
+  succeeded. The unsigned 8.0.0 installer is 38,506,256 bytes; SHA-256:
+  `A81FA2B933C8DC7E6F159E8EBBB7C5DF5DEE9DE9F4DB9BBF3F8A479617375870`.
+  The installer was built, not installed. Dependency license notices are included.
+- **Remaining audit:** The expanded static audit records 542 resolved source
+  occurrences, 412 unresolved expressions and 24 unchanged-text review candidates
+  (including technical names, loanwords and obsolete definitions). These counts
+  do not certify runtime coverage. App-authored diagnostic prose, dynamic result
+  paths and standard installer UI still require follow-up; full localization is
+  not declared complete.
+
+## 19–20 September 2026 — Localization expansion, identity and Photo Viewer
+
+- **Localization:** Expanded all 23 language resources for workflow results,
+  confirmations, Essential and Gaming descriptions, privacy notices and About.
+  Added explicit formatted-message handling for verification results and Photo
+  Viewer registration counts. Essential result paragraphs retain their canonical
+  source text across language changes. Work on remaining catalog and runtime
+  text is ongoing; this checkpoint is not a claim of zero English leakage.
+- **Validation:** Added source-matrix validation for all 23 language rows,
+  duplicate keys/languages, blanks, Unicode replacement characters, placeholder
+  equivalence and missing runtime registration. The new validation caught partial
+  resource files that would otherwise not appear in runtime dictionary checks.
+- **Photo Viewer:** Matched the Windows WIC handler command contract and added
+  the Explorer DropTarget registration. Snapshot schema 3 retains compatibility
+  with schema 2 without restoring uncaptured newer values. Functional tests cover
+  command construction and restoration; live image opening is not yet verified.
+- **About / metadata:** Added localized About and installer program information,
+  with Naufal Windows Powertoys as the product and Muhammad Naufal Alauddin as the
+  developer/publisher. About reads assembly version 8.0.0.0; installer versions
+  derive from the project version and reject conflicting overrides.
+- **License:** Adopted the standard MIT License with the verified 2026 copyright
+  year. Installer staging retains dependency-provided license materials and exact
+  package metadata. Third-party artwork ownership is not asserted.
+- **Repository:** Removed 46 tracked Markdown documents as requested, retaining
+  this complete changelog. Historical references below identify records retained
+  in Git history, not documents still present in the current tree. Source,
+  configuration, images and license notices remain.
+- **Build checkpoint:** Debug x64 built with zero warnings/errors; 4,386 functional
+  and 92 static catalog assertions passed without modifying Windows settings.
+  Release Native AOT and Inno Setup packaging succeeded after restoring the AOT
+  dependencies. Later translation changes still require a fresh final package.
+
+## 14–16 September 2026 — Localization audit and first correction batch
+
+- **Fixed:** The Languages alias no longer overwrites translated captions with
+  English. Added workflow, result, action and dialog translations in all 23
+  languages, with corrections to copied-English dashboard labels.
+- **Added:** Seven Gaming feature-switch descriptions and selected privacy,
+  location, automatic-encryption and Fast Startup notices. OFF, restoration,
+  availability and failure retain their distinct meanings.
+- **Audit:** Expanded inspection to constructors, metadata factories, complete
+  descriptions and confirmations. Unresolved expressions are reported separately
+  from unchanged-output candidates and must not be counted as translated.
+- **Recorded verification:** The earlier development tree recorded 170,825
+  localization, 4,382 functional and 92 static routing assertions, plus 408,512
+  native frontend assertions across 2,944 layout cases covering 23 languages.
+  These are preserved checkpoint results, not new executions on 20 September.
+  That checkpoint produced an unsigned Native AOT installer without running
+  Windows tweaks or pushing to GitHub. Full localization remained unfinished.
 
 ## 14 September 2026 — Dark Mode button contrast follow-up
 

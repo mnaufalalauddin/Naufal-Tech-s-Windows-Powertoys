@@ -4,7 +4,7 @@ param(
     [string]$Configuration = 'Release',
 
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string]$Version = '8.0.0',
+    [string]$Version = '',
 
     [switch]$NoRestore,
 
@@ -17,6 +17,12 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 . (Join-Path $projectRoot 'Installer\PublishStage.ps1')
 $projectFile = Join-Path $projectRoot "Naufal Tech's Windows Powertoys.csproj"
+[xml]$versionProject = Get-Content -LiteralPath $projectFile -Raw
+$sourceVersion = $versionProject.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()
+if ([string]::IsNullOrWhiteSpace($Version)) { $Version = $sourceVersion }
+if ($Version -ne $sourceVersion -or $Version -notmatch '^\d+\.\d+\.\d+$') {
+    throw 'Installer version must match the Version property in the project file.'
+}
 $installerScript = Join-Path $projectRoot 'Installer\NaufalWindowsPowertoys.iss'
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
 $publishRelativeDir = "artifacts\publish\win-x64-$timestamp"
@@ -26,6 +32,18 @@ $applicationExe = Join-Path $publishDir 'Naufal Windows Powertoys.exe'
 $installerExe = Join-Path $installerOutputDir "Naufal-Windows-Powertoys-Setup-$Version-x64.exe"
 
 if (-not $SkipPublish) {
+    if ($NoRestore) {
+        $assetsFile = Join-Path $projectRoot 'obj\project.assets.json'
+        if (!(Test-Path -LiteralPath $assetsFile -PathType Leaf)) {
+            throw 'No restored project assets exist. Run build-installer.ps1 without -NoRestore.'
+        }
+        $restoredAssets = Get-Content -LiteralPath $assetsFile -Raw | ConvertFrom-Json
+        $aotPackages = @($restoredAssets.libraries.PSObject.Properties.Name |
+            Where-Object { $_ -like 'Microsoft.DotNet.ILCompiler/*' })
+        if ($aotPackages.Count -eq 0) {
+            throw 'The current restore does not include Native AOT dependencies (possibly a Debug restore). Run build-installer.ps1 without -NoRestore.'
+        }
+    }
     $publishArguments = @(
         'publish',
         $projectFile,
@@ -71,6 +89,7 @@ if (-not $SkipPublish) {
 
     New-Item -ItemType Directory -Path $publishDir -ErrorAction Stop | Out-Null
     Copy-Item -Path (Join-Path $defaultPublishDir '*') -Destination $publishDir -Recurse -Force
+    & (Join-Path $projectRoot 'Installer\Collect-ThirdPartyNotices.ps1') -ProjectRoot $projectRoot -Destination (Join-Path $publishDir 'ThirdPartyLicenses')
     Complete-PublishStage -Directory $publishDir -Version $Version
 }
 else {
@@ -118,7 +137,9 @@ winget install --id JRSoftware.InnoSetup.7 -e -s winget -i
 New-Item -ItemType Directory -Path $installerOutputDir -Force | Out-Null
 
 Write-Host 'Compiling Setup installer...' -ForegroundColor Cyan
-& $iscc "/DSourceDir=$publishDir" "/DOutputDir=$installerOutputDir" "/DAppVersion=$Version" $installerScript
+$programInfoFile = Join-Path $installerOutputDir 'ProgramInformation.generated.iss'
+& (Join-Path $projectRoot 'Installer\Generate-ProgramInformation.ps1') -ProjectRoot $projectRoot -OutputFile $programInfoFile -Version "$Version.0"
+& $iscc "/DSourceDir=$publishDir" "/DOutputDir=$installerOutputDir" "/DAppVersion=$Version" "/DProgramInfoFile=$programInfoFile" $installerScript
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup compilation failed with exit code $LASTEXITCODE."
 }

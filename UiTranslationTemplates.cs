@@ -15,6 +15,57 @@ internal static partial class UiTranslation
     // errors, commands, paths, package names, GUIDs or user-entered text.
     private static readonly TextPattern[] DisplayPatterns =
     {
+        Pattern("Version {0}"),
+        Pattern("{0}  [RUNNING x{1}]"),
+        Pattern("{0}  [not running]"),
+        Pattern("{0} optional process group(s) currently running.", true),
+        Pattern("Invalid limit for {0}. Use an empty value or 1-2048."),
+        Pattern("{0} active PCI device(s) loaded. Edit MSI, Limit, or Interrupt Priority, then press Apply changes.", true),
+        Pattern("{0} device(s) loaded in read-only mode. Run the app as Administrator to apply changes.", true),
+        Pattern("Save failed: {0}"),
+        Pattern("Saved: {0}"),
+        Pattern("Analyzed {0} component(s)", true),
+        Pattern("Ready {0}", true),
+        Pattern("Attention {0}", true),
+        Pattern("Optional {0}. Select a row for available actions.", true),
+        Pattern("Apply {0} selected tweak(s)? {1} already-applied item(s) will be skipped.", true),
+        Pattern("Restore {0} applied item(s) to {1}", translateArguments: true),
+        Pattern("{0} already-restored item(s) will be skipped.", true),
+        Pattern("Unavailable on this PC — {0}", translateArguments: true),
+        Pattern("Unable to read — {0}", translateArguments: true),
+        Pattern("Verification failed {0}", true),
+        Pattern("No original backup was found. {0}", translateArguments: true),
+        Pattern("Applied {0}/{1}. {2}", translateArguments: true),
+        Pattern("Restored {0}/{1}. {2}", translateArguments: true),
+        Pattern("Registration={0}/{1}. {2}", translateArguments: true),
+        Pattern("{0} is already {1}.", translateArguments: true),
+        Pattern("Verification did not match the requested state. Actual: {0}", translateArguments: true),
+        Pattern("{0} is now {1}. A reboot is recommended.", translateArguments: true),
+        Pattern("{0} is now {1}. Restart Windows before evaluating the result.", translateArguments: true),
+        Pattern("{0} is now {1} and all applicable child settings were verified.", translateArguments: true),
+        Pattern("{0} is now {1}.", translateArguments: true),
+        Pattern("Copy failed: {0}", translateArguments: true),
+        Pattern("Installed: {0}/{1}", true),
+        Pattern("Warnings: {0}.", true),
+        Pattern("{0} Warnings: {1}.", translateArguments: true),
+        Pattern("{0} Mbps", true),
+        Pattern("Apply completed for {0} item(s). See the progress window for details.", true),
+        Pattern("Restore completed for {0} item(s). See the progress window for details.", true),
+        Pattern("Apply completed with {0} failure(s). See the progress window for details.", true),
+        Pattern("Restore completed with {0} failure(s). See the progress window for details.", true),
+        Pattern("Current states loaded; {0} item(s) are unavailable on this PC and their Select and ON/OFF controls remain disabled.", true),
+        Pattern("Checking {0} current setting(s)... You can review and resize this window while the checks finish.", true),
+        Pattern("Applied and verified {0} change(s). Restart Windows for settings marked as reboot-sensitive.", true),
+        Pattern("Restored and verified {0} item(s).", true),
+        Pattern("Processed {0}/{1}: {2}", translateArguments: true),
+        Pattern("Unable to load the catalog state: {0}", translateArguments: true),
+        Pattern("Actual: {0}", translateArguments: true),
+        Pattern("Before: {0}", translateArguments: true),
+        Pattern("After: {0}", translateArguments: true),
+        Pattern("Result: {0}", translateArguments: true),
+        Pattern("Applied {0}/{1}", true),
+        Pattern("Not applicable {0}", true),
+        Pattern("{0}% complete", true),
         Pattern("{0} running task(s).", true),
         Pattern("{0}% complete — {1}/{2}", true),
         Pattern("{0}% processed — {1}/{2}; errors or unverified items", true),
@@ -57,6 +108,15 @@ internal static partial class UiTranslation
     private static string? TranslateDisplayText(string text, string code, Dictionary<string, string> table, int depth)
     {
         if (depth > 6 || text.Length > 8000) return null;
+        // Callers append a leading paragraph break or trailing spaces to an
+        // otherwise exact caption. Preserve layout while looking up the caption.
+        string trimmed = text.Trim();
+        if (trimmed.Length != text.Length && trimmed.Length != 0)
+        {
+            int start = text.IndexOf(trimmed, StringComparison.Ordinal);
+            return text[..start] + TranslateCore(trimmed, code, depth + 1) +
+                text[(start + trimmed.Length)..];
+        }
         // Multi-line confirmations retain their original paragraph boundaries.
         if (text.Contains('\n'))
         {
@@ -73,6 +133,16 @@ internal static partial class UiTranslation
                 .Select(value => (object)Isolate(pattern.TranslateArguments ? TranslateCore(value, code, depth + 1) : value, code)).ToArray();
             return string.Format(CultureInfo.InvariantCulture, translated, values);
         }
+        // Split only the grammar authored by CatalogVerificationReport and
+        // CatalogAvailability, not arbitrary diagnostics or command lines.
+        Match state = Regex.Match(text, @"\A(ON|OFF|PARTIAL(?: / saved restore state)?) — (.+)\z",
+            RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100));
+        if (state.Success)
+            return TranslateCore(state.Groups[1].Value, code, depth + 1) + " — " +
+                TranslateCore(state.Groups[2].Value, code, depth + 1);
+        if (Regex.IsMatch(text, @"\AApplied \d+/\d+(?:; Not applicable \d+)?(?:; Verification failed \d+)?\z",
+            RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)) && text.Contains("; ", StringComparison.Ordinal))
+            return string.Join("; ", text.Split("; ").Select(part => TranslateCore(part, code, depth + 1)));
         // Staged repair labels: keep the ordinal outside the localized caption.
         Match numbered = Regex.Match(text, @"\A(\d+\. )(.+)\z", RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100));
         if (numbered.Success)

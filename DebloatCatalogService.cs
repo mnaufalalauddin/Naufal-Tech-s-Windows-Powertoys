@@ -190,7 +190,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 ToolToggleState before = await child.Service.ReadStateAsync(child.Definition);
                 if (!before.IsAvailable)
                 {
-                    if (before.HasReadFailure) failures.Add($"{child.Definition.Name}: {before.Error}");
+                    if (before.HasReadFailure) failures.Add($"{child.Definition.Name}:\n{before.Error}");
                     continue;
                 }
 
@@ -200,7 +200,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     targetOn);
                 if (!result.Success || !result.Verified)
                 {
-                    failures.Add($"{child.Definition.Name}: {result.Message}");
+                    failures.Add($"{child.Definition.Name}:\n{result.Message}");
                 }
             }
 
@@ -263,7 +263,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 ToolToggleState before = await child.Service.ReadStateAsync(child.Definition);
                 if (!before.IsAvailable)
                 {
-                    if (before.HasReadFailure) failures.Add($"{child.Definition.Name}: {before.Error}");
+                    if (before.HasReadFailure) failures.Add($"{child.Definition.Name}:\n{before.Error}");
                     continue;
                 }
 
@@ -276,7 +276,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         : CatalogOperation.RestoreSavedState);
                 if (!result.SkippedUnavailable && (!result.Success || !result.Verified))
                 {
-                    failures.Add($"{child.Definition.Name}: {result.Message}");
+                    failures.Add($"{child.Definition.Name}:\n{result.Message}");
                 }
             }
 

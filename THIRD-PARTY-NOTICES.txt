@@ -1,0 +1,29 @@
+Naufal Windows Powertoys - third-party attribution
+
+The root MIT License applies to project-authored source. It does not replace
+licenses or trademark rights associated with third-party components.
+
+The project references Microsoft Windows App SDK and Microsoft Windows SDK
+BuildTools. Their restored NuGet dependency graph also includes WinUI,
+WebView2 SDK, Windows App SDK component packages, and System.Numerics.Tensors.
+These packages carry their own Microsoft license terms, notices, or MIT text.
+The installer build copies package-supplied license and notice files verbatim
+into ThirdPartyLicenses beside the application. PACKAGE-NOTICES.txt in that
+folder identifies the exact versions used by that build and metadata sources.
+SDK/build-only package metadata is retained as provenance, not as a statement
+that every package binary is redistributed. The normal SDK publish output
+determines the redistributable payload.
+
+The .NET runtime and Native AOT libraries originate from Microsoft .NET;
+their license and third-party notices are retained from the runtime packs
+where those materials are available. Inno Setup is the installer compiler;
+its own copyright and license govern the setup engine.
+
+Microsoft Windows programs, drivers, Microsoft Store products and runtime
+installers obtained by optional application actions retain their respective
+vendor terms. They are not relicensed by this project. Product and component
+names are used for identification.
+
+Branding assets were supplied by the project owner. No independent evidence
+of third-party artwork rights was available during this audit; the MIT notice
+does not claim ownership of third-party logos or trademarks.

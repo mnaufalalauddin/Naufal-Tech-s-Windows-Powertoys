@@ -106,7 +106,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             UiDisplaySettings.Apply(RootLayout);
             UpdateDisplaySettingButtons();
 
-            Title = "Naufal Tech's Windows Powertoys";
+            Title = AppIdentity.Product;
 
             // Match the original dashboard layout by opening maximized.
             try
@@ -2914,7 +2914,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             $"Restore {availableItems.Length} applied item(s) to {targetDescription}" +
                             (windowsDefault || restorePlan.AlreadyRestoredCount == 0
                                 ? string.Empty
-                                : $" {restorePlan.AlreadyRestoredCount} already-restored item(s) will be skipped.") +
+                                : Environment.NewLine + $"{restorePlan.AlreadyRestoredCount} already-restored item(s) will be skipped.") +
                             Environment.NewLine + Environment.NewLine +
                             string.Join(Environment.NewLine, availableItems.Select(item => "• " + item.Name)),
                             "Restore"))
@@ -3007,7 +3007,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         }
                         else if (!result.SkippedUnavailable || !result.State.IsConfirmedUnavailable)
                         {
-                            failures.Add($"{definition.Name}: {result.Message}");
+                            failures.Add($"{definition.Name}:\n{result.Message}");
                         }
                         progressWindow.CompleteItem(definition.Id, result);
                         completed++;
@@ -3287,7 +3287,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         }
                         else if (!result.SkippedUnavailable || !result.State.IsConfirmedUnavailable)
                         {
-                            failures.Add($"{definition.Name}: {result.Message}");
+                            failures.Add($"{definition.Name}:\n{result.Message}");
                         }
                         progressWindow.CompleteItem(definition.Id, result);
                         completed++;
@@ -4347,7 +4347,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         }
                         else
                         {
-                            failures.Add($"{original.Name}: {result.Message}");
+                            failures.Add($"{original.Name}:\n{result.Message}");
                         }
                         progressWindow.CompleteItem(
                             request.DeviceId,

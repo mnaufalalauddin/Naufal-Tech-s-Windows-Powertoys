@@ -56,9 +56,14 @@ public sealed partial class MainWindow : Window
             RootLayout.UpdateLayout();
             CheckHeader();
             int[] sequence = [25, 50, 75, 100, 125, 150, 175, 200, 175, 150, 125, 100, 75, 50, 25, 100];
+            string? languageArgument = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--languages="));
+            string[] languages = languageArgument is null ? ["en", "de", "id", "ar"] : languageArgument[12..].Split(',');
+            if (languages.Length == 0 || languages.Any(code => !UiTranslation.IsSupportedLanguage(code)))
+                throw new InvalidOperationException("Unsupported native-test language.");
+            File.AppendAllText(App.ResultPath, "Languages: " + string.Join(", ", languages) + "\n");
             foreach (int width in new[] { 1920, 1280, 800, 480 })
             foreach (ElementTheme theme in new[] { ElementTheme.Light, ElementTheme.Dark })
-            foreach (string language in new[] { "en", "de", "id", "ar" })
+            foreach (string language in languages)
             {
                 AppWindow.Resize(new SizeInt32(width, 800));
                 if (UiDisplaySettings.Theme != theme) UiDisplaySettings.ToggleTheme();
@@ -103,6 +108,8 @@ public sealed partial class MainWindow : Window
 
     private void CheckHeader()
     {
+        Check(LanguageLabel.Text == UiTranslation.Translate("Languages", UiDisplaySettings.LanguageCode),
+            "language label retains canonical source after switches");
         CheckThemePalette();
         CheckButtons();
         foreach (FrameworkElement control in new FrameworkElement[] { TextScaleButton, ThemeButton, LanguageComboBox })
@@ -170,7 +177,10 @@ public sealed partial class MainWindow : Window
     private void CheckButtons()
     {
         Button[] buttons = AuthoredButtons(RootLayout).Where(b => b.IsEnabled).ToArray();
-        Check(buttons.Length == 28, "all 28 enabled dashboard buttons are covered (not hidden WinUI template controls)");
+        Check(buttons.Length == 29, "all 29 enabled dashboard buttons are covered (including About, not hidden WinUI template controls)");
+        Check(buttons.Contains(AboutButton), "About participates in dashboard contrast checks");
+        Check(AboutButton.Content?.ToString() == UiTranslation.Translate("About", UiDisplaySettings.LanguageCode),
+            "About caption follows the selected language");
         foreach (Button button in buttons)
             CheckButtonContrast(button);
     }
@@ -325,6 +335,7 @@ public sealed partial class MainWindow : Window
     // MainWindow.xaml is linked unchanged; all system-action handlers are inert
     // in this test-only host, so accidental input cannot launch a repair/tweak.
     private void TaskStatusButton_Click(object s, RoutedEventArgs e) { }
+    private void AboutButton_Click(object s, RoutedEventArgs e) { }
     private void RebootButton_Click(object s, RoutedEventArgs e) { }
     private void ExitButton_Click(object s, RoutedEventArgs e) { }
     private void FullRepairButton_Click(object s, RoutedEventArgs e) { }

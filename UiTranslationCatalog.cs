@@ -145,10 +145,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     new(entryCount, StringComparer.OrdinalIgnoreCase);
                 for (int entryIndex = 0; entryIndex < entryCount; entryIndex++)
                 {
-                    table[reader.ReadString()] = reader.ReadString();
+                    string key = reader.ReadString();
+                    string value = reader.ReadString();
+                    if (!table.TryAdd(key, value))
+                        throw new InvalidDataException("Duplicate base localization key: " + languageCode + " / " + key);
                 }
 
-                catalog[languageCode] = table;
+                if (!catalog.TryAdd(languageCode, table))
+                    throw new InvalidDataException("Duplicate base localization language: " + languageCode);
             }
 
             SupplementalUiCatalog.Merge(catalog);

@@ -5,14 +5,17 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>Naufal_Windows_Tech_s_Powertoys</RootNamespace>
     <AssemblyName>Naufal Windows Powertoys</AssemblyName>
-    <AssemblyTitle>Windows 10/11 PowerToys for IT System-Administrator</AssemblyTitle>
-    <Product>Naufal Tech's Windows Powertoys</Product>
-    <Description>Windows 10/11 PowerToys for IT System-Administrator</Description>
+    <AssemblyTitle>Naufal Windows Powertoys</AssemblyTitle>
+    <Product>Naufal Windows Powertoys</Product>
+    <Description>Open-source Windows system maintenance, troubleshooting, optimization and gaming utility.</Description>
     <Version>8.0.0</Version>
-    <InformationalVersion>8.0.0.0</InformationalVersion>
-    <AssemblyVersion>8.0.0.0</AssemblyVersion>
-    <FileVersion>8.0.0.0</FileVersion>
-    <Company>Naufal Tech's Ltd.</Company>
+    <InformationalVersion>$(Version).0</InformationalVersion>
+    <AssemblyVersion>$(Version).0</AssemblyVersion>
+    <FileVersion>$(Version).0</FileVersion>
+    <Company>Muhammad Naufal Alauddin</Company>
+    <Authors>Muhammad Naufal Alauddin</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>Copyright (c) 2026 Muhammad Naufal Alauddin</Copyright>
     <GenerateAssemblyCompanyAttribute>true</GenerateAssemblyCompanyAttribute>
     <ApplicationIcon>Assets\NaufalWindowsPowertoys.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -31,6 +34,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\NaufalWindowsPowertoys.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />

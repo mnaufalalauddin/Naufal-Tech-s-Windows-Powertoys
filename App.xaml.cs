@@ -92,8 +92,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 MessageBoxW(
                     IntPtr.Zero,
-                    "Naufal Tech's Windows Powertoys is already running",
-                    "Naufal Tech's Windows Powertoys",
+                    UiTranslation.Translate("Naufal Windows Powertoys is already running.", UiDisplaySettings.LanguageCode),
+                    AppIdentity.Product,
                     0x00000040U);
                 Exit();
                 return;

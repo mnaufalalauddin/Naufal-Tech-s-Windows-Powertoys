@@ -24,6 +24,49 @@ internal static partial class NativeUiCatalog
         MergeRows(catalog, Dashboard);
         MergeRows(catalog, RepairStages);
         MergeRows(catalog, Availability);
+        MergeRows(catalog, Workflow);
+        MergeRows(catalog, WorkflowResults);
+        MergeRows(catalog, GamingDescriptions);
+        MergeRows(catalog, WorkflowDialogs);
+        MergeRows(catalog, PolicyNotices);
+        MergeRows(catalog, RepairConfirmations);
+        MergeRows(catalog, RepairOutcomes);
+        MergeRows(catalog, RuntimeStatus);
+        MergeRows(catalog, RuntimeCompositions);
+        MergeRows(catalog, RuntimeAnalysis);
+        MergeRows(catalog, CatalogConfirmations);
+        MergeRows(catalog, CommonResults);
+        MergeRows(catalog, RegistryReadStates);
+        MergeRows(catalog, EssentialActionResults);
+        MergeRows(catalog, AvailabilityReasons);
+        MergeRows(catalog, GamingStatusResults);
+        MergeRows(catalog, PrivacyWarnings);
+        MergeRows(catalog, AboutContent);
+        MergeRows(catalog, PrivacyRemainingDescriptions);
+        MergeRows(catalog, AdvancedDescriptions);
+        MergeRows(catalog, EssentialRemainingActions);
+        MergeRows(catalog, EssentialRemainingTweaks);
+        MergeRows(catalog, EssentialLabDescriptions);
+        MergeRows(catalog, GamingRemainingConfirmations);
+        MergeRows(catalog, GamingRemainingDescriptions);
+        MergeRows(catalog, OperationOutcomes);
+        MergeRows(catalog, PhotoViewerMessages);
+        MergeRows(catalog, EssentialOutcomes);
+        MergeRows(catalog, RestoreResults);
+        MergeRows(catalog, VerificationStates);
+        MergeRows(catalog, ServiceDescriptions);
+        MergeRows(catalog, GamingBootDescriptions);
+        MergeRows(catalog, GamingLabGpuDescriptions);
+        MergeRows(catalog, GamingLabCoreDescriptions);
+        MergeRows(catalog, DebloatDetails);
+        MergeRows(catalog, DashboardLabels);
+        foreach (var item in ReviewedLabelOverrides)
+        {
+            if (!catalog.TryGetValue(item.Language, out var reviewedTable) || !reviewedTable.ContainsKey(item.Key) ||
+                string.IsNullOrWhiteSpace(item.Value))
+                throw new InvalidOperationException("Invalid reviewed label override: " + item.Language + " / " + item.Key);
+            reviewedTable[item.Key] = item.Value;
+        }
         foreach (var table in catalog.Values)
         {
             // Obsolete, unused descriptions disagree on restore semantics.
@@ -31,6 +74,7 @@ internal static partial class NativeUiCatalog
             table.Remove("Applies the supplied WPFTweaksServices startup targets and memory-based SvcHostSplitThresholdInKB; OFF restores the exact pre-tweak service snapshot.");
             table.Remove("Applies the supplied WPFTweaksServices startup targets and memory-based SvcHostSplitThresholdInKB; OFF restores the source-defined OriginalType values.");
             foreach (var pair in Aliases) if (table.TryGetValue(pair.Value, out string? text)) table[pair.Key] = text;
+            foreach (var pair in WorkflowAliases) table[pair.Key] = table[pair.Value];
         }
     }
 
@@ -86,7 +130,8 @@ es|Tareas|Tareas activas|En ejecución|En cola|En espera|Procesando|Verificando|
 
     private static readonly Dictionary<string, string> Aliases = new(StringComparer.Ordinal)
     {
-        ["Languages"] = "LANGUAGE",
+        // Languages has a dedicated reviewed resource; the recovered LANGUAGE
+        // alias contains English copies and must not overwrite that resource.
         ["GAME MODE"] = "GAME MODE STATUS", ["Disk Information"] = "Disk Info",
         ["Games Runtime & Compatibility Check"] = "Games Runtime & Compatibility Check",
         ["Games Runtime & Compatibility"] = "Games Runtime & Compatibility Check",

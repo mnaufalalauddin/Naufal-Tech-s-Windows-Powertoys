@@ -242,7 +242,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         true,
                         true,
                         $"{definition.Name} is already {(targetOn ? "ON" : "OFF")}." +
-                        (definition.Id == "PhotoViewer" && targetOn ? " " + before.ActualValue : ""),
+                        (definition.Id == "PhotoViewer" && targetOn ? Environment.NewLine + before.ActualValue : ""),
                         before);
                 }
 
@@ -263,10 +263,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     OpenPhotoViewerDefaultApps();
                 }
                 string restartNote = verified && definition.RestartRecommended
-                    ? " Restart Explorer, sign out, or reboot to make the UI change visible."
+                    ? Environment.NewLine + "Restart Explorer, sign out, or reboot to make the UI change visible."
                     : string.Empty;
                 if (verified && targetOn && definition.Id == "PhotoViewer")
-                    restartNote += " " + after.ActualValue;
+                    restartNote += Environment.NewLine + after.ActualValue;
                 return new ToolToggleOperationResult(
                     verified,
                     verified,
@@ -551,7 +551,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         () =>
                         {
                             using RegistryKey snapshot = Registry.CurrentUser.CreateSubKey($@"{BackupRoot}\{id}", writable: true);
-                            snapshot.SetValue(PhotoViewerRegistration.SchemaKey, 2, RegistryValueKind.DWord);
+                            snapshot.SetValue(PhotoViewerRegistration.SchemaKey, PhotoViewerRegistration.CurrentSchema, RegistryValueKind.DWord);
                             snapshot.Flush();
                         },
                         entry => SetString(RegistryHive.LocalMachine, entry.Path, entry.Name, entry.Value),

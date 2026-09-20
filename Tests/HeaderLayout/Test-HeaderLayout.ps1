@@ -1,5 +1,7 @@
 param([switch]$NoBuild, [switch]$NativeAot, [ValidateSet(25,50,75,100,125,150,175,200)][int]$StartupScale = 100,
-    [ValidateSet('Light','Dark')][string]$StartupTheme = 'Light')
+    [ValidateSet('Light','Dark')][string]$StartupTheme = 'Light',
+    [ValidateSet('en','id','de','fr','ar','tl','vi','zh-CN','zh-TW','th','ru','uk','pt','ja','ko','ur','ta','hi','ms','jv','ban','sv','es')]
+    [string[]]$Languages = @('en','de','id','ar'))
 $ErrorActionPreference = 'Stop'
 if (-not $NoBuild) {
     if ($NativeAot) {
@@ -14,7 +16,7 @@ if ($NativeAot) { $output = Join-Path $PSScriptRoot 'bin\x64\Release\net10.0-win
 $exe = Join-Path $output 'HeaderLayout.Tests.exe'
 $report = Join-Path $output 'header-layout-results.txt'
 $started = [DateTime]::UtcNow
-$testProcess = Start-Process -FilePath $exe -ArgumentList "--startup-scale=$StartupScale", "--startup-theme=$StartupTheme" -WindowStyle Hidden -PassThru
+$testProcess = Start-Process -FilePath $exe -ArgumentList "--startup-scale=$StartupScale", "--startup-theme=$StartupTheme", "--languages=$($Languages -join ',')" -WindowStyle Hidden -PassThru
 if (-not $testProcess.WaitForExit(60000)) {
     # Only this newly created, backend-free test host may be stopped.
     $testProcess.Kill()

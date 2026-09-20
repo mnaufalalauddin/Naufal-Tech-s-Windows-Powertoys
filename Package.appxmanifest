@@ -16,8 +16,8 @@
   <mp:PhoneIdentity PhoneProductId="29db7b07-6375-47ec-a284-45a5722852bc" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Naufal Tech's Windows Powertoys</DisplayName>
-    <PublisherDisplayName>Naufal Tech's Ltd.</PublisherDisplayName>
+    <DisplayName>Naufal Windows Powertoys</DisplayName>
+    <PublisherDisplayName>Muhammad Naufal Alauddin</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -35,7 +35,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Naufal Tech's Windows Powertoys"
+        DisplayName="Naufal Windows Powertoys"
         Description="Windows 10/11 PowerToys for IT System-Administrator"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"

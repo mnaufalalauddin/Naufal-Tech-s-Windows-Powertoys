@@ -130,6 +130,8 @@ internal static class Regression
         Check(mainSource.Contains("UiTranslation.Release(RootLayout);"), "main window localization cleanup");
         Check(File.ReadAllText(Path.Combine(testRoot, "ToolWindow.cs")).Contains("UiTranslation.Release(_root);"), "tool window localization cleanup");
         assertions += LanguageSwitchRegression.Run();
+        assertions += WorkflowRegression.Run(testRoot);
+        assertions += ResourceMatrixRegression.Run(testRoot);
         return assertions;
     }
 
