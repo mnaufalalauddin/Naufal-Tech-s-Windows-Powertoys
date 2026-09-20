@@ -18,6 +18,15 @@ checkpoint, not a new execution of those tests while writing this file. A compil
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
 
+## 21 September 2026 — Repository introduction restored
+
+- **Documentation:** Reintroduced README.md at the user's explicit request after
+  the earlier Markdown cleanup. Added an English project overview, existing
+  Light/Dark screenshots, feature map, safety and restore guidance, build/test
+  commands, language coverage, known limitations, contribution guidance and
+  licensing links. This documentation-only update does not change application
+  behavior or claim completed localization.
+
 ## 21 September 2026 — Backend result localization and packaged checkpoint
 
 - **Localization:** Completed and registered 47 additional result/status keys in
