@@ -20,6 +20,11 @@ mutation, complete visual validation, or full behavioral parity.
 
 ## 21 September 2026 — Repository introduction restored
 
+- **Presentation:** Restyled the README around concise introduction badges,
+  dashboard previews, Quick Start, feature/profile tables, collapsible technical
+  details, resources and contribution links, following the user-selected WinUtil
+  README layout reference. Commands and claims remain specific to this project;
+  no WinUtil launch script, sponsor roster or release statistics were copied.
 - **Documentation:** Reintroduced README.md at the user's explicit request after
   the earlier Markdown cleanup. Added an English project overview, existing
   Light/Dark screenshots, feature map, safety and restore guidance, build/test

@@ -1,182 +1,167 @@
 # Naufal Windows Powertoys
 
-**An open-source Windows maintenance, troubleshooting, tweaking, and gaming utility.**
+[![Source version](https://img.shields.io/badge/Source_Version-8.0.0.0-0567ff?style=for-the-badge)](CHANGELOG.md)
+[![Windows target](https://img.shields.io/badge/Target-Windows_10_%2F_11_x64-0078d4?style=for-the-badge)](#quick-start)
+[![License](https://img.shields.io/badge/License-MIT-16803c?style=for-the-badge)](LICENSE)
+[![Languages](https://img.shields.io/badge/UI_Languages-23-8250df?style=for-the-badge)](#languages--project-status)
 
-Bring repair tools, system information, performance profiles, privacy controls, and app management into one native Windows dashboard—with operation progress and result verification.
+A native Windows dashboard to **repair system components**, **manage Windows apps**, **review privacy settings**, and **configure gaming and performance options**—with live monitoring and operation progress in one place.
 
-Developed by **Muhammad Naufal Alauddin** · Version **8.0.0.0** · [MIT License](LICENSE)
+Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under active development. **Not affiliated with Microsoft or Microsoft PowerToys.**
 
-[Features](#features) · [Getting started](#getting-started) · [Build from source](#build-from-source) · [Development status](#development-status) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues)
-
-> This is an independent project, not Microsoft PowerToys, and is not affiliated with or endorsed by Microsoft. It is under active development. Advanced options can change services, security settings, boot configuration, and installed apps; review each warning before applying a change.
-
-## Preview
-
-### Dark theme
-
-![Dark dashboard with repair tools, performance profiles, and live CPU, RAM, GPU, and network graphs](docs/images/dashboard-dark.png)
+![Naufal Windows Powertoys — dark dashboard](docs/images/dashboard-dark.png)
 
 <details>
 <summary>View the light theme</summary>
 
-![Light dashboard with repair tools, performance profiles, and live system graphs](docs/images/dashboard-light.png)
+![Naufal Windows Powertoys — light dashboard](docs/images/dashboard-light.png)
 
 </details>
 
-These screenshots show an earlier development build. Labels, branding, and available controls may differ from the current source.
+*Screenshots show an earlier development build; current labels and controls may differ.*
 
-## What is this project?
+---
 
-Naufal Windows Powertoys is a native C# / WinUI desktop application for people who want to inspect, maintain, and customize their Windows PC from a single interface. It builds on the project's earlier PowerShell-based utility and is being audited for functionality, restore behavior, accessibility, and localization.
+## Quick Start
 
-It is **not a one-click guarantee of better performance**. Results depend on the Windows version, hardware, drivers, installed components, and the settings you choose. Use individual options deliberately instead of applying every tweak.
+> **Back up important data before applying tweaks.** System-changing operations may require Administrator privileges. Review each option's warning; do not apply every tweak indiscriminately.
 
-## Features
+1. Visit [Releases](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases) and choose a maintainer-published x64 installer, if available. If no suitable installer is attached, [build from source](#build--develop).
+2. Run the installer, open **Naufal Windows Powertoys**, and review the first-run prerequisites.
+3. Choose a catalog or performance profile, read its description, and apply only the changes you need.
+4. Check the separate progress window and verification results. Restart Windows when the option requires it.
 
-| Area | Included tools |
+**Windows 10 / 11 x64 are intended targets.** Feature availability depends on your Windows build, edition, hardware, and installed components. Not every configuration has been validated. Some downloads and app recovery operations require Internet access and WinGet.
+
+**The current installer is unsigned.** Verify the download source and any published SHA-256 hash; do not disable system protection just to run it. GitHub's **Code → Download ZIP** downloads source code, not a ready-to-run application.
+
+---
+
+## What's Included
+
+| Category | Highlights |
 | --- | --- |
-| Repair and maintenance | Full Repair, Quick Repair, Windows Update Fix, Microsoft Store Fix, and Explorer Fix. |
-| System information | Disk information, system reports, and Windows / Office activation status tools. A valid license is still required; this project does not provide one. |
-| Performance profiles | Competitive Gaming, Optimized Gaming, and Balanced profiles, with checks for the settings each profile manages. |
-| Live monitoring | CPU, RAM, GPU 3D, and network history graphs, plus process count, uptime, power-plan, and gaming-setting status. |
-| Essential and Gaming tweaks | Windows behavior, Game Mode, storage, power, input, network, and other catalog options with descriptions and risk indicators. |
-| Advanced Windows Tweaks & De-Bloat | Service controls, privacy and advertising policies, supported AI-related controls, and built-in app management. |
-| Built-in Windows Apps | Alphabetically organized app removal / recovery options, including OneDrive, with Recommended, Optional, and Not Recommended removal guidance. Availability varies by PC. |
-| Security and compatibility | BitLocker Manager, automatic device-encryption policy control, Defender controls, Smart App Control, GPU Driver Manager, runtime checks, and MSI Mode Utility. |
-| Interface and workflow | Light/Dark themes, text scaling, 23 language choices, first-run setup, Task Monitoring, separate operation-progress windows, and result/log export. |
+| **Repair** | Full Repair, Quick Repair, Windows Update Fix, Microsoft Store Fix, and Explorer Fix. |
+| **System** | Disk information, system reports, and Windows / Office activation status tools. A valid license is still required. |
+| **Tweaks & De-Bloat** | Essential and Gaming catalogs, service controls, privacy and advertising policies, and supported AI-related settings. |
+| **Built-in Windows Apps** | Alphabetical app removal / recovery, including OneDrive, with Recommended, Optional, and Not Recommended removal guidance. |
+| **Security & Compatibility** | BitLocker Manager, automatic device-encryption policy, Defender controls, Smart App Control, GPU Driver Manager, runtime checks, and MSI Mode Utility. |
+| **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; Light/Dark themes; text scaling; and 23 language choices. |
 
-Some options require administrator privileges, a restart, Internet access, WinGet, or a supported Windows edition. A missing component is not the same as an execution failure; supported catalog paths report confirmed unavailability separately.
+## Performance Profiles
 
-## Getting started
+Choose a profile from the dashboard, review its confirmation, and inspect verification results after applying it.
 
-The current installer workflow targets **Windows x64**. Windows 10 and Windows 11 are intended targets, but individual features depend on the OS build, edition, hardware, and installed components. The project declares a minimum Windows build of 17763; that declaration is **not** proof of complete compatibility testing on every supported build. There are no Linux or macOS builds.
+| Profile | Purpose |
+| --- | --- |
+| **Competitive Gaming** | Apply the project's competitive-gaming configuration. |
+| **Optimized Gaming** | Apply an alternative gaming-oriented configuration. |
+| **Balanced** | Apply the project's balanced configuration using the Windows Balanced power plan. |
 
-1. Check the repository's [Releases](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases) for a maintainer-published installer. If no suitable binary is attached, use the build instructions below. **Code → Download ZIP downloads source, not an installer.**
-2. Back up important files. For changes involving encryption, securely retain your BitLocker recovery key outside this application.
-3. Run the installer and review first-run prerequisites. Approve elevation only when you intend to perform the requested system operation.
-4. Open a catalog, read its descriptions and warnings, and start with a small number of changes. Review the progress window and verification results before proceeding.
+Profiles manage multiple settings, not just the power plan. **No profile guarantees higher FPS or lower latency** on every PC. These are application UI profiles, not command-line automation presets.
 
-The most recently recorded installer is **unsigned**. Windows may display publisher or reputation warnings. Do not disable system protection just to run a download; verify its source and, when provided, compare its SHA-256 hash with the maintainer's published value.
+<details>
+<summary><strong>Important: Apply, OFF, Restore, and safety</strong></summary>
 
-The default installation directory is:
+- ON can mean a disabling/removal tweak is applied—not that the underlying Windows feature is enabled. Read the description.
+- OFF and Restore have different meanings for some options. Restore uses captured state where available; some options offer documented Windows-default fallbacks. Vendor-specific defaults cannot always be inferred safely.
+- Restore all defaults can intentionally discard saved pre-change state for applicable items. Read the confirmation.
+- Reinstalling an app does not recover deleted personal data. Recovery can require Internet access, Store availability, and an appropriate license.
+- Disabling update, printing, biometric, networking, or security components can interrupt those functions. Security reductions are not general-purpose performance recommendations.
+- Retain your BitLocker recovery key securely. Preventing automatic device encryption does not decrypt an already encrypted drive.
+- Keep restore backups. A green verification result covers the implemented checks, not every possible side effect.
 
-```text
-C:\Program Files\Naufal Tech's Limited\Naufal Windows Powertoys
-```
+Default installation: `C:\Program Files\Naufal Tech's Limited\Naufal Windows Powertoys`.
 
-Application-owned per-user files use `%LOCALAPPDATA%\Naufal Windows Powertoys`. Some restore snapshots are held in the registry or other feature-specific locations; copying this folder alone is not a complete system backup.
+Per-user application files: `%LOCALAPPDATA%\Naufal Windows Powertoys`. Some snapshots live in the registry or other feature-specific locations; this folder alone is not a complete backup.
 
-### Apply, OFF, and Restore
+</details>
 
-- **Apply** requests the selected change. A toggle's meaning depends on the option: ON can mean that a disabling/removal tweak is applied, not that the underlying Windows feature is enabled. Read its description.
-- **OFF** and **Restore** are not interchangeable for every option. Feature switches and snapshot-based tweaks have different behavior.
-- **Restore** uses saved pre-change state where available. Some options provide a documented Windows-default fallback; not every vendor setting has a safe universal default.
-- **Restore all defaults** can intentionally discard saved pre-change state for applicable items. Read its confirmation carefully.
-- Reinstalling a removed app does **not** recover its deleted personal data. Store availability, Internet access, and an appropriate license may be required.
-- Do not delete backup data while you may still need to restore changes. A green verification result covers the checks implemented for that option, not every possible side effect.
+---
 
-Disabling update, printing, biometric, networking, or security components can interrupt those functions. Disabling protection or changing BitLocker policies is not recommended as a general performance optimization. Preventing automatic device encryption does not itself decrypt an already encrypted drive.
+## Build & Develop
 
-## Languages
+Built with **C# / WinUI**, **.NET 10**, **Native AOT**, and **Inno Setup 7**.
 
-The interface offers 23 languages:
+Use a Windows x64 development PC with Git, .NET 10 SDK, Visual Studio Windows / WinUI build support, the **Desktop development with C++** workload, MSVC x64 tools, a Windows SDK, and Inno Setup 7. The recorded packaging version is **7.1.0**.
 
-English, Indonesian, German, French, Arabic, Tagalog, Vietnamese, Simplified Chinese, Traditional Chinese, Thai, Russian, Ukrainian, Portuguese, Japanese, Korean, Urdu, Tamil, Hindi, Malay, Javanese, Balinese, Swedish, and Spanish.
-
-Localization includes catalog descriptions, confirmations, results, and About information, with ongoing work on remaining runtime text. **Complete translation coverage is not yet claimed.** Technical identifiers, product names, and external diagnostic output may remain in their original form. The installer's program-information page has 23 language choices; its standard setup UI is not fully localized into all 23 languages.
-
-## Build from source
-
-### Prerequisites
-
-- A Windows x64 development PC and Git.
-- **.NET 10 SDK**.
-- **Visual Studio with Windows / WinUI build support**, the **Desktop development with C++** workload, MSVC x64 tools, and a Windows SDK. Native AOT publishing requires the native linker.
-- **PowerShell 7**, with the Visual Studio **x64** developer environment loaded.
-- **Inno Setup 7** for the `.exe` installer. The latest recorded packaging run used Inno Setup **7.1.0**.
-- Internet access for the initial dependency restore.
-
-Clone the repository:
+From **PowerShell 7 with the Visual Studio x64 developer environment loaded**:
 
 ```powershell
 git clone https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys.git
 Set-Location Naufal-Tech-s-Windows-Powertoys
-```
-
-Build a Debug version:
-
-```powershell
-dotnet build ".\Naufal Tech's Windows Powertoys.csproj" -c Debug -p:Platform=x64
-```
-
-Build the self-contained Release Native AOT application and installer:
-
-```powershell
 .\build-installer.ps1
 ```
 
-Run the packaging command from the repository root in the x64 developer environment. The script reads the version from the project, publishes the application, collects dependency notices, checks branding assets, and invokes Inno Setup. Build tools are not required on a user's PC to run the packaged self-contained application.
-
-For the current project version, the installer is written to:
+The script restores dependencies, publishes the self-contained Native AOT application, includes dependency notices, and builds the installer:
 
 ```text
 artifacts\installer\Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe
 ```
 
-Generated binaries, logs, and publish directories are excluded from Git. The source project keeps its historical filename even though the product's display name is now **Naufal Windows Powertoys**.
+Build tools are not required to run the packaged application. Generated binaries and private runtime data are excluded from Git.
 
-### Run automated checks
-
-From the repository root:
+<details>
+<summary>Debug build, regression checks, and source map</summary>
 
 ```powershell
+dotnet build ".\Naufal Tech's Windows Powertoys.csproj" -c Debug -p:Platform=x64
+
 dotnet run --project .\Tests\ProfileVerification\ProfileVerification.Tests.csproj
 dotnet run --project .\Tests\Localization\Localization.Tests.csproj
 .\Tests\ParityAudit\Test-CatalogInteraction.ps1
 .\Tests\ParityAudit\Test-ProjectIdentity.ps1
 ```
 
-These checks cover functional logic, localization resources, catalog routing, and project metadata without applying Windows tweaks. A separate backend-free native UI test host checks layout, themes, text scaling, and language switching:
+The functional and localization checks do not apply Windows tweaks. The separate backend-free native UI test host exercises layout and language switching:
 
 ```powershell
 .\Tests\HeaderLayout\Test-HeaderLayout.ps1 -NativeAot -Languages en,id,ar,ur
 ```
 
-Passing automated tests does not prove that every system-changing operation works on every Windows configuration. Test risky changes in a disposable VM or dedicated test PC, not on a production machine.
-
-## Source map
-
-| Location | Purpose |
+| Source | Purpose |
 | --- | --- |
-| `MainWindow.xaml` and `MainWindow*.cs` | Dashboard, dialogs, and catalog interaction. |
-| `*Service.cs` and catalog / policy files | Repair, inspection, tweak, app-management, and restore behavior. |
-| `UiTranslation*.cs` and `NativeUiCatalog*.cs` | Localization infrastructure, translations, and dynamic display templates. |
-| `Installer/` and `build-installer.ps1` | Setup definition, packaging, icon generation, and license collection. |
-| `Tests/` | Functional, localization, static, and native UI regression checks. |
-| `Assets/` and `docs/images/` | Application branding and README screenshots. |
-| [CHANGELOG.md](CHANGELOG.md) | Development history and dated verification checkpoints. |
+| `MainWindow.xaml`, `MainWindow*.cs` | Dashboard, dialogs, and catalog interaction. |
+| `*Service.cs`, catalog and policy files | Inspection, repair, tweaks, app management, and restore behavior. |
+| `UiTranslation*.cs`, `NativeUiCatalog*.cs` | Localization resources and dynamic display templates. |
+| `Installer/`, `build-installer.ps1` | Installer definition, packaging, icons, and dependency notices. |
+| `Tests/` | Functional, localization, static, and native UI checks. |
 
-## Development status
+The project file retains its historical filename. Passing tests is not proof that every system-changing operation works on every Windows configuration; use a disposable VM or dedicated test PC for risky changes.
 
-**Active development — audited in stages, not declared complete.**
+</details>
 
-The 21 September 2026 checkpoint records successful Native AOT / installer builds, 394,160 localization assertions, 4,390 functional assertions, and native layout checks across all 23 languages. These are dated results, not a claim that a live CI pipeline is currently passing.
+---
 
-Work still includes auditing dynamic messages and application-authored logs, completing installer localization, and live validation of Windows Photo Viewer image opening. Broader Windows-version and hardware coverage remains important. See the [changelog](CHANGELOG.md) for evidence, limitations, and previous fixes.
+## Languages & Project Status
 
-## Feedback and contributions
+**23 interface languages:** English, Indonesian, German, French, Arabic, Tagalog, Vietnamese, Simplified Chinese, Traditional Chinese, Thai, Russian, Ukrainian, Portuguese, Japanese, Korean, Urdu, Tamil, Hindi, Malay, Javanese, Balinese, Swedish, and Spanish.
 
-[Open an issue](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues) for a bug or suggestion. For a reproducible report, include:
+**Active development—not declared complete.** Remaining work includes dynamic messages, application-authored logs, standard installer localization, and live verification of Windows Photo Viewer image opening. The installer's program-information page offers 23 languages; the entire setup UI does not yet have equivalent coverage.
 
-- Windows version/build, app version, language, and theme.
-- The catalog and option involved, the steps taken, and expected versus actual behavior.
-- Whether the operation was Apply, OFF, Restore, or Restore defaults.
-- Relevant exported output or screenshots, with private information removed.
+Technical identifiers, product names, and external diagnostics may retain their original wording. Dated build and test results are recorded in the [changelog](CHANGELOG.md), not presented as a live CI status.
 
-Never post recovery keys, credentials, tokens, product keys, or private backup contents. Translation corrections and focused pull requests are welcome. Preserve restore behavior, add relevant tests, and describe any change to system-modifying logic.
+---
 
-## License and acknowledgments
+## Resources
 
-Project source is provided under the [MIT License](LICENSE), copyright © 2026 Muhammad Naufal Alauddin, without warranty. Third-party components retain their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). Packaged builds include collected dependency notices.
+- [Published releases](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases)
+- [Development history and known limitations](CHANGELOG.md)
+- [Report a bug or request a feature](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues)
+- [Source license](LICENSE) · [Third-party notices](THIRD-PARTY-NOTICES.txt)
 
-Windows, Microsoft product names, and other third-party trademarks belong to their respective owners. This project's license does not grant rights to those trademarks or third-party artwork.
+## Support & Contribute
+
+If the project helps you, consider starring the repository. Bug reports, translation corrections, reproducible test cases, and focused pull requests are welcome.
+
+Include your Windows build, app version, language, selected option, exact steps, and relevant output when reporting a problem. **Remove private information—never upload recovery keys, credentials, product keys, or personal backups.** Preserve restore behavior and add relevant tests when changing system-modifying code.
+
+[View contributors](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/graphs/contributors) · [View pull requests](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/pulls)
+
+---
+
+## License
+
+[MIT License](LICENSE) · Copyright © 2026 **Muhammad Naufal Alauddin**. Provided without warranty. Dependencies retain their own licenses; see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
+
+Third-party names, trademarks, and artwork remain subject to their owners' rights. This project is independent of Microsoft and Microsoft PowerToys.
