@@ -10,13 +10,12 @@ function Assert([bool]$value, [string]$name) {
     if (-not $value) { throw "FAILED: $name" }
     $script:count++
 }
-# Reference Main UI order from the installed 7.8 application, not from the
-# generated current route list. Labels are canonical English localization keys.
+# All 20 existing routes remain, now grouped into the five requested pages.
 $routes = [ordered]@{
     FullRepair = 'Full Repair'; QuickRepair = 'Quick Repair'
     WindowsUpdateFix = 'Windows Update Fix'; MicrosoftStoreFix = 'Microsoft Store Fix'
     ExplorerFix = 'Explorer Fix'; DiskInfo = 'Disk Info'; SystemReport = 'System Report'
-    WindowsActivation = 'Windows Activation'; OfficeActivation = 'Office Activation'
+    WindowsActivation = 'Windows Activation Status'; OfficeActivation = 'Office Activation Status'
     DisableDefender = 'Disable Defender'; RestoreDefender = 'Restore Defender'
     BitLockerManager = 'BitLocker Manager'; SmartAppControl = 'Smart App Control'
     EssentialTweaks = 'Essential Windows Tweaks'; GamingTweaks = 'Gaming Tweaks'
@@ -25,14 +24,20 @@ $routes = [ordered]@{
     LegacyWindowsPanels = 'Legacy Windows Panels'
 }
 $buttons = @($window.SelectNodes('//*[local-name()="Button"]'))
-$last = -1
+$pageForRoute = @{
+    FullRepair='RepairPage'; QuickRepair='RepairPage'; WindowsUpdateFix='RepairPage'; MicrosoftStoreFix='RepairPage'; ExplorerFix='RepairPage'
+    DiskInfo='InfoPage'; SystemReport='InfoPage'; WindowsActivation='InfoPage'; OfficeActivation='InfoPage'
+    DisableDefender='SecurityPage'; RestoreDefender='SecurityPage'; BitLockerManager='SecurityPage'; SmartAppControl='SecurityPage'
+    EssentialTweaks='AdvancedPage'; GamingTweaks='AdvancedPage'; RuntimeCompatibility='AdvancedPage'; GpuDriverManager='AdvancedPage'; Debloat='AdvancedPage'; MsiModeUtility='AdvancedPage'
+    LegacyWindowsPanels='HomePage'
+}
 foreach ($route in $routes.GetEnumerator()) {
     $matches = @($buttons | Where-Object { $_.GetAttribute('Click') -ceq ($route.Key + 'Button_Click') })
     Assert ($matches.Count -eq 1) ("one reference button: " + $route.Key)
     Assert ($matches[0].GetAttribute('Content') -ceq $route.Value) ("reference label: " + $route.Key)
-    $index = [array]::IndexOf($buttons, $matches[0])
-    Assert ($index -gt $last) ("reference order: " + $route.Key)
-    $last = $index
+    $ancestor = $matches[0].ParentNode
+    while ($ancestor -is [Xml.XmlElement] -and $ancestor.GetAttribute('Name', 'http://schemas.microsoft.com/winfx/2006/xaml') -ne $pageForRoute[$route.Key]) { $ancestor = $ancestor.ParentNode }
+    Assert ($ancestor -is [Xml.XmlElement]) ("correct page: " + $route.Key)
 }
 $ns = [Xml.XmlNamespaceManager]::new($app.NameTable)
 $ns.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')

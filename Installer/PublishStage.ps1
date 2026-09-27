@@ -16,7 +16,7 @@ function Get-PublishInventory {
 
 function Complete-PublishStage {
     param([Parameter(Mandatory)][string]$Directory, [Parameter(Mandatory)][string]$Version)
-    $application = Join-Path $Directory 'Naufal Windows Powertoys.exe'
+    $application = Join-Path $Directory 'Naufal Windows Utility.exe'
     if (-not (Test-Path -LiteralPath $application -PathType Leaf)) {
         throw "Missing published application: $application"
     }
@@ -42,7 +42,7 @@ function Get-CompletedPublishStage {
     foreach ($stage in $stages) {
         try {
             $marker = Join-Path $stage.FullName 'publish-complete.json'
-            $application = Join-Path $stage.FullName 'Naufal Windows Powertoys.exe'
+            $application = Join-Path $stage.FullName 'Naufal Windows Utility.exe'
             if (-not (Test-Path -LiteralPath $marker -PathType Leaf) -or
                 -not (Test-Path -LiteralPath $application -PathType Leaf)) { continue }
             $metadata = Get-Content -LiteralPath $marker -Raw | ConvertFrom-Json
@@ -61,7 +61,7 @@ function Get-CompletedPublishStage {
                 }
             }
             if (-not $valid -or
-                (@($actual | Where-Object Path -EQ 'Naufal Windows Powertoys.exe')[0].Sha256 -cne $metadata.Sha256)) { continue }
+                (@($actual | Where-Object Path -EQ 'Naufal Windows Utility.exe')[0].Sha256 -cne $metadata.Sha256)) { continue }
             return $stage
         } catch {
             # Incomplete/corrupt stages are not installer inputs. Try an older complete stage.

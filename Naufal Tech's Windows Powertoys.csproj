@@ -4,9 +4,9 @@
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>Naufal_Windows_Tech_s_Powertoys</RootNamespace>
-    <AssemblyName>Naufal Windows Powertoys</AssemblyName>
-    <AssemblyTitle>Naufal Windows Powertoys</AssemblyTitle>
-    <Product>Naufal Windows Powertoys</Product>
+    <AssemblyName>Naufal Windows Utility</AssemblyName>
+    <AssemblyTitle>Naufal Windows Utility</AssemblyTitle>
+    <Product>Naufal Windows Utility</Product>
     <Description>Open-source Windows system maintenance, troubleshooting, optimization and gaming utility.</Description>
     <Version>8.0.0</Version>
     <InformationalVersion>$(Version).0</InformationalVersion>
@@ -30,7 +30,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefaultItemExcludes>$(DefaultItemExcludes);Tests\**</DefaultItemExcludes>
-    <SatelliteResourceLanguages>en-US;id-ID;de-DE;fr-FR;ar-SA;fil-PH;vi-VN;zh-CN;zh-TW;th-TH;ru-RU;uk-UA;pt-PT;ja-JP;ko-KR;ur-PK;ta-IN;hi-IN;ms-MY;sv-SE;es-ES</SatelliteResourceLanguages>
+    <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
@@ -97,16 +97,10 @@
 
   <Target Name="RemoveObsoletePublishedBranding" AfterTargets="Publish">
     <Delete Files="$(PublishDir)Naufal Tech's Windows Powertoys.exe;$(PublishDir)Naufal Techs Windows Powertoys.pdb;$(PublishDir)Naufal Windows Tech's Powertoys.pdb" />
+    <!-- Renaming the assembly must not carry the previous launcher/PRI from an incremental publish. -->
+    <Delete Files="$(PublishDir)Naufal Windows Powertoys.exe;$(PublishDir)Naufal Windows Powertoys.dll;$(PublishDir)Naufal Windows Powertoys.pri;$(PublishDir)Naufal Windows Powertoys.pdb;$(PublishDir)Naufal Windows Powertoys.deps.json;$(PublishDir)Naufal Windows Powertoys.runtimeconfig.json" />
   </Target>
 
-  <Target Name="RemoveUnsupportedWinUiMuiLanguages" AfterTargets="Publish">
-    <ItemGroup>
-      <_UnsupportedWinUiMui Include="$(PublishDir)**\Microsoft.ui.xaml.dll.mui;$(PublishDir)**\Microsoft.UI.Xaml.Phone.dll.mui"
-                            Exclude="$(PublishDir)en-us\**\*.mui;$(PublishDir)id-ID\**\*.mui;$(PublishDir)de-DE\**\*.mui;$(PublishDir)fr-FR\**\*.mui;$(PublishDir)ar-SA\**\*.mui;$(PublishDir)fil-PH\**\*.mui;$(PublishDir)vi-VN\**\*.mui;$(PublishDir)zh-CN\**\*.mui;$(PublishDir)zh-TW\**\*.mui;$(PublishDir)th-TH\**\*.mui;$(PublishDir)ru-RU\**\*.mui;$(PublishDir)uk-UA\**\*.mui;$(PublishDir)pt-PT\**\*.mui;$(PublishDir)ja-JP\**\*.mui;$(PublishDir)ko-KR\**\*.mui;$(PublishDir)ur-PK\**\*.mui;$(PublishDir)ta-IN\**\*.mui;$(PublishDir)hi-IN\**\*.mui;$(PublishDir)ms-MY\**\*.mui;$(PublishDir)sv-SE\**\*.mui;$(PublishDir)es-ES\**\*.mui" />
-      <_UnsupportedWinUiLanguageDirectory Include="@(_UnsupportedWinUiMui->'%(RootDir)%(Directory)')" />
-    </ItemGroup>
-    <Delete Files="@(_UnsupportedWinUiMui)" />
-    <RemoveDir Directories="@(_UnsupportedWinUiLanguageDirectory)" />
-  </Target>
+  <!-- Preserve native Windows App SDK MUI deployment dependencies; app-owned UI is English-only. -->
 
 </Project>

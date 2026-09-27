@@ -13,7 +13,7 @@ try {
     $tampered = Join-Path $scratch 'win-x64-003'
     foreach ($directory in @($good, $failed, $tampered)) { New-Item -ItemType Directory -Path $directory | Out-Null }
     foreach ($directory in @($good, $tampered)) {
-        [IO.File]::WriteAllText((Join-Path $directory 'Naufal Windows Powertoys.exe'), 'synthetic bytes - not an executable')
+        [IO.File]::WriteAllText((Join-Path $directory 'Naufal Windows Utility.exe'), 'synthetic bytes - not an executable')
         Complete-PublishStage -Directory $directory -Version '7.8.0'
     }
     Assert-Test ((Get-CompletedPublishStage -PublishRoot $scratch -Version '7.8.0').FullName -eq $tampered) 'newest complete stage chosen'
@@ -39,12 +39,12 @@ try {
     [IO.File]::WriteAllText($marker, $savedMarker.Replace('"Schema": 2', '"Schema": 1'))
     Assert-Test ((Get-CompletedPublishStage -PublishRoot $scratch -Version '7.8.0').FullName -eq $good) 'legacy EXE-only marker rejected'
     [IO.File]::WriteAllText($marker, $savedMarker)
-    [IO.File]::WriteAllText((Join-Path $tampered 'Naufal Windows Powertoys.exe'), 'changed synthetic bytes')
+    [IO.File]::WriteAllText((Join-Path $tampered 'Naufal Windows Utility.exe'), 'changed synthetic bytes')
     Assert-Test ((Get-CompletedPublishStage -PublishRoot $scratch -Version '7.8.0').FullName -eq $good) 'skip modified EXE and empty failed stage'
     Assert-Test ($null -eq (Get-CompletedPublishStage -PublishRoot $scratch -Version '8.0.0')) 'version mismatch rejected'
     [IO.File]::WriteAllText((Join-Path $tampered 'publish-complete.json'), '{broken')
     Assert-Test ((Get-CompletedPublishStage -PublishRoot $scratch -Version '7.8.0').FullName -eq $good) 'corrupt marker ignored'
-    Remove-Item -LiteralPath (Join-Path $good 'Naufal Windows Powertoys.exe')
+    Remove-Item -LiteralPath (Join-Path $good 'Naufal Windows Utility.exe')
     Assert-Test ($null -eq (Get-CompletedPublishStage -PublishRoot $scratch -Version '7.8.0')) 'no incomplete stage accepted'
     Write-Output "PASS: $script:passed publish-stage assertions. No app or installer executed."
 } finally {

@@ -32,10 +32,8 @@ public sealed partial class MainWindow
             resetItem.Click += (_, _) => UiDisplaySettings.SetTextScale(100);
             flyout.Items.Add(resetItem);
 
-            // Keep the popup in the window's authored tree, including while
-            // closed, so language changes retain its canonical captions.
+            // Retain the popup for the recovery control and test its native opening.
             Microsoft.UI.Xaml.Controls.Primitives.FlyoutBase.SetAttachedFlyout(TextScaleButton, flyout);
-            UiTranslation.Apply(RootLayout, UiDisplaySettings.LanguageCode);
             flyout.ShowAt(TextScaleButton);
         }
 
@@ -53,13 +51,9 @@ public sealed partial class MainWindow
         Grid.SetRow(HeaderSettings, stacked ? 1 : 0);
         Grid.SetColumn(HeaderSettings, stacked ? 0 : 1);
         Grid.SetColumnSpan(HeaderSettings, stacked ? 2 : 1);
-        // Both recovery buttons remain at the trailing edge. On narrow windows
-        // the language selector can shrink instead of pushing them off-screen.
+        // Keep recovery controls accessible even on narrow windows and at 200%.
         HeaderSettings.MaxWidth = width;
-        HeaderSettings.HorizontalAlignment = stacked ? HorizontalAlignment.Stretch : HorizontalAlignment.Right;
-        LanguageComboBox.MaxWidth = System.Math.Max(0, width -
-            System.Math.Max(ThemeButton.Width, ThemeButton.MinWidth) -
-            System.Math.Max(TextScaleButton.Width, TextScaleButton.MinWidth) - 2 * HeaderSettings.ColumnSpacing);
+        HeaderSettings.HorizontalAlignment = HorizontalAlignment.Right;
     }
 
     private void ResetTextScale_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)

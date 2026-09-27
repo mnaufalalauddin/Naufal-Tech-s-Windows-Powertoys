@@ -16,7 +16,9 @@ foreach ($field in @('AssemblyVersion','FileVersion','InformationalVersion')) {
     Assert-Identity ($project.SelectSingleNode("/Project/PropertyGroup/$field").InnerText -ceq '$(Version).0') "$field must derive from Version"
 }
 Assert-Identity ($manifest.Package.Identity.Version -ceq "$version.0") 'MSIX identity version drift'
-Assert-Identity ($project.SelectSingleNode('/Project/PropertyGroup/Product').InnerText -ceq 'Naufal Windows Powertoys') 'Product identity drift'
+Assert-Identity ($project.SelectSingleNode('/Project/PropertyGroup/AssemblyName').InnerText -ceq 'Naufal Windows Utility') 'Executable name drift'
+Assert-Identity ($project.SelectSingleNode('/Project/PropertyGroup/AssemblyTitle').InnerText -ceq 'Naufal Windows Utility') 'Executable title drift'
+Assert-Identity ($project.SelectSingleNode('/Project/PropertyGroup/Product').InnerText -ceq 'Naufal Windows Utility') 'Product identity drift'
 Assert-Identity ($project.SelectSingleNode('/Project/PropertyGroup/Company').InnerText -ceq 'Muhammad Naufal Alauddin') 'Publisher identity drift'
 Assert-Identity ($project.SelectSingleNode('/Project/PropertyGroup/PackageLicenseExpression').InnerText -ceq 'MIT') 'Package license drift'
 $identity = Get-Content -LiteralPath (Join-Path $projectRoot 'AppIdentity.cs') -Raw
@@ -37,10 +39,10 @@ $temporaryDirectory = Join-Path $projectRoot ('artifacts\identity-test\' + [Guid
 $output = Join-Path $temporaryDirectory 'ProgramInformation.generated.iss'
 & (Join-Path $projectRoot 'Installer\Generate-ProgramInformation.ps1') -ProjectRoot $projectRoot -OutputFile $output -Version "$version.0"
 $generated = Get-Content -LiteralPath $output -Raw -Encoding UTF8
-Assert-Identity ([regex]::Matches($generated, '(?m)^    \d+: begin').Count -eq 23) 'Installer requires 23 program-information translations'
-Assert-Identity ([regex]::Matches($generated, 'ProgramInfoLanguage.Items.Add').Count -eq 23) 'Installer requires 23 language choices'
-Assert-Identity ([regex]::Matches($generated, 'ProgramInfoText.Alignment := taRightJustify;').Count -eq 2) 'Arabic and Urdu information must be right-aligned'
+Assert-Identity ($generated.Contains('procedure LoadProgramInformation;')) 'English information procedure missing'
+Assert-Identity (!$installer.Contains('ProgramInfoLanguage')) 'Installer language selector must be removed'
 Assert-Identity (!$generated.Contains([char]0xFFFD)) 'Installer information contains corrupted Unicode'
-Assert-Identity ([regex]::Matches($generated, [regex]::Escape('Muhammad Naufal Alauddin')).Count -eq 23) 'Developer identity must remain intact in every language'
-Assert-Identity ([regex]::Matches($generated, [regex]::Escape("$version.0")).Count -eq 23) 'All installer languages must show actual version'
+Assert-Identity ([regex]::Matches($generated, [regex]::Escape('Muhammad Naufal Alauddin')).Count -eq 1) 'Developer identity drift'
+Assert-Identity ($generated.Contains("Version $version.0")) 'Installer must show actual version'
+Assert-Identity ($generated.Contains('ProgramInfoText.Alignment := taLeftJustify;')) 'English information alignment'
 Write-Output "PASS: $checks project identity, license and installer information assertions. No installer was run."

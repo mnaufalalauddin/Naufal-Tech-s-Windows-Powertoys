@@ -156,7 +156,7 @@ public static class IconResourceAudit {
     }
     $binaries = @()
     if ($PublishDirectory) {
-        $binaries += Join-Path $PublishDirectory 'Naufal Windows Powertoys.exe'
+        $binaries += Join-Path $PublishDirectory 'Naufal Windows Utility.exe'
         $publishedIcon = Join-Path $PublishDirectory 'Assets\NaufalWindowsPowertoys.ico'
         Assert-Icon ((Get-FileHash -LiteralPath $publishedIcon).Hash -eq
             (Get-FileHash -LiteralPath (Join-Path $assetDirectory 'NaufalWindowsPowertoys.ico')).Hash) 'Published window icon is stale/missing.'

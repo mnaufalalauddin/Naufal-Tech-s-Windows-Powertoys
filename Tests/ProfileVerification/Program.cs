@@ -2,6 +2,7 @@ using Naufal_Windows_Tech_s_Powertoys;
 
 try
 {
+if (args.Contains("--live-profile-audit")) { await LiveProfileAudit.RunAsync(args); return; }
 if (OneDriveExecutionTests.Child(args)) return;
 if (args.Contains("--onedrive-user-probe"))
 {
@@ -124,13 +125,15 @@ await RecoveredCatalogFeaturesTests.RunAsync(Assert);
 await GeneralAuditTests.RunAsync(Assert);
 await CatalogAuditTests.RunAsync(Assert);
 PowerPolicyReaderTests.Run(Assert);
-AppDataPathTests.Run(Assert);
+StartupLanguageTests.Run(Assert);
+    AppDataPathTests.Run(Assert);
 await WmiPrerequisiteTests.RunAsync(Assert);
 await BuiltInAppsTests.RunAsync(Assert);
 CatalogExpansionTests.Run(Assert);
 await CopilotConsentTests.RunAsync(Assert);
 await OneDriveExecutionTests.RunAsync(Assert);
 await GameModeToggleTests.RunAsync(Assert);
+await GamingOwnershipTests.RunAsync(Assert);
 NtfsPerformanceTests.Run(Assert);
 PhotoViewerTests.Run(Assert);
 await MonitoringTests.RunAsync(Assert);

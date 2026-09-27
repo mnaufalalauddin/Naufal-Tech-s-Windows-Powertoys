@@ -15,8 +15,8 @@ public sealed partial class MainWindow
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap
         });
         content.Children.Add(new TextBlock { Text = "Version " + AppIdentity.Version });
-        content.Children.Add(new TextBlock { Text = NativeUiCatalog.AboutDescription, TextWrapping = TextWrapping.Wrap });
-        content.Children.Add(new TextBlock { Text = NativeUiCatalog.AboutPurpose, TextWrapping = TextWrapping.Wrap });
+        content.Children.Add(new TextBlock { Text = EnglishUiText.AboutDescription, TextWrapping = TextWrapping.Wrap });
+        content.Children.Add(new TextBlock { Text = EnglishUiText.AboutPurpose, TextWrapping = TextWrapping.Wrap });
         content.Children.Add(new TextBlock { Text = "Developed by" });
         content.Children.Add(new TextBlock { Text = AppIdentity.Developer, Tag = "ui-literal" });
         content.Children.Add(new TextBlock { Text = "Open-Source Software" });

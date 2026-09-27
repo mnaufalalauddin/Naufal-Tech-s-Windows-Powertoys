@@ -1,6 +1,6 @@
-# Naufal Windows Powertoys — Changelog
+# Naufal Windows Utility — Changelog
 
-Development history from **30 August 2026** through **21 September 2026**.
+Development history from **30 August 2026** through **27 September 2026**.
 
 **Original history snapshot:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
 Later development entries are appended below with their own dates.
@@ -17,6 +17,110 @@ source changes. **Verification** describes the evidence available at that
 checkpoint, not a new execution of those tests while writing this file. A compiled
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
+
+## 27 September 2026 — Naufal Windows Utility rename and startup repair
+
+- **Renamed:** The application display name, executable metadata, main window,
+  installer and generated shortcuts now use Naufal Windows Utility. The executable
+  is `Naufal Windows Utility.exe`; the installer is
+  `Naufal-Windows-Utility-Setup-8.0.0-x64.exe`. Version remains 8.0.0.0.
+- **Compatibility:** Retained the existing installer identity, single-instance
+  mutex, taskbar identity, install folder and AppData/backup paths. The installer
+  removes only the exact legacy EXE/PRI and standard shortcut files during upgrade.
+  Publishing removes stale old-name build payloads before staging.
+- **Startup fix:** Actual application crash logs identified an InvalidOperationException
+  from the UWP Windows.Globalization language override introduced during the
+  English-only change. Use the unpackaged-compatible Microsoft.Windows.Globalization
+  API instead, with a nonfatal fallback that preserves managed/authored English UI.
+  The earlier backend-free UI host did not execute this production startup path.
+- **Released-EXE check:** Added opt-in `--capture-startup-check` diagnostics. The
+  newly published Native AOT EXE passed actual startup, English framework resources,
+  all five sidebar selections, live Home reads and Light/Dark rendering at
+  15:05 WIB. It did not request Apply/Restore/repair, change wizard completion,
+  or persist its temporary theme/scale settings.
+- **Documentation:** Updated README branding, installer instructions and both
+  dashboard images with actual Home captures from the renamed application.
+- **Verification:** Debug build had zero errors/warnings. Passed 4,364 functional,
+  281 English-only, 92 static routing, 25 identity, 14 installer-location and
+  10 publish-stage assertions. Native AOT publishing and Setup compilation
+  succeeded. Installation/upgrade execution is not claimed by these checks.
+
+## 27 September 2026 — Live rollback audit, sidebar, Home, and English-only UI
+
+- **Live verification:** Competitive Gaming, Optimized Gaming, and Balanced each
+  reached 23/23 checks on the development PC. A test-only checkpoint intentionally
+  failed after successful verification to exercise the production rollback paths.
+  After each test, registry, power settings, BCD, RSC and active plan matched the
+  captured baseline. Final state: Competitive Gaming — VERIFIED. Prior transaction
+  history was restored. Private snapshots remain in ignored local artifacts.
+- **BCD access:** The elevated, same-user test harness could read and update BCD.
+  No BCD ACLs or security protections were weakened; no reboot was performed.
+  The production manifest continues to require Administrator privileges.
+- **Navigation:** Added Home, System Repair, System Info, Windows Security, and
+  Advanced Windows Tweaks. Preserved all 20 existing main-menu routes; Legacy
+  Windows Panels remains a compact Home launcher rather than a sidebar page.
+- **Home:** Performance profiles first, compact actual system status, three quick
+  actions, and expandable live telemetry/technical details. Added visible MPO,
+  windowed-optimization and SysMain status. Configuration verification refreshes
+  every 15 seconds, independently from one-second telemetry and clock updates.
+- **English only:** Removed the language selector, language preference handling,
+  runtime translation observers/templates and 22 owned non-English resource sets.
+  Application and installer About use shared English copy. Preserved existing
+  theme/scaling preferences and recovery data. Native SDK MUI dependencies are
+  left to the SDK deployment pipeline rather than deleted indiscriminately.
+- **Scaling:** Retain authored control projections for their root's lifetime and
+  capture the full tree before scaling inherited fonts. This prevents unnamed
+  controls from recapturing scaled dimensions after garbage collection.
+- **Tests:** Replaced obsolete multilingual tests with English-only contracts;
+  retained backend tests and added sidebar/page routing plus forced-GC scaling
+  regression coverage. The UI host does not instantiate system-mutation services.
+
+## 27 September 2026 — Performance Profile / Gaming ownership (phase 2)
+
+- **Architecture audit:** The current .NET 10 / WinUI / Windows App SDK 2.4
+  application uses a large MainWindow dashboard and shared ToolWindow/catalog
+  dialogs, not page navigation. Repair, system information, security, advanced
+  tools and the existing Legacy launcher already have separate service backends.
+  Preserve those routes while introducing the five requested pages in phase 3.
+- **Audit risks:** Profile status uses a real 23-check evaluator rather than the
+  last selected profile. Its transactional backends must remain intact. Expensive
+  power/BCD/network status refresh currently runs on a one-second cadence with
+  an overlap guard; later work should separate telemetry cadence from configuration
+  checks. Other persistent-switch versus Restore semantics still need phase 6
+  review. Dense cards, colored buttons and long descriptions remain design work.
+- **Localization plan:** Phase 5 will remove application-owned translations and
+  preferences for Indonesian, German, French, Arabic, Tagalog, Vietnamese,
+  Simplified Chinese, Traditional Chinese, Thai, Russian, Ukrainian, Portuguese,
+  Japanese, Korean, Urdu, Tamil, Hindi, Malay, Javanese, Balinese, Swedish and
+  Spanish. Canonical English remains. Existing C# catalogs, runtime text mapping,
+  selector and installer-language generation must be handled together. WinUI MUI
+  and framework/runtime satellite resources are deployment dependencies, not
+  application translations; review the existing publish-pruning target separately.
+- **Ownership:** Removed the duplicate Dynamic Tick and HPET controls from Gaming
+  Tweaks. Performance Profiles retain their BCD controls, all 23 verification
+  checks, power/CPU/MMCSS/TCP/QoS/RSC behavior, snapshots and rollback. The legacy
+  timer service implementations remain in source; only UI entry points changed.
+- **Preservation:** Retained separate CPU/kernel, boot and adapter experiments:
+  their registry/BCD targets are not the settings managed by profiles. Added a
+  neutral ownership explanation, including this distinction, to Gaming Tweaks.
+- **Capture:** Exposed existing Game DVR functionality independently in Gaming.
+  OFF explicitly disables capture rather than restoring a snapshot; ON enables
+  capture without opting into background recording. Both directions retain the
+  original snapshot, and original/default Restore remain separate operations.
+- **Scope:** Navigation, Home, English-only cleanup and visual redesign remain
+  later phases. This checkpoint does not claim their implementation or successful
+  real-machine profile mutations based on synthetic tests alone.
+- **Verification:** 4,580 non-mutating regression assertions passed, including
+  synthetic evaluation of all three profiles, Custom detection, snapshot and
+  restore/rollback-reporting safeguards, and new ownership/capture-switch tests.
+  394,160 existing localization assertions and 92 static UI routing assertions
+  passed. Debug build completed with zero warnings/errors. The isolated Native
+  AOT UI host passed 19,128 assertions over 128 English Light/Dark/scale layout
+  cases and eight flyouts; this does not certify real catalog clicks or OS writes.
+- **Read-only PC probe:** MMCSS matched Competitive Gaming, while full detection
+  correctly remained Custom at 21/23 because BCD was unreadable in the test
+  process. A direct BCD store read returned Access denied. No profile, timer,
+  registry, RSC or Windows service configuration was changed by these checks.
 
 ## 21 September 2026 — Repository introduction restored
 

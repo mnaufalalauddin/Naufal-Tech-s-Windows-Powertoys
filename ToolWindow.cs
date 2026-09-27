@@ -87,7 +87,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
         {
             _owner = owner;
             _canonicalTitle = title;
-            Title = UiTranslation.Translate(title, UiDisplaySettings.LanguageCode);
+            Title = title;
             _minimumWidth = Math.Max(360, minimumWidth);
             _minimumHeight = Math.Max(260, minimumHeight);
 
@@ -180,7 +180,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             Content = root;
             Closed += ToolWindow_Closed;
             UiDisplaySettings.Changed += UiDisplaySettings_Changed;
-            UiTranslation.Observe(root);
             root.Loaded += (_, _) => UiDisplaySettings.Apply(root);
             UiDisplaySettings.Apply(root);
 
@@ -203,9 +202,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(title);
             _canonicalTitle = title.Trim();
-            string translated = UiTranslation.Translate(
-                _canonicalTitle,
-                UiDisplaySettings.LanguageCode);
+            string translated = _canonicalTitle;
             Title = translated;
             AppWindow.Title = translated;
             _headingText.Text = _canonicalTitle;
@@ -333,7 +330,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             OpenTools.Remove(this);
             _owner.Closed -= Owner_Closed;
             UiDisplaySettings.Changed -= UiDisplaySettings_Changed;
-            UiTranslation.Release(_root);
             _completion.TrySetResult(
                 _closingFromButton ? _buttonResult : ToolWindowResult.Closed);
         }
@@ -341,9 +337,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private void UiDisplaySettings_Changed(object? sender, EventArgs args)
         {
             if (IsClosed) return;
-            Title = UiTranslation.Translate(
-                _canonicalTitle,
-                UiDisplaySettings.LanguageCode);
+            Title = _canonicalTitle;
             AppWindow.Title = Title;
             _headingText.Text = _canonicalTitle;
             UiDisplaySettings.Apply(_root);

@@ -11,7 +11,7 @@ $diagnostics = [ordered]@{
 }
 $notes = [Collections.Generic.List[string]]::new()
 $diagnostics['Processes'] = @(Get-Process -ErrorAction SilentlyContinue |
-    Where-Object { $_.ProcessName -eq 'Naufal Windows Powertoys' } |
+    Where-Object { $_.ProcessName -in @('Naufal Windows Powertoys', 'Naufal Windows Utility') } |
     ForEach-Object {
         try { [pscustomobject]@{ Id = $_.Id; Path = $_.Path; Started = $_.StartTime } }
         catch { $notes.Add('Could not read a running application process: ' + $_.Exception.Message) }
@@ -37,7 +37,7 @@ catch { $notes.Add('EventLog service query: ' + $_.Exception.Message) }
 try {
     $stage = Get-CompletedPublishStage -PublishRoot (Join-Path $PSScriptRoot 'artifacts\publish') -Version '8.0.0'
     if ($null -ne $stage) {
-        $exe = Join-Path $stage.FullName 'Naufal Windows Powertoys.exe'
+        $exe = Join-Path $stage.FullName 'Naufal Windows Utility.exe'
         $diagnostics['LatestBuild'] = [ordered]@{
             Path = $exe
             SHA256 = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash

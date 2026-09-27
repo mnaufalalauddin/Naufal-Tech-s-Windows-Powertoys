@@ -1,7 +1,7 @@
 param([switch]$NoBuild, [switch]$NativeAot, [ValidateSet(25,50,75,100,125,150,175,200)][int]$StartupScale = 100,
     [ValidateSet('Light','Dark')][string]$StartupTheme = 'Light',
-    [ValidateSet('en','id','de','fr','ar','tl','vi','zh-CN','zh-TW','th','ru','uk','pt','ja','ko','ur','ta','hi','ms','jv','ban','sv','es')]
-    [string[]]$Languages = @('en','de','id','ar'))
+    [ValidateSet('en')]
+    [string[]]$Languages = @('en'))
 $ErrorActionPreference = 'Stop'
 if (-not $NoBuild) {
     if ($NativeAot) {

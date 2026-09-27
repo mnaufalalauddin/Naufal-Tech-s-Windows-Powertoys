@@ -764,7 +764,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 EventType = BeginSystemChange,
                 RestorePointType = ModifySettings,
                 SequenceNumber = 0,
-                Description = $"Naufal Tech's Windows Powertoys - {DateTime.Now:yyyy-MM-dd HH:mm}"
+                Description = $"{AppIdentity.Product} - {DateTime.Now:yyyy-MM-dd HH:mm}"
             };
             if (!SRSetRestorePoint(ref info, out StateManagerStatus status))
             {

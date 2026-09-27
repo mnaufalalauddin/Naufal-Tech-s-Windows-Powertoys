@@ -10,8 +10,8 @@
   #error AppVersion must be supplied by build-installer.ps1 from the project version.
 #endif
 
-#define AppName "Naufal Windows Powertoys"
-#define AppExeName "Naufal Windows Powertoys.exe"
+#define AppName "Naufal Windows Utility"
+#define AppExeName "Naufal Windows Utility.exe"
 #define AppPublisher "Muhammad Naufal Alauddin"
 #define AppUserModelId "NaufalTechs.WindowsPowertoys"
 #define AppIconFile "{app}\Assets\NaufalWindowsPowertoys.ico"
@@ -38,7 +38,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
 OutputDir={#OutputDir}
-OutputBaseFilename=Naufal-Windows-Powertoys-Setup-{#AppVersion}-x64
+OutputBaseFilename=Naufal-Windows-Utility-Setup-{#AppVersion}-x64
 SetupIconFile=..\Assets\NaufalWindowsPowertoys.ico
 UninstallDisplayIcon={#AppIconFile}
 Compression=lzma2/ultra64
@@ -59,6 +59,14 @@ VersionInfoDescription={#AppName} Installer
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+[InstallDelete]
+; Preserve AppId, install location, AppData and registry snapshots for upgrades.
+; Remove only the superseded owned launcher/resources and legacy shortcuts.
+Type: files; Name: "{app}\Naufal Windows Powertoys.exe"
+Type: files; Name: "{app}\Naufal Windows Powertoys.pri"
+Type: files; Name: "{autoprograms}\Naufal Windows Powertoys.lnk"
+Type: files; Name: "{autodesktop}\Naufal Windows Powertoys.lnk"
+
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
@@ -72,36 +80,22 @@ Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Description: "{cm:LaunchPr
 [Code]
 var
   ProgramInfoPage: TWizardPage;
-  ProgramInfoLanguage: TNewComboBox;
   ProgramInfoText: TNewMemo;
 
 #include ProgramInfoFile
 
-procedure ProgramInformationLanguageChanged(Sender: TObject);
-begin
-  LoadProgramInformation(ProgramInfoLanguage.ItemIndex);
-end;
 
 procedure InitializeWizard;
 begin
-  ProgramInfoPage := CreateCustomPage(wpWelcome, 'Naufal Windows Powertoys', '');
-  ProgramInfoLanguage := TNewComboBox.Create(WizardForm);
-  ProgramInfoLanguage.Parent := ProgramInfoPage.Surface;
-  ProgramInfoLanguage.Style := csDropDownList;
-  ProgramInfoLanguage.SetBounds(0, 0, ProgramInfoPage.SurfaceWidth, ScaleY(24));
-  ProgramInfoLanguage.Anchors := [akLeft, akTop, akRight];
+  ProgramInfoPage := CreateCustomPage(wpWelcome, 'Naufal Windows Utility', '');
   ProgramInfoText := TNewMemo.Create(WizardForm);
   ProgramInfoText.Parent := ProgramInfoPage.Surface;
-  ProgramInfoText.SetBounds(0, ScaleY(36), ProgramInfoPage.SurfaceWidth, ProgramInfoPage.SurfaceHeight - ScaleY(36));
+  ProgramInfoText.SetBounds(0, 0, ProgramInfoPage.SurfaceWidth, ProgramInfoPage.SurfaceHeight);
   ProgramInfoText.Anchors := [akLeft, akTop, akRight, akBottom];
   ProgramInfoText.ReadOnly := True;
   ProgramInfoText.ScrollBars := ssVertical;
   ProgramInfoText.WordWrap := True;
-  ProgramInfoLanguage.ItemIndex := 0;
-  LoadProgramLanguages;
-  if ProgramInfoLanguage.ItemIndex < 0 then ProgramInfoLanguage.ItemIndex := 0;
-  ProgramInfoLanguage.OnChange := @ProgramInformationLanguageChanged;
-  LoadProgramInformation(ProgramInfoLanguage.ItemIndex);
+  LoadProgramInformation;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;

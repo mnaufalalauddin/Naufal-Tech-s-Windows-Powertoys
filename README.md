@@ -1,24 +1,24 @@
-# Naufal Windows Powertoys
+# Naufal Windows Utility
 
 [![Source version](https://img.shields.io/badge/Source_Version-8.0.0.0-0567ff?style=for-the-badge)](CHANGELOG.md)
 [![Windows target](https://img.shields.io/badge/Target-Windows_10_%2F_11_x64-0078d4?style=for-the-badge)](#quick-start)
 [![License](https://img.shields.io/badge/License-MIT-16803c?style=for-the-badge)](LICENSE)
-[![Languages](https://img.shields.io/badge/UI_Languages-23-8250df?style=for-the-badge)](#languages--project-status)
+[![Interface](https://img.shields.io/badge/UI-English-8250df?style=for-the-badge)](#interface--project-status)
 
 A native Windows dashboard to **repair system components**, **manage Windows apps**, **review privacy settings**, and **configure gaming and performance options**—with live monitoring and operation progress in one place.
 
 Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under active development. **Not affiliated with Microsoft or Microsoft PowerToys.**
 
-![Naufal Windows Powertoys — dark dashboard](docs/images/dashboard-dark.png)
+![Naufal Windows Utility — dark dashboard](docs/images/dashboard-dark.png)
 
 <details>
 <summary>View the light theme</summary>
 
-![Naufal Windows Powertoys — light dashboard](docs/images/dashboard-light.png)
+![Naufal Windows Utility — light dashboard](docs/images/dashboard-light.png)
 
 </details>
 
-*Screenshots show an earlier development build; current labels and controls may differ.*
+*Actual application Home captures from 27 September 2026, using the released Native AOT executable in Light and Dark mode. Scroll Home for system status, quick actions, telemetry, and technical details.*
 
 ---
 
@@ -27,7 +27,7 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 > **Back up important data before applying tweaks.** System-changing operations may require Administrator privileges. Review each option's warning; do not apply every tweak indiscriminately.
 
 1. Visit [Releases](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases) and choose a maintainer-published x64 installer, if available. If no suitable installer is attached, [build from source](#build--develop).
-2. Run the installer, open **Naufal Windows Powertoys**, and review the first-run prerequisites.
+2. Run the installer, open **Naufal Windows Utility**, and review the first-run prerequisites.
 3. Choose a catalog or performance profile, read its description, and apply only the changes you need.
 4. Check the separate progress window and verification results. Restart Windows when the option requires it.
 
@@ -46,7 +46,11 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 | **Tweaks & De-Bloat** | Essential and Gaming catalogs, service controls, privacy and advertising policies, and supported AI-related settings. |
 | **Built-in Windows Apps** | Alphabetical app removal / recovery, including OneDrive, with Recommended, Optional, and Not Recommended removal guidance. |
 | **Security & Compatibility** | BitLocker Manager, automatic device-encryption policy, Defender controls, Smart App Control, GPU Driver Manager, runtime checks, and MSI Mode Utility. |
-| **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; Light/Dark themes; text scaling; and 23 language choices. |
+| **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; Light/Dark themes; text scaling; an English-only interface; and five sidebar pages. |
+
+### Navigation
+
+The sidebar contains **Home**, **System Repair**, **System Info**, **Windows Security**, and **Advanced Windows Tweaks**. Home prioritizes performance profiles and current system status, with Quick Repair, System Report, shader-cache cleanup, and the Legacy Windows Panels launcher. Expand **Live telemetry** for graphs or **Technical details** for diagnostic output. All existing repair and catalog entry points remain available on their corresponding pages.
 
 ## Performance Profiles
 
@@ -73,6 +77,8 @@ Profiles manage multiple settings, not just the power plan. **No profile guarant
 
 Default installation: `C:\Program Files\Naufal Tech's Limited\Naufal Windows Powertoys`.
 
+**Executable:** `Naufal Windows Utility.exe`. The installation directory, per-user folder, and upgrade identity intentionally retain their historical names so existing preferences and restore backups remain available. The installer replaces the old executable and standard shortcuts; an old pinned shortcut may need to be unpinned and pinned again.
+
 Per-user application files: `%LOCALAPPDATA%\Naufal Windows Powertoys`. Some snapshots live in the registry or other feature-specific locations; this folder alone is not a complete backup.
 
 </details>
@@ -96,7 +102,7 @@ Set-Location Naufal-Tech-s-Windows-Powertoys
 The script restores dependencies, publishes the self-contained Native AOT application, includes dependency notices, and builds the installer:
 
 ```text
-artifacts\installer\Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe
+artifacts\installer\Naufal-Windows-Utility-Setup-8.0.0-x64.exe
 ```
 
 Build tools are not required to run the packaged application. Generated binaries and private runtime data are excluded from Git.
@@ -113,19 +119,21 @@ dotnet run --project .\Tests\Localization\Localization.Tests.csproj
 .\Tests\ParityAudit\Test-ProjectIdentity.ps1
 ```
 
-The functional and localization checks do not apply Windows tweaks. The separate backend-free native UI test host exercises layout and language switching:
+The functional and localization checks do not apply Windows tweaks. The separate backend-free native UI test host exercises layout, scaling, theme contrast, and sidebar navigation:
 
 ```powershell
-.\Tests\HeaderLayout\Test-HeaderLayout.ps1 -NativeAot -Languages en,id,ar,ur
+.\Tests\HeaderLayout\Test-HeaderLayout.ps1 -NativeAot -Languages en
 ```
 
 | Source | Purpose |
 | --- | --- |
 | `MainWindow.xaml`, `MainWindow*.cs` | Dashboard, dialogs, and catalog interaction. |
 | `*Service.cs`, catalog and policy files | Inspection, repair, tweaks, app management, and restore behavior. |
-| `UiTranslation*.cs`, `NativeUiCatalog*.cs` | Localization resources and dynamic display templates. |
+| `EnglishUiText.cs`, `UiTextKeys.cs` | Shared English application/installer copy. |
 | `Installer/`, `build-installer.ps1` | Installer definition, packaging, icons, and dependency notices. |
-| `Tests/` | Functional, localization, static, and native UI checks. |
+| `Tests/` | Functional, English-only contract, static, and native UI checks. |
+
+To check the actual packaged EXE without applying tweaks, launch it with `--capture-startup-check` from a writable publish folder. It checks startup, English framework resources, the five sidebar pages and real Home reads, exports Light/Dark PNGs plus `startup-check/result.txt`, then closes. It skips the first-run wizard for that run only and does not save the temporary display preferences. Administrator approval is still required by the application's manifest. Do not run this check concurrently with another app instance.
 
 The project file retains its historical filename. Passing tests is not proof that every system-changing operation works on every Windows configuration; use a disposable VM or dedicated test PC for risky changes.
 
@@ -133,13 +141,13 @@ The project file retains its historical filename. Passing tests is not proof tha
 
 ---
 
-## Languages & Project Status
+## Interface & Project Status
 
-**23 interface languages:** English, Indonesian, German, French, Arabic, Tagalog, Vietnamese, Simplified Chinese, Traditional Chinese, Thai, Russian, Ukrainian, Portuguese, Japanese, Korean, Urdu, Tamil, Hindi, Malay, Javanese, Balinese, Swedish, and Spanish.
+**English-only interface.** The language selector, saved-language behavior, runtime text replacement, and application-owned non-English catalogs have been removed. Existing theme, scaling, backup, and wizard preferences are preserved. Output returned by Windows or device drivers can retain the operating system's language.
 
-**Active development—not declared complete.** Remaining work includes dynamic messages, application-authored logs, standard installer localization, and live verification of Windows Photo Viewer image opening. The installer's program-information page offers 23 languages; the entire setup UI does not yet have equivalent coverage.
+The 27 September 2026 live audit reached **23/23 checks for each of the three performance profiles**, then exercised forced-failure rollback to the captured initial configuration after each profile. This is evidence from one development PC, not a guarantee for every Windows build or device. The opt-in mutation harness is separate from normal regression tests.
 
-Technical identifiers, product names, and external diagnostics may retain their original wording. Dated build and test results are recorded in the [changelog](CHANGELOG.md), not presented as a live CI status.
+**Active development—not declared complete.** Broader device/Windows-version coverage and remaining feature-specific live audits are ongoing. Historical screenshots and guides may show the previous dashboard.
 
 ---
 
@@ -152,9 +160,9 @@ Technical identifiers, product names, and external diagnostics may retain their 
 
 ## Support & Contribute
 
-If the project helps you, consider starring the repository. Bug reports, translation corrections, reproducible test cases, and focused pull requests are welcome.
+If the project helps you, consider starring the repository. Bug reports, English wording improvements, reproducible test cases, and focused pull requests are welcome.
 
-Include your Windows build, app version, language, selected option, exact steps, and relevant output when reporting a problem. **Remove private information—never upload recovery keys, credentials, product keys, or personal backups.** Preserve restore behavior and add relevant tests when changing system-modifying code.
+Include your Windows build, app version, Windows display language, selected option, exact steps, and relevant output when reporting a problem. **Remove private information—never upload recovery keys, credentials, product keys, or personal backups.** Preserve restore behavior and add relevant tests when changing system-modifying code.
 
 [View contributors](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/graphs/contributors) · [View pull requests](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/pulls)
 

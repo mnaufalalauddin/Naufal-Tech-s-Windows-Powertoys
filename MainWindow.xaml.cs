@@ -87,22 +87,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
             _primaryToolButtonStyle = FullRepairButton.Style;
 
             UiDisplaySettings.Changed += UiDisplaySettings_Changed;
-            UiTranslation.Observe(RootLayout);
             RootLayout.Loaded += (_, _) =>
             {
                 UiDisplaySettings.Apply(RootLayout);
                 UpdateHeaderLayout();
             };
-            foreach (UiLanguageOption language in UiTranslation.LanguageOptions)
-            {
-                LanguageComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = language.Name,
-                    Tag = "ui-language:" + language.Code
-                });
-            }
-            LanguageComboBox.SelectedIndex =
-                UiTranslation.GetLanguageIndex(UiDisplaySettings.LanguageCode);
             UiDisplaySettings.Apply(RootLayout);
             UpdateDisplaySettingButtons();
 
@@ -129,10 +118,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             _monitorTimer.Tick += MonitorTimer_Tick;
             _monitorTimer.Start();
 
-            // The reference status worker refreshes once per second. All
-            // expensive native queries remain asynchronous and overlap is
-            // prevented by _gamingRefreshInProgress.
-            _gamingStatusTimer.Interval = TimeSpan.FromSeconds(1);
+            // Configuration verification is expensive; live CPU/RAM graphs still sample every second.
+            _gamingStatusTimer.Interval = TimeSpan.FromSeconds(15);
             _gamingStatusTimer.Tick += GamingStatusTimer_Tick;
             _gamingStatusTimer.Start();
 
@@ -147,6 +134,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            if (Environment.GetCommandLineArgs().Contains("--capture-startup-check"))
+            {
+                if (!_startupCheckStarted) await CaptureStartupCheckAsync();
+                return;
+            }
             if (_firstRunWizardStarted || !_firstRunPrerequisiteService.ShouldShow())
             {
                 return;
@@ -402,24 +394,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             UiDisplaySettings.ToggleTheme();
         }
 
-        private void LanguageComboBox_SelectionChanged(
-            object sender,
-            SelectionChangedEventArgs e)
-        {
-            if (LanguageComboBox.SelectedIndex < 0)
-            {
-                return;
-            }
-
-            if (LanguageComboBox.SelectedItem is ComboBoxItem item &&
-                item.Tag is string marker &&
-                marker.StartsWith("ui-language:", StringComparison.Ordinal))
-            {
-                UiDisplaySettings.SetLanguage(marker["ui-language:".Length..]);
-            }
-        }
-
-
         private async void TaskStatusButton_Click(object sender, RoutedEventArgs e)
         {
             if (_taskManagerWindow is not null)
@@ -670,7 +644,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             ClockText.Text = now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
             DateText.Text = now.ToString(
                 "dddd, dd MMMM yyyy",
-                UiTranslation.GetCulture(UiDisplaySettings.LanguageCode));
+                CultureInfo.GetCultureInfo("en-US"));
             SessionText.Text = $"Time spent {elapsed:hh\\:mm\\:ss}";
             UpdatedText.Text = $"Updated {now:HH:mm:ss}";
         }
@@ -731,6 +705,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 MmcssValueText.Text = snapshot.Mmcss.Profile;
                 GameModeValueText.Text = snapshot.GameMode;
                 HagsValueText.Text = snapshot.Hags;
+                WindowedValueText.Text = snapshot.WindowedOptimization;
+                MpoValueText.Text = snapshot.Mpo;
+                SysMainValueText.Text = snapshot.SysMain;
 
                 CurrentProfileValueText.Text = snapshot.PerformanceProfile?.DisplayText ?? "Profile verification unavailable";
 
@@ -2070,18 +2047,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 await ShowToggleCatalogDialogAsync(
                     "Gaming Tweaks",
-                    _gamingCatalog ??= new CompositeToolToggleService(
-                        new FilteredToolToggleService(
-                            _gamingTweaksService,
-                            "DynamicTick",
-                            "HPET",
-                            "MPO",
-                            "WindowedOptimizations",
-                            "HAGS",
-                            "GameMode"),
+                    _gamingCatalog ??= GamingCatalogOwnership.Create(
+                        _gamingTweaksService,
                         new GamingBcdService(),
                         new PerformanceLabService("Gaming Tweaks")),
-                    _gamingActionsService);
+                    _gamingActionsService,
+                    GamingCatalogOwnership.Notice + "\n" + GamingCatalogOwnership.IndependentNotice);
             }
             catch (Exception exception)
             {
@@ -2167,7 +2138,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private async Task ShowToggleCatalogDialogAsync(
             string title,
             IToolToggleService service,
-            IToolActionService? actionService = null)
+            IToolActionService? actionService = null,
+            string? ownershipNotice = null)
         {
             IReadOnlyList<ToolToggleDefinition> definitions = service.GetDefinitions();
             Dictionary<string, ToolToggleState> currentStates = new(StringComparer.OrdinalIgnoreCase);
@@ -2221,6 +2193,15 @@ namespace Naufal_Windows_Tech_s_Powertoys
             contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             StackPanel rows = new() { Spacing = 8 };
+            if (!string.IsNullOrWhiteSpace(ownershipNotice))
+            {
+                rows.Children.Add(new TextBlock
+                {
+                    Text = ownershipNotice,
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(4, 0, 4, 8)
+                });
+            }
             foreach (ToolToggleDefinition definition in definitions)
             {
                 ToolToggleState state = new(
@@ -5702,7 +5683,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             await window.ShowAsync();
         }
 
-        private bool HasPendingWork => _utilityTaskInProgress || _profileApplyInProgress || _profileGate.IsBusy ||
+        private bool HasPendingWork => _utilityTaskInProgress || _profileApplyInProgress || _profileGate.IsBusy || _homeActionGate.IsBusy ||
             _taskActivityService.HasActiveTask || ToolWindow.HasBusyOwnedWindows(this);
         private bool HasBusyTasks => HasPendingWork || _rebootInProgress;
 
@@ -6112,7 +6093,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
         {
             _isClosed = true;
             UiDisplaySettings.Changed -= UiDisplaySettings_Changed;
-            UiTranslation.Release(RootLayout);
             _clockTimer.Stop();
             _monitorTimer.Stop();
             _gamingStatusTimer.Stop();

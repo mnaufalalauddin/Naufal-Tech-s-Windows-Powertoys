@@ -5,8 +5,16 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants>$(DefineConstants);PROFILE_LIVE_AUDIT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\ApplicationLanguagePolicy.cs" Link="ApplicationLanguagePolicy.cs" />
+    <Compile Include="..\..\PerformanceProfileService.cs" Link="PerformanceProfileService.cs" />
+    <Compile Include="..\..\PerformanceProfileExtendedService.cs" Link="PerformanceProfileExtendedService.cs" />
+    <Compile Include="..\..\GamingStatusService.cs" Link="GamingStatusService.cs" />
+    <Compile Include="..\..\GamingCatalogOwnership.cs" Link="GamingCatalogOwnership.cs" />
+    <Compile Include="..\..\GameDvrSetting.cs" Link="GameDvrSetting.cs" />
+    <Compile Include="..\..\CompositeToolToggleService.cs" Link="CompositeToolToggleService.cs" />
     <Compile Include="..\..\PhotoViewerRegistration.cs" Link="PhotoViewerRegistration.cs" />
     <Compile Include="..\..\BuiltInAppsCatalog.cs" Link="BuiltInAppsCatalog.cs" />
     <Compile Include="..\..\CopilotStorePolicy.cs" Link="CopilotStorePolicy.cs" />
@@ -77,7 +85,6 @@
     <Compile Include="..\..\RuntimePrerequisiteVerification.cs" Link="RuntimePrerequisiteVerification.cs" />
     <Compile Include="..\..\EssentialSnapshotValidation.cs" Link="EssentialSnapshotValidation.cs" />
     <Compile Include="..\..\PerformanceProfileTransaction.cs" Link="PerformanceProfileTransaction.cs" />
-    <Compile Include="..\..\SupplementalUiCatalog.cs" Link="SupplementalUiCatalog.cs" />
     <Compile Include="..\..\MsiNdisIdentity.cs" Link="MsiNdisIdentity.cs" />
     <Compile Include="..\..\UiTextKeys.cs" Link="UiTextKeys.cs" />
   </ItemGroup>

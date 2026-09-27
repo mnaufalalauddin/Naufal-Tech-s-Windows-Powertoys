@@ -54,7 +54,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     "Game DVR (Digital Video Recorder) / Capture",
                     "Controls Windows Game DVR and background capture through user settings and machine policy. OFF disables recording/capture hooks that can consume resources; Xbox Game Bar capture and background recording become unavailable until restored.",
                     true,
-                    false),
+                    false,
+                    IsFeatureSwitch: true),
                 new ToolToggleDefinition(
                     "MPO",
                     "Graphics",
@@ -162,6 +163,22 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     GameModeSetting.Apply(targetOn,
                         () => CaptureRegistryValue(definition.Id, "AutoGameModeEnabled", RegistryHive.CurrentUser, GameModePath, "AutoGameModeEnabled"),
                         value => SetDword(RegistryHive.CurrentUser, GameModePath, "AutoGameModeEnabled", value));
+                }
+                else if (definition.Id == "GameDVR")
+                {
+                    IReadOnlyList<PreviousRegistryTarget> targets = GetPreviousRegistryTargets(definition.Id);
+                    GameDvrSetting.Apply(targetOn,
+                        () =>
+                        {
+                            TryImportPreviousSnapshot(definition.Id);
+                            foreach (PreviousRegistryTarget target in targets)
+                                CaptureRegistryValue(definition.Id, target.Tag, target.Hive, target.Path, target.Name);
+                        },
+                        (name, value) =>
+                        {
+                            PreviousRegistryTarget target = targets.Single(item => item.Name == name);
+                            SetDword(target.Hive, target.Path, target.Name, value);
+                        });
                 }
                 else if (targetOn)
                 {

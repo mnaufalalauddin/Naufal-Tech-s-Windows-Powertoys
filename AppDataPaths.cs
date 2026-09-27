@@ -22,7 +22,7 @@ internal static class AppDataPaths
     }
 
     private static readonly string[] SettingsFiles =
-        ["ui-language.txt", "ui-theme.txt", "ui-font-scale.txt", "first-run-prerequisites.json"];
+        ["ui-theme.txt", "ui-font-scale.txt", "first-run-prerequisites.json"];
     private static readonly string[] BackupFiles =
         ["Debloat_LowRisk_Original.json", "performance-lab-original.json"];
 

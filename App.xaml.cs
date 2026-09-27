@@ -46,6 +46,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 out _ownsSingleInstanceMutex);
             try
             {
+                ApplicationLanguagePolicy.Initialize(
+                    language => Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = language,
+                    exception => WriteCrashLog(exception, "Nonfatal framework language preference"));
                 InitializeComponent();
             }
             catch (Exception exception)
@@ -92,7 +95,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 MessageBoxW(
                     IntPtr.Zero,
-                    UiTranslation.Translate("Naufal Windows Powertoys is already running.", UiDisplaySettings.LanguageCode),
+                    $"{AppIdentity.Product} is already running.",
                     AppIdentity.Product,
                     0x00000040U);
                 Exit();

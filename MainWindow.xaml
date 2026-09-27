@@ -7,7 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="Naufal Windows Powertoys">
+    Title="Naufal Windows Utility">
 
     <Window.SystemBackdrop>
         <MicaBackdrop/>
@@ -19,7 +19,7 @@
                 <Setter Property="Background" Value="#F9FBFE"/>
                 <Setter Property="BorderBrush" Value="#7F8C9D"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="CornerRadius" Value="0"/>
+                <Setter Property="CornerRadius" Value="8"/>
             </Style>
 
             <Style x:Key="ToolButtonStyle" TargetType="Button" BasedOn="{StaticResource ReferenceButtonStyle}">
@@ -59,7 +59,7 @@
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Padding" Value="12,9"/>
                 <Setter Property="MinHeight" Value="58"/>
-                <Setter Property="CornerRadius" Value="0"/>
+                <Setter Property="CornerRadius" Value="8"/>
             </Style>
         </Grid.Resources>
 
@@ -102,10 +102,6 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-
-                        <TextBlock x:Name="LanguageLabel" Grid.Column="0" Text="Languages" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                            <ComboBox x:Name="LanguageComboBox" Grid.Row="1" Grid.Column="0" Width="160" MinWidth="0" Height="32"
-                                      SelectionChanged="LanguageComboBox_SelectionChanged"/>
                             <Button x:Name="ThemeButton" Grid.Row="1" Grid.Column="1" Content="☀" Width="38" Height="32" MinHeight="32" CornerRadius="0"
                                     Click="ThemeButton_Click" AutomationProperties.Name="Toggle light or dark mode"/>
                             <Button x:Name="TextScaleButton" Grid.Row="1" Grid.Column="2" Width="38" Height="32" MinHeight="32" CornerRadius="0" FontWeight="Bold"
@@ -121,149 +117,39 @@
             </Grid>
         </Border>
 
-        <!-- SCROLLABLE DASHBOARD -->
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-            <Grid Margin="20,18,20,14" MinWidth="1180">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="18"/>
-                    <RowDefinition Height="520"/>
-                </Grid.RowDefinitions>
-
-                <!-- SYSTEM & TUNING TOOLS -->
-                <Border Grid.Row="0" Style="{StaticResource PanelBorderStyle}" Padding="22,14,22,16">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="12"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="SYSTEM &amp; TUNING TOOLS" FontWeight="Bold" FontSize="14"
-                                       VerticalAlignment="Center"/>
-
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
-                                <Button x:Name="AboutButton" Content="About" MinWidth="80" Height="32" MinHeight="32"
+        <NavigationView x:Name="MainNavigation" Grid.Row="1" PaneDisplayMode="Auto"
+                        OpenPaneLength="256" CompactPaneLength="48" ExpandedModeThresholdWidth="1100"
+                        CompactModeThresholdWidth="640" IsSettingsVisible="False" IsBackButtonVisible="Collapsed"
+                        PaneTitle="Windows Utility" SelectionChanged="MainNavigation_SelectionChanged" ItemInvoked="MainNavigation_ItemInvoked">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Home" Tag="Home" Icon="Home" IsSelected="True"/>
+                <NavigationViewItem Content="System Repair" Tag="Repair" Icon="Repair"/>
+                <NavigationViewItem Content="System Info" Tag="Info" Icon="Document"/>
+                <NavigationViewItem Content="Windows Security" Tag="Security" Icon="Permissions"/>
+                <NavigationViewItem Content="Advanced Windows Tweaks" Tag="Advanced" Icon="Setting"/>
+            </NavigationView.MenuItems>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="24,16,24,24" Spacing="24" MaxWidth="1320" HorizontalAlignment="Stretch">
+                    <Grid ColumnSpacing="8" RowSpacing="8" x:Name="UtilityButtonsGrid" SizeChanged="HomeGrid_SizeChanged">
+                        <Button x:Name="AboutButton" Content="About" MinWidth="80" Height="32" MinHeight="32"
                                         Style="{StaticResource ToolButtonStyle}" Margin="0" Click="AboutButton_Click"/>
-                                <Button x:Name="TaskStatusButton" Content="Task Monitoring" MinWidth="156" Height="32" MinHeight="32"
+                        <Button x:Name="TaskStatusButton" Content="Task Monitoring" MinWidth="156" Height="32" MinHeight="32"
                                         Style="{StaticResource ToolButtonStyle}" Margin="0"
                                         Click="TaskStatusButton_Click"
                                         AutomationProperties.Name="Task Monitoring"/>
-                                <Button x:Name="RebootButton" Content="Reboot" Width="92" Height="32" MinHeight="32"
+                        <Button x:Name="RebootButton" Content="Reboot" Width="92" Height="32" MinHeight="32"
                                         Click="RebootButton_Click"
                                         Style="{StaticResource DangerToolButtonStyle}" Margin="0"/>
-                                <Button Content="Exit" Width="92" Height="32" MinHeight="32"
-                                        Click="ExitButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}" Margin="0"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid Grid.Row="2" ColumnSpacing="12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="REPAIR" FontSize="12" FontWeight="Bold" Margin="3,0,0,8"/>
-                                <Button x:Name="FullRepairButton" Content="Full Repair"
-                                        Click="FullRepairButton_Click"
-                                        Style="{StaticResource PrimaryToolButtonStyle}"/>
-                                <Button x:Name="QuickRepairButton" Content="Quick Repair"
-                                        Click="QuickRepairButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                                <Button x:Name="WindowsUpdateFixButton" Content="Windows Update Fix"
-                                        Click="WindowsUpdateFixButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                                <Button x:Name="MicrosoftStoreFixButton" Content="Microsoft Store Fix"
-                                        Click="MicrosoftStoreFixButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="SYSTEM" FontSize="12" FontWeight="Bold" Margin="3,0,0,8"/>
-                                <Button x:Name="ExplorerFixButton" Content="Explorer Fix"
-                                        Click="ExplorerFixButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                                <Button x:Name="DiskInfoButton" Content="Disk Info"
-                                        Click="DiskInfoButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                                <Button x:Name="SystemReportButton" Content="System Report"
-                                        Click="SystemReportButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                                <Button x:Name="WindowsActivationButton" Content="Windows Activation"
-                                        Click="WindowsActivationButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                                <Button x:Name="OfficeActivationButton" Content="Office Activation"
-                                        Click="OfficeActivationButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="SECURITY" FontSize="12" FontWeight="Bold" Margin="3,0,0,8"/>
-                                <Button x:Name="DisableDefenderButton" Content="Disable Defender"
-                                        Click="DisableDefenderButton_Click"
-                                        Style="{StaticResource DangerToolButtonStyle}"/>
-                                <Button x:Name="RestoreDefenderButton" Content="Restore Defender"
-                                        Click="RestoreDefenderButton_Click"
-                                        Style="{StaticResource SuccessToolButtonStyle}"/>
-                                <Button x:Name="BitLockerManagerButton" Content="BitLocker Manager"
-                                        Click="BitLockerManagerButton_Click"
-                                        Style="{StaticResource WarningToolButtonStyle}"/>
-                                <Button x:Name="SmartAppControlButton" Content="Smart App Control"
-                                        Click="SmartAppControlButton_Click"
-                                        Style="{StaticResource WarningToolButtonStyle}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="3">
-                                <TextBlock Text="ADVANCED" FontSize="12" FontWeight="Bold" Margin="3,0,0,8"/>
-                                <Button x:Name="EssentialTweaksButton" Content="Essential Windows Tweaks"
-                                        Click="EssentialTweaksButton_Click"
-                                        Style="{StaticResource PrimaryToolButtonStyle}"/>
-                                <Button x:Name="GamingTweaksButton" Content="Gaming Tweaks"
-                                        Click="GamingTweaksButton_Click"
-                                        Style="{StaticResource PrimaryToolButtonStyle}"/>
-                                <Button x:Name="RuntimeCompatibilityButton" Content="Games Runtime &amp; Compatibility Check"
-                                        Click="RuntimeCompatibilityButton_Click"
-                                        Style="{StaticResource PrimaryToolButtonStyle}"/>
-                                <Button x:Name="GpuDriverManagerButton" Content="GPU Driver Manager"
-                                        Click="GpuDriverManagerButton_Click"
-                                        Style="{StaticResource PrimaryToolButtonStyle}"/>
-                                <Button x:Name="DebloatButton" Content="Advanced Windows Tweaks &amp; De-Bloat"
-                                        Click="DebloatButton_Click"
-                                        Style="{StaticResource WarningToolButtonStyle}"/>
-                                <Button x:Name="MsiModeUtilityButton" Content="MSI Mode Utility"
-                                        Click="MsiModeUtilityButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                                <Button x:Name="LegacyWindowsPanelsButton" Content="Legacy Windows Panels"
-                                        Click="LegacyWindowsPanelsButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-                            </StackPanel>
-                        </Grid>
+                        <Button Content="Exit" Click="ExitButton_Click" Style="{StaticResource ToolButtonStyle}"/>
                     </Grid>
-                </Border>
-
-                <!-- LOWER DASHBOARD -->
-                <Grid Grid.Row="2" ColumnSpacing="18">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="510"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- PERFORMANCE PROFILE -->
-                    <Border Grid.Column="0" Style="{StaticResource PanelBorderStyle}" Padding="18,16">
+                    <StackPanel x:Name="HomePage" Spacing="20">
+                        <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold"/>
+                        <TextBlock Text="Your Windows configuration, at a glance." TextWrapping="Wrap"/>
+                        <Border Grid.Column="0" Style="{StaticResource PanelBorderStyle}" Padding="18,16">
                         <StackPanel Spacing="14">
-                            <TextBlock Text="PERFORMANCE PROFILE" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="Performance profile" FontSize="22" FontWeight="SemiBold"/>
 
-                            <Grid ColumnSpacing="8">
+                            <Grid x:Name="ProfileChoicesGrid" ColumnSpacing="8" RowSpacing="8" SizeChanged="HomeGrid_SizeChanged">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
@@ -287,11 +173,11 @@
                                     Click="ApplyProfileButton_Click" IsEnabled="False"
                                     Style="{StaticResource ToolButtonStyle}" Margin="0"/>
 
-                            <Border Background="#EDF2F8" BorderBrush="#7F8C9D" BorderThickness="1" Padding="14,12" Height="88">
+                            <Border Background="#EDF2F8" BorderBrush="#7F8C9D" BorderThickness="1" Padding="14,12" MinHeight="88">
                                 <StackPanel Spacing="10">
                                     <TextBlock Text="CURRENT PROFILE" FontSize="11" Foreground="#33465F"/>
                                     <TextBlock x:Name="CurrentProfileValueText" Text="Initializing..." FontSize="16" FontWeight="Bold"
-                                               Foreground="#C15B00"/>
+                                               Foreground="#C15B00" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
 
@@ -302,123 +188,107 @@
                                        FontSize="12" Foreground="#33465F" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
-
-                    <!-- LIVE GAMING STATUS -->
-                    <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}" Padding="16">
-                        <Grid RowSpacing="14">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="🔴 LIVE GAMING STATUS" FontSize="14" FontWeight="Bold"/>
-                                <TextBlock x:Name="UpdatedText" Grid.Column="1" Text="Updated 00:00:00"
-                                           FontSize="11" Foreground="#315486"/>
-                            </Grid>
-
-                            <Grid Grid.Row="1" ColumnSpacing="8" RowSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="CPU LIVE" FontSize="10"/>
-                                        <TextBlock x:Name="CpuValueText" Text="Initializing..." Foreground="#008A3C" FontSize="14"/>
-                                        <Grid x:Name="CpuGraphHost"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="RAM LIVE" FontSize="10"/>
-                                        <TextBlock x:Name="RamValueText" Text="Initializing..." Foreground="#008A3C" FontSize="14"/>
-                                        <Grid x:Name="RamGraphHost"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="GPU 3D LIVE" FontSize="10"/>
-                                        <TextBlock x:Name="GpuValueText" Text="Pending" Foreground="#315486" FontSize="14"/>
-                                        <Grid x:Name="GpuGraphHost"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="0" Grid.Column="3" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="NETWORK RX / TX" FontSize="10"/>
-                                        <TextBlock x:Name="NetworkValueText" Text="Initializing..." Foreground="#008A3C" FontSize="14"/>
-                                        <Grid x:Name="NetworkGraphHost"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="0" Grid.Column="4" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="PROCESSES" FontSize="10"/>
-                                        <TextBlock x:Name="ProcessValueText" Text="--" FontSize="14"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="POWER PLAN" FontSize="10"/>
-                                        <TextBlock x:Name="PowerPlanValueText" Text="Initializing..." Foreground="#005FB8" FontSize="14"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="MMCSS" FontSize="10"/>
-                                        <TextBlock x:Name="MmcssValueText" Text="Initializing..." Foreground="#C15B00" FontSize="14"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="GAME MODE" FontSize="10"/>
-                                        <TextBlock x:Name="GameModeValueText" Text="Initializing..." Foreground="#C15B00" FontSize="14"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="1" Grid.Column="3" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="HAGS" FontSize="10"/>
-                                        <TextBlock x:Name="HagsValueText" Text="Initializing..." Foreground="#315486" FontSize="14"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Row="1" Grid.Column="4" Style="{StaticResource MetricCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="UPTIME" FontSize="10"/>
-                                        <TextBlock x:Name="UptimeValueText" Text="--" FontSize="14"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <TextBox x:Name="LiveDetailText" Grid.Row="2"
-                                     Text="STATUS: Initializing..."
-                                     IsReadOnly="True"
-                                     AcceptsReturn="True"
-                                     TextWrapping="NoWrap"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     Background="#07111F"
-                                     Foreground="#F5F7FA"
-                                     BorderThickness="0"
-                                     Padding="10"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                        <TextBlock Text="System status" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="UpdatedText" Text="Checking current configuration..." FontSize="12"/>
+                        <Grid x:Name="StatusCardsGrid" ColumnSpacing="10" RowSpacing="10" SizeChanged="HomeGrid_SizeChanged"><Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="Power plan" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="PowerPlanValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="MMCSS" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="MmcssValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="Game Mode" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="GameModeValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="Hardware-accelerated GPU scheduling" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="HagsValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="Windowed optimizations" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="WindowedValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="Multiplane overlay" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="MpoValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="SysMain" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="SysMainValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="Uptime" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="UptimeValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="6"><TextBlock Text="Processes" FontSize="12" TextWrapping="Wrap"/><TextBlock x:Name="ProcessValueText" Text="Checking..." FontSize="15" TextWrapping="Wrap"/></StackPanel></Border></Grid>
+                        <TextBlock Text="Restart Windows after applying a performance profile or any option marked restart-sensitive." TextWrapping="Wrap" FontSize="12"/>
+                        <TextBlock Text="Quick actions" FontSize="22" FontWeight="SemiBold"/>
+                        <Grid x:Name="QuickActionsGrid" ColumnSpacing="8" RowSpacing="8" SizeChanged="HomeGrid_SizeChanged">
+                            <Button Content="Quick Repair" Click="HomeQuickRepair_Click" Style="{StaticResource ToolButtonStyle}"/>
+                            <Button Content="System Report" Click="HomeSystemReport_Click" Style="{StaticResource ToolButtonStyle}"/>
+                            <Button Content="Clear GPU Shader Cache" Click="HomeShaderCache_Click" Style="{StaticResource ToolButtonStyle}"/>
                         </Grid>
-                    </Border>
-                </Grid>
-            </Grid>
-        </ScrollViewer>
+                        <Button x:Name="LegacyWindowsPanelsButton" Content="Legacy Windows Panels"
+                                        Click="LegacyWindowsPanelsButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+                        <Expander Header="Live telemetry" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Grid x:Name="LiveChartsGrid" ColumnSpacing="10" RowSpacing="10" SizeChanged="HomeGrid_SizeChanged"><Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="8"><TextBlock Text="CPU"/><TextBlock x:Name="CpuValueText" Text="Checking..."/><Grid x:Name="CpuGraphHost"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="8"><TextBlock Text="Memory"/><TextBlock x:Name="RamValueText" Text="Checking..."/><Grid x:Name="RamGraphHost"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="8"><TextBlock Text="GPU 3D"/><TextBlock x:Name="GpuValueText" Text="Checking..."/><Grid x:Name="GpuGraphHost"/></StackPanel></Border>
+<Border Style="{StaticResource MetricCardStyle}"><StackPanel Spacing="8"><TextBlock Text="Network RX / TX"/><TextBlock x:Name="NetworkValueText" Text="Checking..."/><Grid x:Name="NetworkGraphHost"/></StackPanel></Border></Grid>
+                        </Expander>
+                        <Expander Header="Technical details" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <TextBox x:Name="LiveDetailText" Text="Checking configuration..." IsReadOnly="True" AcceptsReturn="True"
+                                     TextWrapping="NoWrap" FontFamily="Consolas" FontSize="12" Height="300"
+                                     Background="#07111F" Foreground="#F5F7FA" Padding="12"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                        </Expander>
+                    </StackPanel>
+                    <StackPanel x:Name="RepairPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="System Repair" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Repair Windows components. Each operation explains its scope before it starts." TextWrapping="Wrap"/>
+<Button x:Name="FullRepairButton" Content="Full Repair"
+                                        Click="FullRepairButton_Click"
+                                        Style="{StaticResource PrimaryToolButtonStyle}"/>
+<Button x:Name="QuickRepairButton" Content="Quick Repair"
+                                        Click="QuickRepairButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="WindowsUpdateFixButton" Content="Windows Update Fix"
+                                        Click="WindowsUpdateFixButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="MicrosoftStoreFixButton" Content="Microsoft Store Fix"
+                                        Click="MicrosoftStoreFixButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="ExplorerFixButton" Content="Explorer Fix"
+                                        Click="ExplorerFixButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+</StackPanel>
+<StackPanel x:Name="InfoPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="System Info" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Inspect disks, system reports, and activation status without changing Windows." TextWrapping="Wrap"/>
+<Button x:Name="DiskInfoButton" Content="Disk Info"
+                                        Click="DiskInfoButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="SystemReportButton" Content="System Report"
+                                        Click="SystemReportButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="WindowsActivationButton" Content="Windows Activation Status"
+                                        Click="WindowsActivationButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="OfficeActivationButton" Content="Office Activation Status"
+                                        Click="OfficeActivationButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+</StackPanel>
+<StackPanel x:Name="SecurityPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="Windows Security" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Review protection and encryption. Security changes require confirmation; understand the consequences before proceeding." TextWrapping="Wrap"/>
+<Button x:Name="DisableDefenderButton" Content="Disable Defender"
+                                        Click="DisableDefenderButton_Click"
+                                        Style="{StaticResource DangerToolButtonStyle}"/>
+<Button x:Name="RestoreDefenderButton" Content="Restore Defender"
+                                        Click="RestoreDefenderButton_Click"
+                                        Style="{StaticResource SuccessToolButtonStyle}"/>
+<Button x:Name="BitLockerManagerButton" Content="BitLocker Manager"
+                                        Click="BitLockerManagerButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="SmartAppControlButton" Content="Smart App Control"
+                                        Click="SmartAppControlButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+</StackPanel>
+<StackPanel x:Name="AdvancedPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="Advanced Windows Tweaks" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Explore optional configuration, applications, drivers, and runtime tools. Review each warning and keep a recovery backup." TextWrapping="Wrap"/>
+<Button x:Name="EssentialTweaksButton" Content="Essential Windows Tweaks"
+                                        Click="EssentialTweaksButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="GamingTweaksButton" Content="Gaming Tweaks"
+                                        Click="GamingTweaksButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="RuntimeCompatibilityButton" Content="Games Runtime &amp; Compatibility Check"
+                                        Click="RuntimeCompatibilityButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="GpuDriverManagerButton" Content="GPU Driver Manager"
+                                        Click="GpuDriverManagerButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="DebloatButton" Content="Advanced Windows Tweaks &amp; De-Bloat"
+                                        Click="DebloatButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="MsiModeUtilityButton" Content="MSI Mode Utility"
+                                        Click="MsiModeUtilityButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+</StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </NavigationView>
     </Grid>
 </Window>

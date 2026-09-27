@@ -33,7 +33,8 @@ internal static class AppDataPathTests
             File.WriteAllText(Path.Combine(legacy, "Debloat_LowRisk_Original.json"), "{\"saved\":true}");
             File.WriteAllText(Path.Combine(legacy, "service-lock-test.cmd"), "never execute or migrate this script");
             assert(AppDataPaths.MigrateKnownFiles(sandbox).Count == 0, "Known AppData files import successfully");
-            assert(File.ReadAllText(Path.Combine(settings, "ui-language.txt")) == "id", "Most recent native V78 preference has precedence");
+            assert(!File.Exists(Path.Combine(settings, "ui-language.txt")), "Obsolete language preference is not imported");
+            assert(File.ReadAllText(Path.Combine(legacy, "ui-language.txt")) == "id", "Legacy language data is not deleted");
             assert(File.ReadAllText(Path.Combine(settings, "ui-theme.txt")) == "Dark", "Previous canonical-root preference imports");
             assert(File.ReadAllText(Path.Combine(settings, "ui-font-scale.txt")) == "150", "V77 remains last fallback");
             assert(File.ReadAllText(Path.Combine(settings, "first-run-prerequisites.json")) == wizard, "Wizard suppression state preserved byte-for-byte");
@@ -47,7 +48,7 @@ internal static class AppDataPathTests
             File.WriteAllText(Path.Combine(legacy, "ui-language.txt"), "ru");
             File.WriteAllText(Path.Combine(legacy, "performance-lab-original.json"), "changed source");
             assert(AppDataPaths.MigrateKnownFiles(sandbox).Count == 0, "Migration is idempotent");
-            assert(File.ReadAllText(Path.Combine(settings, "ui-language.txt")) == "id", "New canonical setting is not overwritten");
+            assert(!File.Exists(Path.Combine(settings, "ui-language.txt")), "Repeated migration still ignores obsolete language preference");
             assert(File.ReadAllBytes(resolved).SequenceEqual(backup), "Captured backup is not overwritten by later legacy changes");
             File.WriteAllText(resolved, "corrupt canonical snapshot");
             assert(AppDataPaths.ResolveLegacyBackup("performance-lab-original.json", sandbox) == resolved, "Corruption is not silently replaced by legacy snapshot");
@@ -66,19 +67,19 @@ internal static class AppDataPathTests
             assert(Directory.GetFiles(sandbox, "*.tmp", SearchOption.AllDirectories).Length == 0, "No partial import is left behind");
 
             string lockedCase = Path.Combine(sandbox, "locked-case");
-            string lockedSource = Path.Combine(lockedCase, "WindowsPowerToysV78", "ui-language.txt");
+            string lockedSource = Path.Combine(lockedCase, "WindowsPowerToysV78", "ui-theme.txt");
             Directory.CreateDirectory(Path.GetDirectoryName(lockedSource)!);
             Directory.CreateDirectory(Path.Combine(lockedCase, AppDataPaths.FolderName));
-            File.WriteAllText(lockedSource, "id");
-            File.WriteAllText(Path.Combine(lockedCase, AppDataPaths.FolderName, "ui-language.txt"), "de");
+            File.WriteAllText(lockedSource, "Dark");
+            File.WriteAllText(Path.Combine(lockedCase, AppDataPaths.FolderName, "ui-theme.txt"), "Light");
             using (var held = new FileStream(lockedSource, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 assert(AppDataPaths.MigrateKnownFiles(lockedCase).Count == 1, "Unreadable current settings emit migration warning");
-                assert(!File.Exists(Path.Combine(lockedCase, AppDataPaths.FolderName, "Settings", "ui-language.txt")), "Unreadable current source does not fall through to stale settings");
+                assert(!File.Exists(Path.Combine(lockedCase, AppDataPaths.FolderName, "Settings", "ui-theme.txt")), "Unreadable current source does not fall through to stale settings");
                 assert(Directory.GetFiles(lockedCase, "*.tmp", SearchOption.AllDirectories).Length == 0, "Failed copy cleans only its temporary import");
             }
             assert(AppDataPaths.MigrateKnownFiles(lockedCase).Count == 0, "Failed import retries on a later launch");
-            assert(File.ReadAllText(Path.Combine(lockedCase, AppDataPaths.FolderName, "Settings", "ui-language.txt")) == "id", "Retry preserves the authoritative source");
+            assert(File.ReadAllText(Path.Combine(lockedCase, AppDataPaths.FolderName, "Settings", "ui-theme.txt")) == "Dark", "Retry preserves the authoritative source");
         }
         finally
         {

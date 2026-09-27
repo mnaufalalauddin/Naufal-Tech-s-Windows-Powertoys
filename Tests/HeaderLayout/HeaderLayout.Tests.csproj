@@ -28,13 +28,9 @@
     <ApplicationDefinition Include="..\..\App.xaml" Link="App.xaml" />
     <Page Include="..\..\MainWindow.xaml" Link="MainWindow.xaml" />
     <Compile Include="..\..\MainWindow.HeaderLayout.cs" Link="MainWindow.HeaderLayout.cs" />
+    <Compile Include="..\..\MainWindow.Navigation.cs" Link="MainWindow.Navigation.cs" />
     <Compile Include="..\..\HeaderLayoutPolicy.cs" Link="HeaderLayoutPolicy.cs" />
     <Compile Include="..\..\UiDisplaySettings.cs" Link="UiDisplaySettings.cs" />
-    <Compile Include="..\..\UiTranslation*.cs" Link="%(Filename)%(Extension)" />
-    <Compile Include="..\..\NativeUiCatalog*.cs" Link="%(Filename)%(Extension)" />
-    <Compile Include="..\..\UiLocalizedValue.cs" Link="UiLocalizedValue.cs" />
-    <Compile Include="..\..\UiLocalizationLifetime.cs" Link="UiLocalizationLifetime.cs" />
-    <Compile Include="..\..\SupplementalUiCatalog.cs" Link="SupplementalUiCatalog.cs" />
     <Compile Include="..\..\CatalogDisplayNames.cs" Link="CatalogDisplayNames.cs" />
     <Compile Include="..\..\UiTextKeys.cs" Link="UiTextKeys.cs" />
   </ItemGroup>

@@ -49,6 +49,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private readonly GamingStatusService _statusService = new();
         private readonly PerformanceProfileExtendedService _extendedProfileService = new();
+#if PROFILE_LIVE_AUDIT
+        // Compiled only into the opt-in integration test executable, never the app.
+        internal Action<ProfileVerificationResult>? VerifiedAuditCheckpoint { get; set; }
+#endif
 
         public static bool IsAdministrator()
         {
@@ -190,6 +194,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
                                         .Select(check => $"{check.Name}: expected {check.Expected}; actual {check.Actual}"));
                                 throw new InvalidOperationException("Full profile verification failed.\n" + details);
                             }
+#if PROFILE_LIVE_AUDIT
+                            VerifiedAuditCheckpoint?.Invoke(fullVerification!);
+#endif
                         });
                 extendedRollbackAttempted = extended.RolledBack;
                 extendedRollbackSucceeded = extended.RollbackSucceeded;

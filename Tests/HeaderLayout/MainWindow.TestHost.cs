@@ -29,13 +29,10 @@ public sealed partial class MainWindow : Window
         UiDisplaySettings.KeepRecoveryControlUsable(ThemeButton);
         UiDisplaySettings.KeepRecoveryControlUsable(TextScaleButton);
         UiDisplaySettings.KeepRecoveryControlUsable(TextScaleGlyph);
-        LanguageComboBox.Items.Add(new ComboBoxItem { Content = "English", Tag = "ui-language:en" });
-        LanguageComboBox.SelectedIndex = 0;
-        UiTranslation.Observe(RootLayout);
         UiDisplaySettings.Changed += DisplayChanged;
         UiDisplaySettings.Apply(RootLayout);
         RootLayout.Loaded += Run;
-        Closed += (_, _) => { UiDisplaySettings.Changed -= DisplayChanged; UiTranslation.Release(RootLayout); };
+        Closed += (_, _) => { UiDisplaySettings.Changed -= DisplayChanged; };
     }
 
     private void DisplayChanged(object? sender, EventArgs e)
@@ -56,21 +53,17 @@ public sealed partial class MainWindow : Window
             RootLayout.UpdateLayout();
             CheckHeader();
             int[] sequence = [25, 50, 75, 100, 125, 150, 175, 200, 175, 150, 125, 100, 75, 50, 25, 100];
-            string? languageArgument = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--languages="));
-            string[] languages = languageArgument is null ? ["en", "de", "id", "ar"] : languageArgument[12..].Split(',');
-            if (languages.Length == 0 || languages.Any(code => !UiTranslation.IsSupportedLanguage(code)))
-                throw new InvalidOperationException("Unsupported native-test language.");
-            File.AppendAllText(App.ResultPath, "Languages: " + string.Join(", ", languages) + "\n");
+            const string language = "en";
             foreach (int width in new[] { 1920, 1280, 800, 480 })
             foreach (ElementTheme theme in new[] { ElementTheme.Light, ElementTheme.Dark })
-            foreach (string language in languages)
             {
                 AppWindow.Resize(new SizeInt32(width, 800));
                 if (UiDisplaySettings.Theme != theme) UiDisplaySettings.ToggleTheme();
-                UiDisplaySettings.SetLanguage(language);
                 foreach (int percent in sequence)
                 {
                     _case = $"width={width}, theme={theme}, language={language}, scale={percent}";
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                     UiDisplaySettings.SetTextScale(percent);
                     await Task.Delay(30);
                     RootLayout.UpdateLayout();
@@ -78,7 +71,6 @@ public sealed partial class MainWindow : Window
                     _cases++;
                 }
             }
-            UiDisplaySettings.SetLanguage("en");
             foreach (int percent in sequence.Take(8))
             {
                 _case = $"flyout scale={percent}";
@@ -93,6 +85,7 @@ public sealed partial class MainWindow : Window
                 Check(popup.Items.OfType<ToggleMenuFlyoutItem>().All(item => item.FontSize >= 14), "readable flyout");
                 popup.Hide();
             }
+            await CheckNavigationAsync();
             await CheckDynamicButtonsAsync();
             await SaveThemePreviewsAsync();
             File.AppendAllText(App.ResultPath, $"PASS: {_checks} native WinUI assertions, {_cases} layout cases, 8 flyouts. Minimum header contrast: {_minimumHeaderContrast:F2}:1; button contrast: {_minimumButtonContrast:F2}:1. No Windows settings changed.\n");
@@ -106,13 +99,35 @@ public sealed partial class MainWindow : Window
         finally { Close(); }
     }
 
+    private async Task CheckNavigationAsync()
+    {
+        var pages = new FrameworkElement[] { HomePage, RepairPage, InfoPage, SecurityPage, AdvancedPage };
+        Check(MainNavigation.MenuItems.Count == 5, "exactly five navigation pages");
+        foreach (ElementTheme theme in new[] { ElementTheme.Light, ElementTheme.Dark })
+        {
+            if (UiDisplaySettings.Theme != theme) UiDisplaySettings.ToggleTheme();
+            for (int index = 0; index < pages.Length; index++)
+            {
+                MainNavigation.SelectedItem = MainNavigation.MenuItems[index];
+                await Task.Delay(40);
+                RootLayout.UpdateLayout();
+                Check(pages[index].Visibility == Visibility.Visible, "selected page visible");
+                Check(pages.Count(p => p.Visibility == Visibility.Visible) == 1, "only one page visible");
+                CheckButtons();
+            }
+        }
+        MainNavigation.SelectedItem = MainNavigation.MenuItems[0];
+        await Task.Delay(60);
+    }
+
     private void CheckHeader()
     {
-        Check(LanguageLabel.Text == UiTranslation.Translate("Languages", UiDisplaySettings.LanguageCode),
-            "language label retains canonical source after switches");
+        Check(RootLayout.Language == "en-US" && RootLayout.FlowDirection == FlowDirection.LeftToRight, "English-only presentation");
+        var homeHeading = HomePage.Children.OfType<TextBlock>().First();
+        Check(Math.Abs(homeHeading.FontSize - Math.Max(4, 28 * UiDisplaySettings.TextScalePercent / 100d)) < 0.01, "unnamed Home heading scales from original size after GC");
         CheckThemePalette();
         CheckButtons();
-        foreach (FrameworkElement control in new FrameworkElement[] { TextScaleButton, ThemeButton, LanguageComboBox })
+        foreach (FrameworkElement control in new FrameworkElement[] { TextScaleButton, ThemeButton })
         {
             Rect bounds = control.TransformToVisual(RootLayout).TransformBounds(new Rect(0, 0, control.ActualWidth, control.ActualHeight));
             Check(bounds.Left >= -0.5 && bounds.Right <= RootLayout.ActualWidth + 0.5,
@@ -142,9 +157,7 @@ public sealed partial class MainWindow : Window
         var background = ((SolidColorBrush)header.Background!).Color;
         foreach (var pair in new[]
         {
-            ("Clock", ClockText.Foreground), ("Languages label", LanguageLabel.Foreground),
-            ("Languages selection", LanguageComboBox.Foreground),
-            ("Language item", ((ComboBoxItem)LanguageComboBox.SelectedItem).Foreground)
+            ("Clock", ClockText.Foreground), ("Date", DateText.Foreground), ("Session", SessionText.Foreground)
         })
         {
             Check(pair.Item2 is SolidColorBrush, pair.Item1 + " has a solid text brush");
@@ -155,9 +168,7 @@ public sealed partial class MainWindow : Window
         }
         Check(((SolidColorBrush)FullRepairButton.Foreground).Color == Microsoft.UI.Colors.White,
             "explicit white text on primary colored buttons preserved");
-        Check(ClockText.ReadLocalValue(TextBlock.ForegroundProperty) == DependencyProperty.UnsetValue &&
-            LanguageLabel.ReadLocalValue(TextBlock.ForegroundProperty) == DependencyProperty.UnsetValue &&
-            LanguageComboBox.ReadLocalValue(Control.ForegroundProperty) == DependencyProperty.UnsetValue,
+        Check(ClockText.ReadLocalValue(TextBlock.ForegroundProperty) == DependencyProperty.UnsetValue,
             "theme-owned header foregrounds are never frozen as local values");
         if (UiDisplaySettings.Theme == ElementTheme.Light)
             Check(((SolidColorBrush)DateText.Foreground).Color == Windows.UI.Color.FromArgb(255, 52, 69, 92),
@@ -177,10 +188,10 @@ public sealed partial class MainWindow : Window
     private void CheckButtons()
     {
         Button[] buttons = AuthoredButtons(RootLayout).Where(b => b.IsEnabled).ToArray();
-        Check(buttons.Length == 29, "all 29 enabled dashboard buttons are covered (including About, not hidden WinUI template controls)");
+        Check(buttons.Length == 32, "all 32 enabled authored buttons are covered across all five pages");
         Check(buttons.Contains(AboutButton), "About participates in dashboard contrast checks");
-        Check(AboutButton.Content?.ToString() == UiTranslation.Translate("About", UiDisplaySettings.LanguageCode),
-            "About caption follows the selected language");
+        Check(AboutButton.Content?.ToString() == "About",
+            "About caption remains English");
         foreach (Button button in buttons)
             CheckButtonContrast(button);
     }
@@ -278,22 +289,25 @@ public sealed partial class MainWindow : Window
         finally
         {
             catalogWindow.Close();
-            UiTranslation.Release(_catalogTestRoot);
         }
     }
 
     private async Task SaveThemePreviewsAsync()
     {
-        UiDisplaySettings.SetLanguage("en");
         UiDisplaySettings.SetTextScale(100);
         AppWindow.Resize(new SizeInt32(1920, 1080));
+        MainNavigation.IsPaneOpen = true;
         foreach (ElementTheme theme in new[] { ElementTheme.Dark, ElementTheme.Light })
         {
             _case = "render preview " + theme;
             if (UiDisplaySettings.Theme != theme) UiDisplaySettings.ToggleTheme();
             UiDisplaySettings.Apply(RootLayout);
-            await Task.Delay(100);
+            await Task.Delay(700);
+            MainNavigation.IsPaneOpen = true;
+            await Task.Delay(700);
             RootLayout.UpdateLayout();
+            Check(MainNavigation.DisplayMode == NavigationViewDisplayMode.Expanded && MainNavigation.IsPaneOpen, "wide sidebar shows labels");
+            File.AppendAllText(App.ResultPath, $"Preview navigation: width={MainNavigation.ActualWidth}; mode={MainNavigation.DisplayMode}; open={MainNavigation.IsPaneOpen}\n");
             CheckHeader();
             RenderTargetBitmap bitmap = new();
             await bitmap.RenderAsync(RootLayout);
@@ -331,7 +345,9 @@ public sealed partial class MainWindow : Window
     }
 
     private void ThemeButton_Click(object s, RoutedEventArgs e) => UiDisplaySettings.ToggleTheme();
-    private void LanguageComboBox_SelectionChanged(object s, SelectionChangedEventArgs e) { }
+    private void HomeQuickRepair_Click(object s, RoutedEventArgs e) { }
+    private void HomeSystemReport_Click(object s, RoutedEventArgs e) { }
+    private void HomeShaderCache_Click(object s, RoutedEventArgs e) { }
     // MainWindow.xaml is linked unchanged; all system-action handlers are inert
     // in this test-only host, so accidental input cannot launch a repair/tweak.
     private void TaskStatusButton_Click(object s, RoutedEventArgs e) { }

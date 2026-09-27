@@ -87,20 +87,12 @@ internal static class AuditRegressionTests
         assert(updates.Values.Count == beforeLate, "F04 ignore late and repeated completion");
         assert(!updates.Values.Any(x => x.Status == "PASS"), "F04 repeated completion cannot turn failure into pass");
 
-        // F05: actual embedded supplemental language tables and stable native aliases.
-        var catalog = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        SupplementalUiCatalog.Merge(catalog);
-        assert(catalog.Count == 23, "F05 23 supplemental language tables");
+        // F05: shared canonical English action labels and confirmations.
         string[] keys = { UiTextKeys.RepairSelected, UiTextKeys.EnableSelected, UiTextKeys.DownloadInstall,
             UiTextKeys.AnalyzeReload, UiTextKeys.SelectSafe, UiTextKeys.ApplySelected,
             UiTextKeys.RuntimeRepairConfirmation, UiTextKeys.RuntimeEnableConfirmation, UiTextKeys.RuntimeInstallConfirmation };
-        foreach (var language in catalog)
-            foreach (string key in keys)
-                assert(language.Value.TryGetValue(key, out string? translation) && !string.IsNullOrWhiteSpace(translation), "F05 " + language.Key + ": " + key);
-        assert(catalog["id"][UiTextKeys.SelectSafe] == "Pilih yang aman", "F05 native Indonesian toolbar");
-        assert(catalog["de"].ContainsKey("repair selected"), "F05 original uppercase/native titlecase aliases");
-        SupplementalUiCatalog.Merge(catalog);
-        assert(catalog.Count == 23, "F05 repeat merge idempotent");
+        assert(keys.Distinct(StringComparer.Ordinal).Count() == keys.Length, "F05 distinct English keys");
+        foreach (string key in keys) assert(!string.IsNullOrWhiteSpace(key), "F05 English copy present");
 
         // F06: authoritative identity, never arbitrary matching of same-model NICs.
         Dictionary<string, string> Nic(string id, string location, string name) => new()

@@ -1,103 +1,31 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Naufal_Windows_Tech_s_Powertoys;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-try
+// Historical test entry point now enforces the English-only contract.
+string root = AppContext.BaseDirectory;
+while (!File.Exists(Path.Combine(root, "MainWindow.xaml")))
+    root = Directory.GetParent(root)?.FullName ?? throw new Exception("Project root not found.");
+int checks = 0;
+void Assert(bool ok, string message) { if (!ok) throw new Exception(message); checks++; }
+string Read(string name) => File.ReadAllText(Path.Combine(root, name));
+string settings = Read("UiDisplaySettings.cs");
+Assert(!settings.Contains("SetLanguage") && !settings.Contains("LanguageCode") && !settings.Contains("ui-language.txt"), "Language preference/switching remains");
+Assert(settings.Contains("root.Language = \"en-US\"") && settings.Contains("FlowDirection.LeftToRight"), "English presentation not fixed");
+Assert(Read("App.xaml.cs").Contains("Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = language"), "Use unpackaged-compatible resource API");
+Assert(!Read("App.xaml.cs").Contains("language => Windows.Globalization."), "UWP-only override must not block unpackaged startup");
+Assert(Read("ApplicationLanguagePolicy.cs").Contains("CultureInfo.GetCultureInfo(\"en-US\")"), "English UI culture not fixed");
+foreach (string file in Directory.GetFiles(root, "*.cs"))
 {
-string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
-var options = UiTranslation.LanguageOptions;
-var jsonOptions = new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-if (args.Contains("--dump"))
-{
-    Console.WriteLine(JsonSerializer.Serialize(options.ToDictionary(language => language.Code,
-        language => UiTranslation.GetLanguageTable(language.Code)), jsonOptions));
-    return;
+    string name = Path.GetFileName(file);
+    Assert(!name.StartsWith("NativeUiCatalog") && !name.StartsWith("UiTranslation") && name != "SupplementalUiCatalog.cs", "Owned translation payload remains: " + name);
+    Assert(!File.ReadAllText(file).Contains("UiTranslation."), "Runtime translation dependency remains: " + name);
 }
-
-int assertions = Regression.Run();
-Console.WriteLine($"PASS: {assertions} localization assertions across {options.Count} languages.");
-if (args.Contains("--test-only")) return;
-
-var candidates = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-var uiCandidates = new HashSet<string>(StringComparer.Ordinal);
-var interpolatedCandidates = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-foreach (string file in Directory.EnumerateFiles(root, "*.cs"))
-{
-    if (Path.GetFileName(file).StartsWith("UiTranslation") || Path.GetFileName(file).StartsWith("NativeUiCatalog") || Path.GetFileName(file) == "SupplementalUiCatalog.cs") continue;
-    var syntax = CSharpSyntaxTree.ParseText(File.ReadAllText(file));
-    foreach (var literal in syntax.GetRoot().DescendantNodes().OfType<LiteralExpressionSyntax>())
-    {
-        if (!literal.IsKind(SyntaxKind.StringLiteralExpression)) continue;
-        string value = literal.Token.ValueText;
-        if (value.Length < 3 || value.Length > 1300 || !Regex.IsMatch(value, "[A-Za-z]{3}") ||
-            value.Contains('\\') || value.Contains("https:") || value.Contains("SELECT ") || value.Contains("<") ||
-            value.Contains("HKEY_") || value.Contains("{\\")) continue;
-        if (!candidates.TryGetValue(value, out var locations)) candidates[value] = locations = new();
-        locations.Add(Path.GetFileName(file) + ":" + (literal.GetLocation().GetLineSpan().StartLinePosition.Line + 1));
-        if (literal.Ancestors().OfType<AssignmentExpressionSyntax>().Any(assignment =>
-            Regex.IsMatch(assignment.Left.ToString(), @"(?:^|\.)(?:Text|Content|Header|PlaceholderText)$"))) uiCandidates.Add(value);
-    }
-    foreach (var interpolated in syntax.GetRoot().DescendantNodes().OfType<InterpolatedStringExpressionSyntax>())
-    {
-        int argument = 0;
-        string template = string.Concat(interpolated.Contents.Select(part => part is InterpolatedStringTextSyntax text
-            ? text.TextToken.ValueText : "{" + argument++ + "}"));
-        if (template.Length < 3 || template.Length > 1300 || !Regex.IsMatch(template, "[A-Za-z]{3}")) continue;
-        if (!interpolatedCandidates.TryGetValue(template, out var locations)) interpolatedCandidates[template] = locations = new();
-        locations.Add(Path.GetFileName(file) + ":" + (interpolated.GetLocation().GetLineSpan().StartLinePosition.Line + 1));
-    }
-}
-foreach (string file in Directory.EnumerateFiles(root, "*.xaml"))
-foreach (var attribute in XDocument.Load(file).Descendants().Attributes().Where(a => a.Name.LocalName is "Text" or "Content" or "Header" or "PlaceholderText"))
-{
-    if (attribute.Value.StartsWith('{') || attribute.Value.Length < 3) continue;
-    if (!candidates.TryGetValue(attribute.Value, out var locations)) candidates[attribute.Value] = locations = new();
-    locations.Add(Path.GetFileName(file));
-    uiCandidates.Add(attribute.Value);
-}
-var english = UiTranslation.GetLanguageTable("en");
-var surfaces = SurfaceCoverageAudit.Inspect(root);
-var report = new
-{
-    SurfaceScope = "Authored labels, constant descriptions/warnings, local metadata factories, action confirmations, service groups, dialogs, XAML and backend operation-result/state messages. Unchanged output is a review candidate, not automatically a failure: official names, acronyms and loanwords need explicit review. Unresolved expressions are reported separately and must not be counted as translated. Static analysis does not certify every runtime path or third-party diagnostic.",
-    SurfaceSummary = new
-    {
-        ResolvedOccurrences = surfaces.Count(s => s.Resolved),
-        UnresolvedOccurrences = surfaces.Count(s => !s.Resolved),
-        UnchangedReviewCandidates = surfaces.Where(s => s.Resolved && s.MissingLanguages.Length > 0)
-            .Select(s => s.Text).Distinct(StringComparer.Ordinal).Count()
-    },
-    Surfaces = surfaces,
-    Note = "Static candidate coverage, not visual/linguistic certification. Candidates include technical strings requiring triage; diagnostic output must stay original.",
-    Languages = options.Select(language =>
-    {
-        var table = UiTranslation.GetLanguageTable(language.Code);
-        return new { language.Code, language.Name, Entries = table.Count,
-            MissingReferenceKeys = english.Keys.Count(key => !table.ContainsKey(key)),
-            BlankValues = table.Count(pair => string.IsNullOrWhiteSpace(pair.Value)),
-            PlaceholderMismatches = table.Where(pair => !Regression.Placeholders(pair.Key).SequenceEqual(Regression.Placeholders(pair.Value))).Select(pair => pair.Key).ToArray(),
-            ChangedCandidates = candidates.Keys.Count(key => UiTranslation.Translate(key, language.Code) != key) };
-    }).ToArray(),
-    Candidates = candidates.Select(pair => new { Text = pair.Key, Locations = pair.Value,
-        DirectDisplayAssignment = uiCandidates.Contains(pair.Key),
-        MissingLanguages = options.Where(option => option.Code != "en" && !UiTranslation.GetLanguageTable(option.Code).ContainsKey(pair.Key) && UiTranslation.Translate(pair.Key, option.Code) == pair.Key).Select(option => option.Code).ToArray() }).ToArray(),
-    InterpolatedCandidates = interpolatedCandidates.Select(pair => new { Template = pair.Key, Locations = pair.Value,
-        ExactResourceTemplate = english.ContainsKey(pair.Key) }).ToArray()
-};
-string output = Path.Combine(root, "artifacts", "localization-audit");
-Directory.CreateDirectory(output);
-string reportFile = Path.Combine(output, args.Contains("--baseline") ? "baseline.json" : "coverage.json");
-File.WriteAllText(reportFile, JsonSerializer.Serialize(report, jsonOptions));
-Console.WriteLine(JsonSerializer.Serialize(new { report.Note, report.Languages, CandidateCount = candidates.Count, Report = reportFile }, jsonOptions));
-}
-catch (Exception exception)
-{
-    // A failing regression must return a nonzero console exit, not leave a
-    // Windows Application Error dialog on the developer's desktop.
-    Console.Error.WriteLine(exception.ToString());
-    Environment.ExitCode = 1;
-}
+var xaml = XDocument.Load(Path.Combine(root, "MainWindow.xaml"));
+Assert(!Read("MainWindow.xaml").Contains("LanguageComboBox"), "Language selector remains");
+var nav = xaml.Descendants().Where(e => e.Name.LocalName == "NavigationViewItem").ToArray();
+Assert(nav.Select(e => (string?)e.Attribute("Content")).SequenceEqual(new[] { "Home", "System Repair", "System Info", "Windows Security", "Advanced Windows Tweaks" }), "Sidebar contract drift");
+Assert(!Read("Installer/NaufalWindowsPowertoys.iss").Contains("ProgramInfoLanguage"), "Installer language selector remains");
+Assert(Read("Installer/Generate-ProgramInformation.ps1").Contains("EnglishUiText.cs"), "Installer does not share English copy");
+Assert(!string.IsNullOrWhiteSpace(EnglishUiText.AboutDescription) && !string.IsNullOrWhiteSpace(EnglishUiText.AboutPurpose), "About copy missing");
+Assert(CatalogDisplayNames.Simplify("Widgets - Remove") == "Taskbar Widgets", "English catalog names changed");
+Console.WriteLine($"PASS: {checks} English-only UI/resource/navigation assertions. No Windows settings changed.");

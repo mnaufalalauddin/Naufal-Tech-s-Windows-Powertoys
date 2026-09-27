@@ -10,8 +10,7 @@ internal static class CatalogAuditTests
         assert((widget with { Category = "COMPONENTS" }).Name == "Taskbar Widgets", "Composites retain simplified names");
         assert(CatalogDisplayNames.Simplify("Taskbar Widgets") == "Taskbar Widgets", "Name normalization is idempotent");
         assert(CatalogDisplayNames.Simplify("Unknown Vendor Service") == "Unknown Vendor Service", "Unknown titles are never guessed");
-        foreach (string code in new[] { "en", "id", "de", "fr", "ar", "tl", "vi", "zh-CN", "zh-TW", "th", "ru", "uk", "pt", "ja", "ko", "ur", "ta", "hi", "ms", "jv", "ban", "sv", "es" })
-            assert(!string.IsNullOrWhiteSpace(CatalogDisplayNames.LocalizedTitle("Taskbar Widgets", code)), "Simplified Widgets label exists: " + code);
+        assert(CatalogDisplayNames.Simplify("Widgets - Remove") == "Taskbar Widgets", "English simplified Widgets label");
         var action = new ToolActionDefinition("Temp", "SYSTEM", "Temporary Files - Remove", "Deletes temporary files.", "Remove", true, false);
         assert(action.Name == "Temporary Files" && action.RunLabel == "Remove", "Only the title changes, not the command button");
 

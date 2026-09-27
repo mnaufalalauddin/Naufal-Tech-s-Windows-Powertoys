@@ -64,21 +64,5 @@ internal static class CatalogDisplayNames
         ["Legacy IRQ8 / IRQ9 Priority Hints"] = "IRQ8 / IRQ9 Priority"
     };
 
-    private static readonly Dictionary<string, string> WidgetTitles = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["en"] = "Taskbar Widgets", ["id"] = "Widget Taskbar", ["de"] = "Taskleisten-Widgets",
-        ["fr"] = "Widgets de la barre des tâches", ["ar"] = "عناصر واجهة شريط المهام",
-        ["tl"] = "Mga Widget sa Taskbar", ["vi"] = "Tiện ích thanh tác vụ",
-        ["zh-CN"] = "任务栏小组件", ["zh-TW"] = "工作列小工具", ["th"] = "วิดเจ็ตบนแถบงาน",
-        ["ru"] = "Виджеты панели задач", ["uk"] = "Віджети панелі завдань",
-        ["pt"] = "Widgets da barra de tarefas", ["ja"] = "タスクバーのウィジェット",
-        ["ko"] = "작업 표시줄 위젯", ["ur"] = "ٹاسک بار ویجٹس", ["ta"] = "பணிப்பட்டி விட்ஜெட்டுகள்",
-        ["hi"] = "टास्कबार विजेट", ["ms"] = "Widget Bar Tugas", ["jv"] = "Widget Taskbar",
-        ["ban"] = "Widget Taskbar", ["sv"] = "Widgetar i aktivitetsfältet", ["es"] = "Widgets de la barra de tareas"
-    };
-
-    public static string? LocalizedTitle(string name, string code) =>
-        name == "Taskbar Widgets" && WidgetTitles.TryGetValue(code, out string? title) ? title : null;
-
     public static string Simplify(string name) => Names.TryGetValue(name, out string? simple) ? simple : name;
 }

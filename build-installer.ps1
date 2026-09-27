@@ -28,8 +28,8 @@ $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
 $publishRelativeDir = "artifacts\publish\win-x64-$timestamp"
 $publishDir = Join-Path $projectRoot $publishRelativeDir
 $installerOutputDir = Join-Path $projectRoot 'artifacts\installer'
-$applicationExe = Join-Path $publishDir 'Naufal Windows Powertoys.exe'
-$installerExe = Join-Path $installerOutputDir "Naufal-Windows-Powertoys-Setup-$Version-x64.exe"
+$applicationExe = Join-Path $publishDir 'Naufal Windows Utility.exe'
+$installerExe = Join-Path $installerOutputDir "Naufal-Windows-Utility-Setup-$Version-x64.exe"
 
 if (-not $SkipPublish) {
     if ($NoRestore) {
@@ -82,7 +82,7 @@ if (-not $SkipPublish) {
     $targetFramework = $targetFrameworkNode.InnerText.Trim()
 
     $defaultPublishDir = Join-Path $projectRoot "bin\$Configuration\$targetFramework\win-x64\publish"
-    $defaultApplicationExe = Join-Path $defaultPublishDir 'Naufal Windows Powertoys.exe'
+    $defaultApplicationExe = Join-Path $defaultPublishDir 'Naufal Windows Utility.exe'
     if (-not (Test-Path -LiteralPath $defaultApplicationExe -PathType Leaf)) {
         throw "The expected Native AOT executable was not generated: $defaultApplicationExe"
     }
@@ -100,7 +100,7 @@ else {
     }
 
     $publishDir = $latestPublish.FullName
-    $applicationExe = Join-Path $publishDir 'Naufal Windows Powertoys.exe'
+    $applicationExe = Join-Path $publishDir 'Naufal Windows Utility.exe'
 }
 
 if (-not (Test-Path -LiteralPath $applicationExe -PathType Leaf)) {

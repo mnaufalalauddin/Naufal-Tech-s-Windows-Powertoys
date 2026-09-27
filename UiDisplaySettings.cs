@@ -88,6 +88,15 @@ namespace Naufal_Windows_Tech_s_Powertoys
             { 25, 50, 75, 100, 125, 150, 175, 200 };
 
         private static readonly ConditionalWeakTable<FrameworkElement, ElementBaseline> ElementBaselines = new();
+        // Keep WinRT control projections alive for the lifetime of their root.
+        // Otherwise unnamed controls can acquire new wrappers after a GC and
+        // capture an already-scaled value as their new baseline. The root-keyed
+        // ephemeron does not keep closed windows alive; stale children are replaced.
+        private sealed class RootLifetime
+        {
+            public ISet<DependencyObject> Elements { get; set; } = new HashSet<DependencyObject>(ReferenceEqualityComparer.Instance);
+        }
+        private static readonly ConditionalWeakTable<FrameworkElement, RootLifetime> RootLifetimes = new();
         private static readonly ConditionalWeakTable<FrameworkElement, object> RecoveryControls = new();
         private static readonly ConditionalWeakTable<ColumnDefinition, ColumnBaseline> ColumnBaselines = new();
         private static readonly ConditionalWeakTable<RowDefinition, RowBaseline> RowBaselines = new();
@@ -102,7 +111,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         public static int TextScalePercent { get; private set; } = 100;
 
-        public static string LanguageCode { get; private set; } = "en";
 
         public static double GeometryScale => TextScalePercent switch
         {
@@ -118,6 +126,15 @@ namespace Naufal_Windows_Tech_s_Powertoys
         };
 
         public static event EventHandler? Changed;
+
+        // Diagnostic screenshots must not overwrite the user's saved preferences.
+        internal static void SetPreviewDisplay(ElementTheme theme, int scale)
+        {
+            if (Array.IndexOf(SupportedPercentages, scale) < 0) throw new ArgumentOutOfRangeException(nameof(scale));
+            Theme = theme;
+            TextScalePercent = scale;
+            Changed?.Invoke(null, EventArgs.Empty);
+        }
 
         // Only the theme/scaling recovery controls opt in, not catalog content.
         internal static void KeepRecoveryControlUsable(FrameworkElement element) =>
@@ -145,30 +162,36 @@ namespace Naufal_Windows_Tech_s_Powertoys
             Changed?.Invoke(null, EventArgs.Empty);
         }
 
-        public static void SetLanguage(string languageCode)
-        {
-            string normalized = UiTranslation.NormalizeLanguageCode(languageCode);
-            if (string.Equals(LanguageCode, normalized, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            LanguageCode = normalized;
-            SavePreferences();
-            Changed?.Invoke(null, EventArgs.Empty);
-        }
-
         public static void Apply(FrameworkElement root)
         {
             root.RequestedTheme = Theme;
             HashSet<DependencyObject> visited = new(ReferenceEqualityComparer.Instance);
+            // Capture the complete authored tree before changing inherited font
+            // sizes. This also handles the first launch with a saved 25% scale.
+            CaptureTree(root, visited);
+            RootLifetimes.GetValue(root, static _ => new RootLifetime()).Elements = visited;
+            visited = new(ReferenceEqualityComparer.Instance);
             ApplyRecursively(
                 root,
                 Theme == ElementTheme.Dark,
                 TextScalePercent / 100d,
                 GeometryScale,
                 visited);
-            UiTranslation.Apply(root, LanguageCode);
+            root.Language = "en-US";
+            root.FlowDirection = FlowDirection.LeftToRight;
+        }
+
+        private static void CaptureTree(DependencyObject element, ISet<DependencyObject> visited)
+        {
+            if (!visited.Add(element)) return;
+            if (element is FrameworkElement frameworkElement)
+                ElementBaselines.GetValue(frameworkElement, CaptureBaseline);
+            if (element is Grid grid)
+            {
+                foreach (ColumnDefinition column in grid.ColumnDefinitions) visited.Add(column);
+                foreach (RowDefinition row in grid.RowDefinitions) visited.Add(row);
+            }
+            foreach (DependencyObject child in EnumerateAuthoredChildren(element)) CaptureTree(child, visited);
         }
 
         private static void ApplyRecursively(
@@ -426,6 +449,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     }
                 }
             }
+
+            if (element is NavigationView navigation)
+            {
+                foreach (object item in navigation.MenuItems)
+                    if (item is DependencyObject child) yield return child;
+                foreach (object item in navigation.FooterMenuItems)
+                    if (item is DependencyObject child) yield return child;
+            }
         }
 
         // Default/inherited text and shared button styles follow RequestedTheme.
@@ -616,12 +647,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     TextScalePercent = scale;
                 }
 
-                string languagePath = IOPath.Combine(PreferenceDirectory, "ui-language.txt");
-                if (File.Exists(languagePath))
-                {
-                    LanguageCode = UiTranslation.NormalizeLanguageCode(
-                        File.ReadAllText(languagePath).Trim());
-                }
+
             }
             catch
             {
@@ -640,9 +666,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 File.WriteAllText(
                     IOPath.Combine(PreferenceDirectory, "ui-font-scale.txt"),
                     TextScalePercent.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                File.WriteAllText(
-                    IOPath.Combine(PreferenceDirectory, "ui-language.txt"),
-                    LanguageCode);
+
             }
             catch
             {
