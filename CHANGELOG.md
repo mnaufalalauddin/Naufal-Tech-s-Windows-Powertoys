@@ -18,6 +18,20 @@ checkpoint, not a new execution of those tests while writing this file. A compil
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
 
+## 27 September 2026 — Installation folder correction and maintainer screenshots
+
+- **Installer:** Changed the default destination to
+  `C:\Program Files\Naufal Tech's Limited\Naufal Windows Utility`.
+  Previous installation paths cannot override this default. The existing
+  relocation guard still requires a normal uninstall before changing folders;
+  Setup does not automatically run the old uninstaller or move/delete its tree.
+- **Data preservation:** Kept the AppId and `%LOCALAPPDATA%\Naufal Windows Powertoys`
+  backup/preferences location unchanged. This supersedes only the retained
+  installation-folder decision in the earlier rename entry below.
+- **README:** Replaced both dashboard images with the maintainer's supplied
+  Light (15:13:19) and Dark (15:13:43) screenshot files from 27 September 2026,
+  unmodified, and updated installation/migration instructions.
+
 ## 27 September 2026 — Naufal Windows Utility rename and startup repair
 
 - **Renamed:** The application display name, executable metadata, main window,

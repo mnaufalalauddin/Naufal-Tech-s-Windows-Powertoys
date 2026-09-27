@@ -18,7 +18,7 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 
 </details>
 
-*Actual application Home captures from 27 September 2026, using the released Native AOT executable in Light and Dark mode. Scroll Home for system status, quick actions, telemetry, and technical details.*
+*Light and Dark screenshots supplied by the maintainer on 27 September 2026, showing Naufal Windows Utility's Home screen. Scroll Home for quick actions, telemetry, and technical details.*
 
 ---
 
@@ -75,9 +75,9 @@ Profiles manage multiple settings, not just the power plan. **No profile guarant
 - Retain your BitLocker recovery key securely. Preventing automatic device encryption does not decrypt an already encrypted drive.
 - Keep restore backups. A green verification result covers the implemented checks, not every possible side effect.
 
-Default installation: `C:\Program Files\Naufal Tech's Limited\Naufal Windows Powertoys`.
+Default installation: `C:\Program Files\Naufal Tech's Limited\Naufal Windows Utility`.
 
-**Executable:** `Naufal Windows Utility.exe`. The installation directory, per-user folder, and upgrade identity intentionally retain their historical names so existing preferences and restore backups remain available. The installer replaces the old executable and standard shortcuts; an old pinned shortcut may need to be unpinned and pinned again.
+**Executable:** `Naufal Windows Utility.exe`. The installation folder now matches the application name. The per-user folder and upgrade identity remain unchanged to preserve access to existing preferences and restore backups. If an existing version is registered in the old folder, finish running tasks, close the app, uninstall that version through **Windows Settings → Apps**, then run the new installer. Setup blocks relocation until the old installation is unregistered; it does not move or recursively delete the old folder. Keep your restore backups. An old pinned shortcut may need to be unpinned and pinned again.
 
 Per-user application files: `%LOCALAPPDATA%\Naufal Windows Powertoys`. Some snapshots live in the registry or other feature-specific locations; this folder alone is not a complete backup.
 

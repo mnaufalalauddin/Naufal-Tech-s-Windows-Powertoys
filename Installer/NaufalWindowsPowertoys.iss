@@ -29,7 +29,7 @@ AppPublisher={#AppPublisher}
 AppPublisherURL=https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys
 AppSupportURL=https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues
 LicenseFile=..\LICENSE
-DefaultDirName={autopf}\Naufal Tech's Limited\Naufal Windows Powertoys
+DefaultDirName={autopf}\Naufal Tech's Limited\Naufal Windows Utility
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
@@ -47,7 +47,7 @@ WizardStyle=modern
 DisableWelcomePage=no
 CloseApplications=yes
 RestartApplications=no
-; Do not let an older flat Program Files path replace the new company folder.
+; Do not reuse the legacy Powertoys folder or an older flat Program Files path.
 UsePreviousAppDir=no
 UsePreviousGroup=yes
 VersionInfoVersion={#AppVersion}.0
@@ -60,7 +60,7 @@ VersionInfoDescription={#AppName} Installer
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [InstallDelete]
-; Preserve AppId, install location, AppData and registry snapshots for upgrades.
+; Preserve AppId, AppData and registry snapshots; relocation is guarded below.
 ; Remove only the superseded owned launcher/resources and legacy shortcuts.
 Type: files; Name: "{app}\Naufal Windows Powertoys.exe"
 Type: files; Name: "{app}\Naufal Windows Powertoys.pri"

@@ -3,7 +3,9 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $scriptText = Get-Content -LiteralPath (Join-Path $root 'Installer\NaufalWindowsPowertoys.iss') -Raw
 $checks = [ordered]@{
-    'Company parent folder' = $scriptText.Contains("DefaultDirName={autopf}\Naufal Tech's Limited\Naufal Windows Powertoys")
+    'Company parent and renamed application folder' = $scriptText.Contains("DefaultDirName={autopf}\Naufal Tech's Limited\Naufal Windows Utility")
+    'Legacy application folder is not the default' = -not $scriptText.Contains("DefaultDirName={autopf}\Naufal Tech's Limited\Naufal Windows Powertoys")
+    'Existing AppData backup folder retained' = (Get-Content -LiteralPath (Join-Path $root 'AppDataPaths.cs') -Raw).Contains('internal const string FolderName = "Naufal Windows Powertoys";')
     'Old location cannot override default' = $scriptText.Contains('UsePreviousAppDir=no')
     'Existing application identity retained' = $scriptText.Contains('AppId={{A75F9775-AC15-4F03-8931-43D04EA6B032}')
     'Publisher matches current project' = $scriptText.Contains('#define AppPublisher "Muhammad Naufal Alauddin"')
