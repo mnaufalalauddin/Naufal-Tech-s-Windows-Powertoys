@@ -10,14 +10,13 @@ A native Windows dashboard to **repair system components**, **inspect disk healt
 
 Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under active development. **Not affiliated with Microsoft or Microsoft PowerToys.**
 
-![Naufal Windows Utility — dark dashboard](docs/images/dashboard-dark.png)
+### Dark Mode
 
-<details>
-<summary>View the light theme</summary>
+![Naufal Windows Utility — Dark Mode, 28 September 2026](docs/images/dashboard-dark-20260928-012955.png)
 
-![Naufal Windows Utility — light dashboard](docs/images/dashboard-light.png)
+### Light Mode
 
-</details>
+![Naufal Windows Utility — Light Mode, 28 September 2026](docs/images/dashboard-light-20260928-012935.png)
 
 *Light and Dark screenshots supplied by the maintainer on 28 September 2026 at 01:29. Home shows About, Task Monitoring, and Exit; restart-sensitive changes instead offer “Restart now” or “Later” after active tasks finish. Profile and system-status values reflect the PC when captured, not recommended settings or guaranteed results. Scroll Home for quick actions, telemetry, and technical details.*
 
