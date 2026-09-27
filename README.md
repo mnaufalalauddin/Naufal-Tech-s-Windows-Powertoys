@@ -19,7 +19,7 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 
 </details>
 
-*Light and Dark screenshots supplied by the maintainer on 27 September 2026 at 19:34. They show Home before the standalone Reboot button was removed. The current build instead offers “Restart now” or “Later” after completed restart-sensitive changes, once active tasks finish. Scroll Home for quick actions, telemetry, and technical details.*
+*Light and Dark screenshots supplied by the maintainer on 28 September 2026 at 01:29. Home shows About, Task Monitoring, and Exit; restart-sensitive changes instead offer “Restart now” or “Later” after active tasks finish. Profile and system-status values reflect the PC when captured, not recommended settings or guaranteed results. Scroll Home for quick actions, telemetry, and technical details.*
 
 ---
 
