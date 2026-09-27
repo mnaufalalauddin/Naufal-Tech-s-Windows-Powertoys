@@ -1,6 +1,6 @@
 # Naufal Windows Utility — Changelog
 
-Development history from **30 August 2026** through **27 September 2026**.
+Development history from **30 August 2026** through **28 September 2026**.
 
 **Original history snapshot:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
 Later development entries are appended below with their own dates.
@@ -17,6 +17,73 @@ source changes. **Verification** describes the evidence available at that
 checkpoint, not a new execution of those tests while writing this file. A compiled
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
+
+## 28 September 2026 — Readable disk transfer totals
+
+- **Changed:** Disk Info Total host reads/writes now display decimal terabytes
+  (TB) with grouping and two decimal places instead of long byte counts. The
+  same values are used by Copy and Save TXT; raw NVMe data-unit counters remain.
+- **Accuracy:** Integer-only formatting retains full 128-bit counter precision
+  before rounding the display. One TB equals 1,000,000,000,000 bytes, not one TiB.
+
+## 28 September 2026 — Targeted controller and SSD endurance port
+
+- **Added:** Read-only USB NVMe identify/health adapters for exact ASMedia
+  ASM2362 and Realtek RTL9210 PnP identities, with standard SAT fallback.
+- **Added:** Intel RST NVMe miniport path for exposed disks on supported Intel
+  drivers. Exact controller serial matching prevents assigning member health to
+  an unrelated disk or treating a member as aggregate RAID array health.
+- **Added:** Model-scoped SATA SSD endurance rules for selected Samsung,
+  Intel/Solidigm, Crucial/Micron, Kingston and Kioxia/Toshiba families. Unknown
+  models retain raw attributes without an invented lifespan percentage.
+- **Verification:** 4,540 regression assertions passed, including 80 new
+  synthetic transport, error, identity and vendor-rule checks. Live read-only
+  probe retained successful reads from two NVMe SSDs and 27 USB ATA attributes.
+  Target RAID/USB bridge hardware was unavailable; these ports are not hardware
+  certified. See docs/disk-info.md for implemented and unimplemented paths.
+
+## 28 September 2026 — Device SMART and disk selection repair
+
+- **Fixed:** Disk selector labels no longer intercept pointer input. Regression
+  tests activate the actual button event instead of calling SelectPage directly.
+- **Health:** Replaced the Windows Health card with Disk Health derived from
+  direct device SMART. Missing evidence is Unknown, not a Windows-derived Good.
+- **NVMe:** Added standard log/identify queries, critical warnings, estimated
+  endurance remaining, 128-bit counters, host read/write totals, power cycles,
+  hours, unsafe shutdowns, media errors and temperature sensors.
+- **ATA/SAT:** Added read-only IDENTIFY, SMART data, thresholds and status reads;
+  raw attributes are attached only to uniquely identified disks. Write/enable/
+  firmware/self-test commands are not exposed.
+- **Attribution:** Referenced CrystalDiskInfo source revision
+  9ac83d03283f2dcb6047b8fb162463469a7b6c74; included its MIT notice. Full vendor
+  USB/RAID and SSD lifespan algorithm parity is not complete.
+- **Live read-only checks:** Two NVMe drives reported estimated endurance
+  remaining of 96% and 81%; a USB drive returned 27 ATA attributes. USB overall
+  health could not be verified and remains Unknown. Native ATA transport needs
+  validation on SATA hardware. No Windows settings or drive contents were changed.
+
+## 28 September 2026 — Disk dashboard and optional network addresses
+
+- **Disk Info:** Added a CrystalDiskInfo-inspired device selector, health and
+  temperature cards, drive details and reliability tables. Preserved the original
+  physical/logical disk backend and complete Copy / Save TXT output in the overview.
+- **Data:** Added bounded native Windows reliability reads and validated legacy
+  ATA attribute parsing. Getter calls use the actual disk object; missing data,
+  unsupported drivers, access errors and timeouts are not converted into healthy
+  status or zero values. No vendor health percentage or raw NVMe support is claimed.
+- **System Report:** Added an unchecked-by-default IP/MAC checkbox; the same
+  visibility filter controls display and exports. No public-IP lookup is made.
+- **Verification:** The elevated read-only hardware probe retrieved temperature
+  counters from three disks and power-on hours from one. Legacy ATA WMI providers
+  on the test PC were unsupported; raw-table rendering uses labelled synthetic
+  fixtures. No system tweaks, disk writes or reboot were performed.
+- **Checks:** 4,424 functional assertions, 299 English-only UI/resource checks,
+  16 static export checks and 20,004 Native AOT WinUI assertions passed. The
+  separate Native AOT hardware read probe exited successfully. The x64 installer
+  was rebuilt locally; this entry does not imply GitHub publication or an
+  installer end-to-end test. The optional AOT probe build emits existing warnings
+  in unrelated reflection-based test helpers; only its read-only report branch
+  was executed in AOT mode.
 
 ## 27 September 2026 — Contextual restart prompts and release previews
 

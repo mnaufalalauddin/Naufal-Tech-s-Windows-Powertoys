@@ -1101,7 +1101,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 "TASKS: READING DISKS",
                 "Disk Information",
                 "StorageOverview",
-                () => Task.Run(_systemReportService.CollectDiskInformation));
+                _systemReportService.CollectDiskInformationAsync);
         }
 
         private async void FullRepairButton_Click(object sender, RoutedEventArgs e)
@@ -4798,7 +4798,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 "TASKS: SYSTEM REPORT",
                 "System Report",
                 "SystemReport",
-                _systemReportService.CollectAsync);
+                () => Task.Run(_systemReportService.CollectAsync));
         }
 
         private async void WindowsActivationButton_Click(object sender, RoutedEventArgs e)
@@ -5805,8 +5805,20 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 "Value",
                 isSection: false,
                 isHeader: true);
-            Grid.SetRow(header, 0);
-            contentGrid.Children.Add(header);
+            bool diskDashboard = suggestedFileName == "StorageOverview";
+            CheckBox addressOption = new()
+            {
+                Content = "Show IP and MAC addresses (also include in Copy / Save TXT)",
+                IsChecked = false,
+                Visibility = rows.Any(row => row.IsNetworkAddress) ? Visibility.Visible : Visibility.Collapsed,
+                Margin = new Thickness(4, 0, 4, 10)
+            };
+            StackPanel reportHeader = new();
+            reportHeader.Children.Add(addressOption);
+            header.Visibility = diskDashboard ? Visibility.Collapsed : Visibility.Visible;
+            reportHeader.Children.Add(header);
+            Grid.SetRow(reportHeader, 0);
+            contentGrid.Children.Add(reportHeader);
 
             ListView reportList = new()
             {
@@ -5823,25 +5835,31 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 reportList,
                 ScrollBarVisibility.Disabled);
 
-            foreach (SystemReportEntry row in rows)
+            string plainText = "";
+            void RenderReport()
             {
-                ListViewItem item = new()
+                IReadOnlyList<SystemReportEntry> visible = NetworkReport.VisibleRows(rows, addressOption.IsChecked == true);
+                plainText = BuildTableReportText(visible);
+                reportList.Items.Clear();
+                if (diskDashboard) return;
+                foreach (SystemReportEntry row in visible)
                 {
-                    Content = CreateReportGridRow(
-                        row.Property,
-                        row.Value,
-                        row.IsSection,
-                        isHeader: false),
-                    HorizontalContentAlignment = HorizontalAlignment.Stretch,
-                    Padding = new Thickness(0),
-                    Margin = new Thickness(0),
-                    IsTabStop = false
-                };
-                reportList.Items.Add(item);
+                    reportList.Items.Add(new ListViewItem
+                    {
+                        Content = CreateReportGridRow(row.Property, row.Value, row.IsSection, isHeader: false),
+                        HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                        Padding = new Thickness(0), Margin = new Thickness(0), IsTabStop = false
+                    });
+                }
+                UiDisplaySettings.Apply(reportList);
             }
+            RenderReport();
+            addressOption.Checked += (_, _) => RenderReport();
+            addressOption.Unchecked += (_, _) => RenderReport();
 
-            Grid.SetRow(reportList, 1);
-            contentGrid.Children.Add(reportList);
+            FrameworkElement reportSurface = diskDashboard ? new DiskInfoView(rows) : reportList;
+            Grid.SetRow(reportSurface, 1);
+            contentGrid.Children.Add(reportSurface);
 
             TextBlock statusText = new()
             {
@@ -5853,7 +5871,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             Grid.SetRow(statusText, 2);
             contentGrid.Children.Add(statusText);
 
-            string plainText = BuildTableReportText(rows);
             ToolWindow window = new(
                 this,
                 title,
@@ -5888,6 +5905,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 if (savingReport) return;
                 savingReport = true;
+                addressOption.IsEnabled = false;
                 window.SecondaryButton.IsEnabled = false;
                 try
                 {
@@ -5901,6 +5919,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 finally
                 {
                     savingReport = false;
+                    addressOption.IsEnabled = true;
                     if (!window.IsClosed) window.SecondaryButton.IsEnabled = true;
                 }
             };

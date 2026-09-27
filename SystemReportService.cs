@@ -14,13 +14,30 @@ using System.Threading.Tasks;
 
 namespace Naufal_Windows_Tech_s_Powertoys
 {
-    internal readonly record struct SystemReportEntry(
-        string Property,
-        string Value,
-        bool IsSection);
-
     internal sealed class SystemReportService
     {
+        private readonly DiskHealthReportService _diskHealth = new();
+        private readonly LegacySmartReport _legacySmart = new();
+        private readonly BoundedReadProbe<IReadOnlyList<SystemReportEntry>> _diskInventory = new();
+
+        public async Task<IReadOnlyList<SystemReportEntry>> CollectDiskInformationAsync()
+        {
+            List<SystemReportEntry> rows = new();
+            Task<IReadOnlyList<SystemReportEntry>> health = _diskHealth.ReadAsync();
+            Task<IReadOnlyList<SystemReportEntry>> attributes = _legacySmart.ReadAsync();
+            try
+            {
+                rows.AddRange(await _diskInventory.ReadAsync(CollectDiskInformation, TimeSpan.FromSeconds(12)));
+            }
+            catch (Exception exception)
+            {
+                AddRow(rows, "Disk inventory unavailable", exception.Message);
+            }
+            rows.AddRange(await health);
+            rows.AddRange(await attributes);
+            return rows;
+        }
+
         private const double BytesPerGigabyte = 1024d * 1024d * 1024d;
         private const uint IoctlStorageQueryProperty = 0x002D1400;
         private const uint IoctlDiskGetLengthInfo = 0x0007405C;
@@ -130,6 +147,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             AddRow(rows, "Windows", NormalizeWindowsProductName(productName, buildNumber));
             AddRow(rows, "Version", BuildWindowsVersion(buildNumber, displayVersion));
             AddRow(rows, "Build", buildNumber);
+            rows.AddRange(NetworkReport.Read());
 
             AddSection(rows, "PROCESSOR");
             AddRow(rows, "CPU", processorName);

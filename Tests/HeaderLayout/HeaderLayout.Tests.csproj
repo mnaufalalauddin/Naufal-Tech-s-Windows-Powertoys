@@ -33,6 +33,10 @@
     <Compile Include="..\..\UiDisplaySettings.cs" Link="UiDisplaySettings.cs" />
     <Compile Include="..\..\CatalogDisplayNames.cs" Link="CatalogDisplayNames.cs" />
     <Compile Include="..\..\UiTextKeys.cs" Link="UiTextKeys.cs" />
+    <Compile Include="..\..\SystemReportEntry.cs" Link="SystemReportEntry.cs" />
+    <Compile Include="..\..\SmartAttribute.cs" Link="SmartAttribute.cs" />
+    <Compile Include="..\..\DiskReportPresentation.cs" Link="DiskReportPresentation.cs" />
+    <Compile Include="..\..\DiskInfoView.cs" Link="DiskInfoView.cs" />
   </ItemGroup>
   <!-- Linked XAML compiles to XBF in TargetDir, but is not automatically
        included by the source-only host's Native AOT publish pipeline. -->

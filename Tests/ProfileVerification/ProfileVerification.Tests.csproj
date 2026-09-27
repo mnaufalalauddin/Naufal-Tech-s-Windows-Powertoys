@@ -9,6 +9,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\ApplicationLanguagePolicy.cs" Link="ApplicationLanguagePolicy.cs" />
+    <Compile Include="..\..\SystemReportEntry.cs" Link="SystemReportEntry.cs" />
+    <Compile Include="..\..\SystemReportService.cs" Link="SystemReportService.cs" />
+    <Compile Include="..\..\NetworkReport.cs" Link="NetworkReport.cs" />
+    <Compile Include="..\..\DiskHealthReportService.cs" Link="DiskHealthReportService.cs" />
+    <Compile Include="..\..\DeviceSmartReport.cs" Link="DeviceSmartReport.cs" />
+    <Compile Include="..\..\NativeDiskSmart.cs" Link="NativeDiskSmart.cs" />
+    <Compile Include="..\..\NativeDiskSmart.Vendor.cs" Link="NativeDiskSmart.Vendor.cs" />
+    <Compile Include="..\..\SsdEndurance.cs" Link="SsdEndurance.cs" />
+    <Compile Include="..\..\DiskReportPresentation.cs" Link="DiskReportPresentation.cs" />
+    <Compile Include="..\..\SmartAttribute.cs" Link="SmartAttribute.cs" />
+    <Compile Include="..\..\LegacySmartReport.cs" Link="LegacySmartReport.cs" />
     <Compile Include="..\..\RestartPromptPolicy.cs" Link="RestartPromptPolicy.cs" />
     <Compile Include="..\..\PerformanceProfileService.cs" Link="PerformanceProfileService.cs" />
     <Compile Include="..\..\PerformanceProfileExtendedService.cs" Link="PerformanceProfileExtendedService.cs" />

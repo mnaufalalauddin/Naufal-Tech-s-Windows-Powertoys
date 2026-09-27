@@ -14,7 +14,13 @@ $checks = @(
     $export.Contains('if (result is null) return null;'),
     $export.Contains('await File.WriteAllTextAsync(result.Path, report)'),
     $main.Contains('window.IsBusy = () => savingReport;'),
-    $progress.Contains('_window.IsBusy = () => !_completed || _exportInProgress;')
+    $progress.Contains('_window.IsBusy = () => !_completed || _exportInProgress;'),
+    $main.Contains('NetworkReport.VisibleRows(rows, addressOption.IsChecked == true)'),
+    $main.Contains('plainText = BuildTableReportText(visible);'),
+    $main.Contains('addressOption.Unchecked += (_, _) => RenderReport();'),
+    $main.Contains('package.SetText(plainText);'),
+    $main.Contains('addressOption.IsEnabled = false;'),
+    $main.Contains('diskDashboard ? new DiskInfoView(rows) : reportList')
 )
 if ($checks -contains $false) { throw 'Report export routing or elevated-picker guard regressed.' }
 Write-Output "PASS: $($checks.Count) static report-export assertions. Native save dialogs remain untested."

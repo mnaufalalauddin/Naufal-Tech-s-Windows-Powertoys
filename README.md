@@ -1,11 +1,12 @@
 # Naufal Windows Utility
 
 [![Source version](https://img.shields.io/badge/Source_Version-v8.0.0.0-0567ff?style=for-the-badge)](CHANGELOG.md)
+[![Latest release](https://img.shields.io/github/v/release/mnaufalalauddin/Naufal-Windows-Utility?style=for-the-badge&label=Download)](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/releases/latest)
 [![Windows target](https://img.shields.io/badge/Target-Windows_10_%2F_11_x64-0078d4?style=for-the-badge)](#quick-start)
 [![License](https://img.shields.io/badge/License-MIT-16803c?style=for-the-badge)](LICENSE)
 [![Interface](https://img.shields.io/badge/UI-English-8250df?style=for-the-badge)](#interface--project-status)
 
-A native Windows dashboard to **repair system components**, **manage Windows apps**, **review privacy settings**, and **configure gaming and performance options**—with live monitoring and operation progress in one place.
+A native Windows dashboard to **repair system components**, **inspect disk health and system information**, **manage Windows apps**, **review privacy settings**, and **configure gaming and performance options**—with live monitoring and operation progress in one place.
 
 Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under active development. **Not affiliated with Microsoft or Microsoft PowerToys.**
 
@@ -26,7 +27,7 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 
 > **Back up important data before applying tweaks.** System-changing operations may require Administrator privileges. Review each option's warning; do not apply every tweak indiscriminately.
 
-1. Visit [Releases](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/releases) and choose a maintainer-published x64 installer, if available. If no suitable installer is attached, [build from source](#build--develop).
+1. Open the [latest release](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/releases/latest) and download `Naufal-Windows-Utility-Setup-8.0.0.0-x64.exe`. Compare its SHA-256 with the attached `SHA256SUMS.txt`. Alternatively, [build from source](#build--develop).
 2. Run the installer, open **Naufal Windows Utility**, and review the first-run prerequisites.
 3. Choose a catalog or performance profile, read its description, and apply only the changes you need.
 4. Check the separate progress window and verification results. For completed changes marked restart-sensitive, the app offers **Restart now** or **Later** after active tasks finish. Save your work before accepting. Choosing Later does not schedule a reboot; restart from Windows when convenient.
@@ -42,7 +43,7 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 | Category | Highlights |
 | --- | --- |
 | **Repair** | Full Repair, Quick Repair, Windows Update Fix, Microsoft Store Fix, and Explorer Fix. |
-| **System** | Disk information, system reports, and Windows / Office activation status tools. A valid license is still required. |
+| **System** | Disk dashboard with device-derived SMART health, NVMe endurance/read-write/error counters, ATA/SAT attributes and Windows reliability fallback; system reports with opt-in local IP/MAC addresses; Windows / Office activation status tools. A valid license is still required. |
 | **Tweaks & De-Bloat** | Essential and Gaming catalogs, service controls, privacy and advertising policies, and supported AI-related settings. |
 | **Built-in Windows Apps** | Alphabetical app removal / recovery, including OneDrive, with Recommended, Optional, and Not Recommended removal guidance. |
 | **Security & Compatibility** | BitLocker Manager, automatic device-encryption policy, Defender controls, Smart App Control, GPU Driver Manager, runtime checks, and MSI Mode Utility. |
@@ -51,6 +52,16 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 ### Navigation
 
 The sidebar contains **Home**, **System Repair**, **System Info**, **Windows Security**, and **Advanced Windows Tweaks**. Home prioritizes performance profiles and current system status, with Quick Repair, System Report, shader-cache cleanup, and the Legacy Windows Panels launcher. Expand **Live telemetry** for graphs or **Technical details** for diagnostic output. All existing repair and catalog entry points remain available on their corresponding pages.
+
+### Disk health and system reports
+
+- **Choose each disk individually:** view device identity, firmware, temperature, SMART attributes, and health derived from the device's SMART data. The overview retains the original physical/logical disk backend and provider notes.
+- **Readable transfer totals:** Total host reads/writes use **TB**, with two decimal places, in both the dashboard and Copy / Save TXT. One TB is 1,000,000,000,000 bytes; original NVMe data-unit counters remain available.
+- **NVMe and ATA/SAT:** NVMe logs expose endurance, spare, critical warnings, 128-bit counters, power cycles/hours, media errors, and temperature sensors. ATA/SAT exposes available raw attributes and thresholds. Missing health evidence is **Unknown**, not an assumed Good result.
+- **Targeted controller support:** ASMedia ASM2362 and Realtek RTL9210 USB NVMe adapters, an identity-checked Intel RST path, and model-scoped SATA SSD endurance rules are included. These additions are **fixture-tested, not yet verified on matching hardware**. Hidden RAID-member enumeration and full CrystalDiskInfo parity are not claimed.
+- **Optional network addresses:** System Report can show local IPv4/IPv6 and MAC addresses. These are hidden by default and included in Copy / Save TXT only when selected; no public-IP lookup is performed. Other report fields can still contain identifying information.
+
+Availability depends on the drive, controller, firmware, and Windows driver. Endurance is a write-wear estimate, not a prediction of years remaining or a guarantee against failure. See [supported paths, data sources, and limitations](docs/disk-info.md).
 
 ## Performance Profiles
 
@@ -129,6 +140,8 @@ The functional and localization checks do not apply Windows tweaks. The separate
 | --- | --- |
 | `MainWindow.xaml`, `MainWindow*.cs` | Dashboard, dialogs, and catalog interaction. |
 | `*Service.cs`, catalog and policy files | Inspection, repair, tweaks, app management, and restore behavior. |
+| `DiskInfoView.cs`, `NativeDiskSmart*.cs`, `DeviceSmartReport.cs`, `SsdEndurance.cs` | Disk dashboard, read-only SMART transports, health decoding and model-scoped endurance. |
+| `NetworkReport.cs`, `SystemReportEntry.cs` | Local network report and opt-in address visibility/export. |
 | `EnglishUiText.cs`, `UiTextKeys.cs` | Shared English application/installer copy. |
 | `Installer/`, `build-installer.ps1` | Installer definition, packaging, icons, and dependency notices. |
 | `Tests/` | Functional, English-only contract, static, and native UI checks. |
@@ -148,6 +161,15 @@ The project file retains its historical filename. Passing tests is not proof tha
 The 27 September 2026 live audit reached **23/23 checks for each of the three performance profiles**, then exercised forced-failure rollback to the captured initial configuration after each profile. This is evidence from one development PC, not a guarantee for every Windows build or device. The opt-in mutation harness is separate from normal regression tests.
 
 **Active development—not declared complete.** Broader device/Windows-version coverage and remaining feature-specific live audits are ongoing. Historical screenshots and guides may show the previous dashboard.
+
+The 28 September 2026 disk/report update passed **4,549 regression assertions**,
+**20,068 native UI assertions**, **307 English-only checks**, and **16 static
+report-export checks**. Read-only Native AOT probes successfully read two NVMe
+SSDs and 27 ATA attributes from one USB drive. The USB drive's overall SMART
+health remained Unknown when the driver could not confirm it. These results do
+not certify every controller, Windows version, or system-changing operation.
+Application version remains **v8.0.0.0**; dated release tags distinguish builds
+without replacing earlier release history.
 
 ---
 

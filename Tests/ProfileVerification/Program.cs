@@ -2,6 +2,12 @@ using Naufal_Windows_Tech_s_Powertoys;
 
 try
 {
+if (args.Contains("--report-read-probe"))
+{
+    string? report = args.Contains("--probe-report") ? args[Array.IndexOf(args, "--probe-report") + 1] : null;
+    await ReportInformationTests.ReadProbeAsync(report);
+    return;
+}
 if (args.Contains("--live-profile-audit")) { await LiveProfileAudit.RunAsync(args); return; }
 if (OneDriveExecutionTests.Child(args)) return;
 if (args.Contains("--onedrive-user-probe"))
@@ -148,6 +154,8 @@ await CatalogAvailabilityTests.RunAsync(Assert);
 RestoreFollowupTests.Run(Assert);
 await RestoreDefaultsAuditTests.RunAsync(Assert);
 await RestartPromptTests.RunAsync(Assert);
+await ReportInformationTests.RunAsync(Assert);
+        DeviceSmartTests.Run(Assert);
 Console.WriteLine($"PASS: {passed} regression assertions. No Windows settings changed.");
 if (args.Contains("--power-probe")) PowerPolicyReaderTests.ProbeBalanced();
 if (args.Contains("--rsc-probe")) await RscResultTests.ProbeAsync();

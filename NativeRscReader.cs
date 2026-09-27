@@ -121,6 +121,38 @@ namespace Naufal_Windows_Tech_s_Powertoys
             finally { VariantClear(ref value); }
         }
 
+        internal static byte[] ReadByteArray(nint instance, string name)
+        {
+            Variant value = default;
+            bool locked = false;
+            try
+            {
+                Get(instance, name, &value);
+                if (value.Type != 0x2011 || value.Pointer == 0 || SafeArrayGetDim(value.Pointer) != 1)
+                    throw new InvalidOperationException("Expected a one-dimensional WMI byte array.");
+                Marshal.ThrowExceptionForHR(SafeArrayGetLBound(value.Pointer, 1, out int lower));
+                Marshal.ThrowExceptionForHR(SafeArrayGetUBound(value.Pointer, 1, out int upper));
+                long length = (long)upper - lower + 1;
+                if (length < 0 || length > 4096) throw new InvalidOperationException("Unexpected WMI byte-array size.");
+                Marshal.ThrowExceptionForHR(SafeArrayAccessData(value.Pointer, out nint data));
+                locked = true;
+                byte[] bytes = new byte[(int)length];
+                if (bytes.Length > 0) Marshal.Copy(data, bytes, 0, bytes.Length);
+                return bytes;
+            }
+            finally
+            {
+                if (locked) SafeArrayUnaccessData(value.Pointer);
+                VariantClear(ref value);
+            }
+        }
+
+        [DllImport("oleaut32.dll")] private static extern uint SafeArrayGetDim(nint array);
+        [DllImport("oleaut32.dll")] private static extern int SafeArrayGetLBound(nint array, uint dimension, out int bound);
+        [DllImport("oleaut32.dll")] private static extern int SafeArrayGetUBound(nint array, uint dimension, out int bound);
+        [DllImport("oleaut32.dll")] private static extern int SafeArrayAccessData(nint array, out nint data);
+        [DllImport("oleaut32.dll")] private static extern int SafeArrayUnaccessData(nint array);
+
         // Only read-only BitLocker getter methods are accepted here.
         internal static Dictionary<string, string> ReadVolumeMethod(nint services, nint instance,
             string method, params string[] properties)
@@ -140,6 +172,58 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 return values;
             }
             finally { Release(result); Marshal.FreeBSTR(name); Marshal.FreeBSTR(path); }
+        }
+
+        // Read-only getter used by Windows Storage/StorageCmdlets.cdxml. Input is
+        // the actual physical-disk CIM object, never a guessed drive ordering.
+        internal static Dictionary<string, string> ReadDiskReliability(nint services, nint disk, string[] properties)
+        {
+            nint className = Marshal.StringToBSTR("PS_StorageCmdlets");
+            nint methodName = Marshal.StringToBSTR("GetStorageReliabilityCounter");
+            nint definition = 0, signature = 0, input = 0, output = 0, counter = 0;
+            Variant embedded = default;
+            try
+            {
+                var getObject = (delegate* unmanaged[Stdcall]<nint, nint, int, nint, nint*, nint, int>)(*(nint**)services)[6];
+                Marshal.ThrowExceptionForHR(getObject(services, className, 0, 0, &definition, 0));
+                var getMethod = (delegate* unmanaged[Stdcall]<nint, char*, int, nint*, nint, int>)(*(nint**)definition)[19];
+                fixed (char* method = "GetStorageReliabilityCounter")
+                    Marshal.ThrowExceptionForHR(getMethod(definition, method, 0, &signature, 0));
+                if (signature == 0) throw new InvalidOperationException("Reliability getter has no input definition.");
+                var spawn = (delegate* unmanaged[Stdcall]<nint, int, nint*, int>)(*(nint**)signature)[15];
+                Marshal.ThrowExceptionForHR(spawn(signature, 0, &input));
+                Variant borrowedDisk = new() { Type = 13, Pointer = disk }; // Put copies/AddRefs; do not clear borrowed pointer
+                var put = (delegate* unmanaged[Stdcall]<nint, char*, int, Variant*, int, int>)(*(nint**)input)[5];
+                fixed (char* property = "PhysicalDisk")
+                    Marshal.ThrowExceptionForHR(put(input, property, 0, &borrowedDisk, 0));
+                var exec = (delegate* unmanaged[Stdcall]<nint, nint, nint, int, nint, nint, nint*, nint, int>)(*(nint**)services)[24];
+                Marshal.ThrowExceptionForHR(exec(services, className, methodName, 0, 0, input, &output, 0));
+                if (output == 0) throw new InvalidOperationException("The reliability getter returned no output.");
+                string returnCode = "";
+                try { returnCode = ReadValue(output, "ReturnValue"); }
+                catch (COMException ex) when (ex.HResult == unchecked((int)0x80041002)) { /* void getter */ }
+                if (returnCode.Length > 0 && returnCode != "0")
+                    throw new InvalidOperationException("The reliability getter returned " + returnCode + ".");
+                Get(output, "StorageReliabilityCounter", &embedded);
+                if (embedded.Type != 13 || embedded.Pointer == 0)
+                    throw new InvalidOperationException("The driver returned no reliability-counter object.");
+                Guid iid = new("DC12A681-737F-11CF-884D-00AA004B2E24");
+                var queryInterface = (delegate* unmanaged[Stdcall]<nint, Guid*, nint*, int>)(*(nint**)embedded.Pointer)[0];
+                Marshal.ThrowExceptionForHR(queryInterface(embedded.Pointer, &iid, &counter));
+                Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase);
+                foreach (string property in properties)
+                {
+                    try { values[property] = ReadValue(counter, property); }
+                    catch { values[property] = string.Empty; }
+                }
+                return values;
+            }
+            finally
+            {
+                Release(counter); VariantClear(ref embedded);
+                Release(output); Release(input); Release(signature); Release(definition);
+                Marshal.FreeBSTR(methodName); Marshal.FreeBSTR(className);
+            }
         }
 
         private static void Get(nint instance, string name, Variant* value)
