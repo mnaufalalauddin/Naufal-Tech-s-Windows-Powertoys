@@ -29,6 +29,15 @@
                 <Setter Property="FontWeight" Value="SemiBold"/>
             </Style>
 
+            <Style x:Key="UtilityButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolButtonStyle}">
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+
+
             <Style x:Key="PrimaryToolButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolButtonStyle}">
                 <Setter Property="Background" Value="#2E66E5"/>
                 <Setter Property="Foreground" Value="White"/>
@@ -131,16 +140,14 @@
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="24,16,24,24" Spacing="24" MaxWidth="1320" HorizontalAlignment="Stretch">
                     <Grid ColumnSpacing="8" RowSpacing="8" x:Name="UtilityButtonsGrid" SizeChanged="HomeGrid_SizeChanged">
-                        <Button x:Name="AboutButton" Content="About" MinWidth="80" Height="32" MinHeight="32"
-                                        Style="{StaticResource ToolButtonStyle}" Margin="0" Click="AboutButton_Click"/>
-                        <Button x:Name="TaskStatusButton" Content="Task Monitoring" MinWidth="156" Height="32" MinHeight="32"
-                                        Style="{StaticResource ToolButtonStyle}" Margin="0"
+                        <Button x:Name="AboutButton" Content="About"
+                                        Style="{StaticResource UtilityButtonStyle}" Click="AboutButton_Click"/>
+                        <Button x:Name="TaskStatusButton" Content="Task Monitoring"
+                                        Style="{StaticResource UtilityButtonStyle}"
                                         Click="TaskStatusButton_Click"
                                         AutomationProperties.Name="Task Monitoring"/>
-                        <Button x:Name="RebootButton" Content="Reboot" Width="92" Height="32" MinHeight="32"
-                                        Click="RebootButton_Click"
-                                        Style="{StaticResource DangerToolButtonStyle}" Margin="0"/>
-                        <Button Content="Exit" Click="ExitButton_Click" Style="{StaticResource ToolButtonStyle}"/>
+
+                        <Button x:Name="ExitButton" Content="Exit" Click="ExitButton_Click" Style="{StaticResource UtilityButtonStyle}"/>
                     </Grid>
                     <StackPanel x:Name="HomePage" Spacing="20">
                         <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold"/>

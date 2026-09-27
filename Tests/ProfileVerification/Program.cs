@@ -147,6 +147,7 @@ await ReauditSeptember9Tests.RunAsync(Assert);
 await CatalogAvailabilityTests.RunAsync(Assert);
 RestoreFollowupTests.Run(Assert);
 await RestoreDefaultsAuditTests.RunAsync(Assert);
+await RestartPromptTests.RunAsync(Assert);
 Console.WriteLine($"PASS: {passed} regression assertions. No Windows settings changed.");
 if (args.Contains("--power-probe")) PowerPolicyReaderTests.ProbeBalanced();
 if (args.Contains("--rsc-probe")) await RscResultTests.ProbeAsync();

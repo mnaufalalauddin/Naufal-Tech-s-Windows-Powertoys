@@ -23,7 +23,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         bool Success,
         bool RolledBack,
         string ProfileName,
-        string Message);
+        string Message,
+        bool RestartRequired = false);
 
     internal sealed class PerformanceProfileService
     {
@@ -224,7 +225,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         ? "Restart Windows so the changed BCD/timer settings become authoritative."
                         : "BCD/timer settings were unchanged; no restart is required for those settings.") +
                     "\n\n" + PerformanceProfileTransaction.Format(fullVerification) +
-                    (saveWarning.Length > 0 ? "\n\nWARNING: " + saveWarning : ""));
+                    (saveWarning.Length > 0 ? "\n\nWARNING: " + saveWarning : ""),
+                    RestartRequired: extended.RestartRequired);
             }
             catch (Exception exception)
             {

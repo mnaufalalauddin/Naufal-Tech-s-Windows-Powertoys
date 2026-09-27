@@ -8,6 +8,7 @@ internal static class AppIdentity
     internal const string Product = "Naufal Windows Utility";
     internal const string Developer = "Muhammad Naufal Alauddin";
     // Verified from this repository's origin remote.
-    internal const string SourceUrl = "https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys";
+    internal const string SourceUrl = "https://github.com/mnaufalalauddin/Naufal-Windows-Utility";
     internal static string Version => typeof(AppIdentity).Assembly.GetName().Version?.ToString() ?? "";
+    internal static string DisplayVersion => "v" + Version;
 }

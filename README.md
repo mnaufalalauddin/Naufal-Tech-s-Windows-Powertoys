@@ -1,6 +1,6 @@
 # Naufal Windows Utility
 
-[![Source version](https://img.shields.io/badge/Source_Version-8.0.0.0-0567ff?style=for-the-badge)](CHANGELOG.md)
+[![Source version](https://img.shields.io/badge/Source_Version-v8.0.0.0-0567ff?style=for-the-badge)](CHANGELOG.md)
 [![Windows target](https://img.shields.io/badge/Target-Windows_10_%2F_11_x64-0078d4?style=for-the-badge)](#quick-start)
 [![License](https://img.shields.io/badge/License-MIT-16803c?style=for-the-badge)](LICENSE)
 [![Interface](https://img.shields.io/badge/UI-English-8250df?style=for-the-badge)](#interface--project-status)
@@ -18,7 +18,7 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 
 </details>
 
-*Light and Dark screenshots supplied by the maintainer on 27 September 2026, showing Naufal Windows Utility's Home screen. Scroll Home for quick actions, telemetry, and technical details.*
+*Light and Dark screenshots supplied by the maintainer on 27 September 2026 at 19:34. They show Home before the standalone Reboot button was removed. The current build instead offers “Restart now” or “Later” after completed restart-sensitive changes, once active tasks finish. Scroll Home for quick actions, telemetry, and technical details.*
 
 ---
 
@@ -26,10 +26,10 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 
 > **Back up important data before applying tweaks.** System-changing operations may require Administrator privileges. Review each option's warning; do not apply every tweak indiscriminately.
 
-1. Visit [Releases](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases) and choose a maintainer-published x64 installer, if available. If no suitable installer is attached, [build from source](#build--develop).
+1. Visit [Releases](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/releases) and choose a maintainer-published x64 installer, if available. If no suitable installer is attached, [build from source](#build--develop).
 2. Run the installer, open **Naufal Windows Utility**, and review the first-run prerequisites.
 3. Choose a catalog or performance profile, read its description, and apply only the changes you need.
-4. Check the separate progress window and verification results. Restart Windows when the option requires it.
+4. Check the separate progress window and verification results. For completed changes marked restart-sensitive, the app offers **Restart now** or **Later** after active tasks finish. Save your work before accepting. Choosing Later does not schedule a reboot; restart from Windows when convenient.
 
 **Windows 10 / 11 x64 are intended targets.** Feature availability depends on your Windows build, edition, hardware, and installed components. Not every configuration has been validated. Some downloads and app recovery operations require Internet access and WinGet.
 
@@ -94,15 +94,15 @@ Use a Windows x64 development PC with Git, .NET 10 SDK, Visual Studio Windows / 
 From **PowerShell 7 with the Visual Studio x64 developer environment loaded**:
 
 ```powershell
-git clone https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys.git
-Set-Location Naufal-Tech-s-Windows-Powertoys
+git clone https://github.com/mnaufalalauddin/Naufal-Windows-Utility.git
+Set-Location Naufal-Windows-Utility
 .\build-installer.ps1
 ```
 
 The script restores dependencies, publishes the self-contained Native AOT application, includes dependency notices, and builds the installer:
 
 ```text
-artifacts\installer\Naufal-Windows-Utility-Setup-8.0.0-x64.exe
+artifacts\installer\Naufal-Windows-Utility-Setup-8.0.0.0-x64.exe
 ```
 
 Build tools are not required to run the packaged application. Generated binaries and private runtime data are excluded from Git.
@@ -153,9 +153,9 @@ The 27 September 2026 live audit reached **23/23 checks for each of the three pe
 
 ## Resources
 
-- [Published releases](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/releases)
+- [Published releases](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/releases)
 - [Development history and known limitations](CHANGELOG.md)
-- [Report a bug or request a feature](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues)
+- [Report a bug or request a feature](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/issues)
 - [Source license](LICENSE) · [Third-party notices](THIRD-PARTY-NOTICES.txt)
 
 ## Support & Contribute
@@ -164,7 +164,7 @@ If the project helps you, consider starring the repository. Bug reports, English
 
 Include your Windows build, app version, Windows display language, selected option, exact steps, and relevant output when reporting a problem. **Remove private information—never upload recovery keys, credentials, product keys, or personal backups.** Preserve restore behavior and add relevant tests when changing system-modifying code.
 
-[View contributors](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/graphs/contributors) · [View pull requests](https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/pulls)
+[View contributors](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/graphs/contributors) · [View pull requests](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/pulls)
 
 ---
 

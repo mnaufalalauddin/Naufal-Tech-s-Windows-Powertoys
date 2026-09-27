@@ -24,10 +24,10 @@
 AppId={{A75F9775-AC15-4F03-8931-43D04EA6B032}
 AppName={#AppName}
 AppVersion={#AppVersion}
-AppVerName={#AppName} {#AppVersion}
+AppVerName={#AppName} v{#AppVersion}
 AppPublisher={#AppPublisher}
-AppPublisherURL=https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys
-AppSupportURL=https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys/issues
+AppPublisherURL=https://github.com/mnaufalalauddin/Naufal-Windows-Utility
+AppSupportURL=https://github.com/mnaufalalauddin/Naufal-Windows-Utility/issues
 LicenseFile=..\LICENSE
 DefaultDirName={autopf}\Naufal Tech's Limited\Naufal Windows Utility
 DefaultGroupName={#AppName}
@@ -50,8 +50,8 @@ RestartApplications=no
 ; Do not reuse the legacy Powertoys folder or an older flat Program Files path.
 UsePreviousAppDir=no
 UsePreviousGroup=yes
-VersionInfoVersion={#AppVersion}.0
-VersionInfoProductVersion={#AppVersion}.0
+VersionInfoVersion={#AppVersion}
+VersionInfoProductVersion={#AppVersion}
 VersionInfoProductName={#AppName}
 VersionInfoCompany={#AppPublisher}
 VersionInfoDescription={#AppName} Installer

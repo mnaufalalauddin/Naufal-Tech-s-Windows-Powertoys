@@ -66,7 +66,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private bool _closeWarningInProgress;
         private bool _firstRunWizardStarted;
         private bool _isClosed;
-        private bool _rebootInProgress;
         private readonly OperationGate _profileGate = new();
         private ToolWindow? _taskManagerWindow;
         private readonly Style? _normalToolButtonStyle;
@@ -586,6 +585,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private void ClockTimer_Tick(object? sender, object e)
         {
             UpdateClock();
+            _ = OfferPendingRestartAsync();
         }
 
         private void MonitorTimer_Tick(object? sender, object e)
@@ -893,6 +893,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         $"Applying: {profileName}");
                     PerformanceProfileApplyResult result =
                         await _performanceProfileService.ApplyAsync(selectedProfile);
+                    if (result.Success && result.RestartRequired) _pendingRestarts.Add(profileName);
                     progressWindow.VerifyItem(
                         "PerformanceProfile",
                         $"Verifying: {profileName}");
@@ -986,7 +987,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
             MsiModeUtilityButton.IsEnabled = true;
             GpuDriverManagerButton.IsEnabled = true;
             DebloatButton.IsEnabled = true;
-            RebootButton.IsEnabled = !_rebootInProgress;
 
             if (!_selectedProfile.HasValue)
             {
@@ -1066,7 +1066,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private async Task<bool> ShowConfirmationWindowAsync(
             string title,
             string message,
-            string primaryButtonText)
+            string primaryButtonText,
+            string closeButtonText = "Cancel")
         {
             TextBlock messageText = new()
             {
@@ -1083,7 +1084,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 title,
                 messageText,
                 primaryButtonText: primaryButtonText,
-                closeButtonText: "Cancel",
+                closeButtonText: closeButtonText,
                 initialWidth: 680,
                 initialHeight: 400,
                 minimumWidth: 460,
@@ -1770,6 +1771,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         repairMode,
                         _gamingRuntimeCompatibilityService,
                         progressWindow.Progress);
+                    if (result.Success && result.Verified && result.RestartRequired)
+                        _pendingRestarts.Add(entry.Component);
                     progressWindow.Complete(
                         result.Success && result.Verified,
                         result.WarningCount,
@@ -1899,6 +1902,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     bool awaitingRestart = RuntimePrerequisiteVerification.AwaitingRestart(
                         result.Success, result.RestartRecommended, verifiedEntry?.Status);
                     bool accepted = verified || awaitingRestart;
+                    if (accepted && result.RestartRecommended) _pendingRestarts.Add(entry.Component);
                     if (awaitingRestart) stageWarnings++;
                     string completionDetail = awaitingRestart
                         ? $"{entry.Component} is waiting for a Windows restart. Readiness is not yet verified; restart and analyze again."
@@ -2445,6 +2449,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             progressWindow.BeginItem(action.Id, $"Running: {action.Name}");
                             ToolActionResult result = await CatalogActionRunner.ExecuteAsync(
                                 actionService, action, restore: false, progressWindow.CreateReporter(action.Id));
+                            if (RestartPromptPolicy.ForAction(action, result)) _pendingRestarts.Add(action.Name);
                             if (bulkActionRefresh.TryGetValue(action.Id, out var refresh)) await refresh();
                             bool completed = result.Success || result.SkippedUnavailable;
                             actionResult.Text = result.SkippedUnavailable ? result.Message : result.Success
@@ -2517,6 +2522,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                                 progressWindow.BeginItem(action.Id, $"Restoring: {action.Name}");
                                 ToolActionResult result = await CatalogActionRunner.ExecuteAsync(
                                     actionService, action, restore: true, progressWindow.CreateReporter(action.Id));
+                                if (RestartPromptPolicy.ForAction(action, result)) _pendingRestarts.Add(action.Name);
                                 if (bulkActionRefresh.TryGetValue(action.Id, out var refresh)) await refresh();
                                 bool completed = result.Success || result.SkippedUnavailable;
                                 actionResult.Text = result.SkippedUnavailable ? result.Message : result.Success
@@ -2788,54 +2794,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 UpdateSelectionSummary();
             }
 
-            bool IsCatalogRestartCandidate(
-                ToolToggleDefinition definition,
-                ToolToggleState state) =>
-                title.Equals(
-                    "Advanced Windows Tweaks & De-Bloat",
-                    StringComparison.OrdinalIgnoreCase) &&
-                (definition.RestartRecommended ||
-                 definition.Id.Equals("ModernStandbyOverride", StringComparison.Ordinal) ||
-                 definition.Id.Equals("SysMainService", StringComparison.Ordinal) ||
-                 state.ActualValue.Contains(
-                     "RUNNING UNTIL STOP/REBOOT",
-                     StringComparison.OrdinalIgnoreCase));
-
-            async Task OfferCatalogRestartAsync(IReadOnlyCollection<string> itemNames)
+            void QueueCatalogRestart(ToolToggleDefinition definition, ToolToggleOperationResult result)
             {
-                string[] names = itemNames
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-                if (names.Length == 0)
-                {
-                    return;
-                }
-
-                string detail =
-                    "Restart Windows to fully apply the following verified changes:" +
-                    Environment.NewLine + Environment.NewLine +
-                    string.Join(Environment.NewLine, names.Select(name => $"• {name}"));
-                if (!await ShowConfirmationWindowAsync(
-                        "Windows restart required",
-                        detail,
-                        "Restart now"))
-                {
-                    return;
-                }
-
-                NativeCommandResult restart = await _commandRunner.RunAsync(
-                    "shutdown.exe",
-                    new[] { "/r", "/t", "5" },
-                    TimeSpan.FromSeconds(10));
-                if (restart.ExitCode != 0)
-                {
-                    statusText.Text = string.IsNullOrWhiteSpace(restart.CombinedOutput)
-                        ? $"Restart request failed with exit code {restart.ExitCode}."
-                        : restart.CombinedOutput;
-                    statusText.Foreground = new SolidColorBrush(
-                        Color.FromArgb(255, 185, 28, 28));
-                }
+                if (RestartPromptPolicy.ForToggle(definition, result))
+                    _pendingRestarts.Add(definition.Name);
             }
 
             async Task RunRestoreItemsAsync(
@@ -2937,7 +2899,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     int succeeded = 0;
                     int completed = 0;
                     List<string> failures = new();
-                    List<string> restartItems = new();
+
                     foreach (ToolToggleDefinition definition in availableItems)
                     {
                         statusText.Text = $"Restoring: {definition.Name}...";
@@ -2981,10 +2943,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         if (result.Success && result.Verified)
                         {
                             succeeded++;
-                            if (IsCatalogRestartCandidate(definition, result.State))
-                            {
-                                restartItems.Add(definition.Name);
-                            }
+                            QueueCatalogRestart(definition, result);
                         }
                         else if (!result.SkippedUnavailable || !result.State.IsConfirmedUnavailable)
                         {
@@ -3011,7 +2970,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         failures.Count == 0 ? "COMPLETED" : "WARNING",
                         operationReport);
                     UpdateSelectionSummary();
-                    await OfferCatalogRestartAsync(restartItems);
+
                 }
                 catch (Exception exception)
                 {
@@ -3222,7 +3181,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     int succeeded = 0;
                     int completed = 0;
                     List<string> failures = new();
-                    List<string> restartItems = new();
+
                     foreach (ToolToggleDefinition definition in changes)
                     {
                         statusText.Text = $"Applying: {definition.Name}...";
@@ -3261,10 +3220,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         {
                             succeeded++;
                             selectors[definition.Id].IsChecked = false;
-                            if (IsCatalogRestartCandidate(definition, result.State))
-                            {
-                                restartItems.Add(definition.Name);
-                            }
+                            QueueCatalogRestart(definition, result);
                         }
                         else if (!result.SkippedUnavailable || !result.State.IsConfirmedUnavailable)
                         {
@@ -3291,7 +3247,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         failures.Count == 0 ? "COMPLETED" : "WARNING",
                         operationReport);
                     UpdateSelectionSummary();
-                    await OfferCatalogRestartAsync(restartItems);
+
                 }
                 catch (Exception exception)
                 {
@@ -4324,6 +4280,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         if (result.Success && result.VerifiedConfiguration is not null)
                         {
                             originals[request.DeviceId] = result.VerifiedConfiguration;
+                            _pendingRestarts.Add("MSI Mode: " + original.Name);
                             succeeded++;
                         }
                         else
@@ -4727,6 +4684,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             ? "TASKS: WARNING"
                             : "TASKS: COMPLETE"
                         : "TASKS: FAILED";
+                    if (result.Success && result.RestartRequired) _pendingRestarts.Add(selected.Vendor + " GPU driver");
                     string completion = result.Success
                         ? result.RestartRequired
                             ? "GPU driver operation completed. Restart Windows to finish applying the driver."
@@ -5685,7 +5643,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private bool HasPendingWork => _utilityTaskInProgress || _profileApplyInProgress || _profileGate.IsBusy || _homeActionGate.IsBusy ||
             _taskActivityService.HasActiveTask || ToolWindow.HasBusyOwnedWindows(this);
-        private bool HasBusyTasks => HasPendingWork || _rebootInProgress;
+        private bool HasBusyTasks => HasPendingWork || _pendingRestarts.IsPromptActive;
 
         private async void ExitButton_Click(object sender, RoutedEventArgs e)
         {
@@ -5695,54 +5653,6 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 return;
             }
             Close();
-        }
-
-        private async void RebootButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_rebootInProgress) return;
-            _rebootInProgress = true;
-            RebootButton.IsEnabled = false;
-            bool restartAccepted = false;
-            try
-            {
-                if (HasPendingWork)
-                {
-                    await ShowCloseWarningAsync();
-                    return;
-                }
-                if (!await ShowConfirmationWindowAsync(
-                        "Restart Windows",
-                        "All open applications will be closed. Save your work before continuing. Restart Windows now?",
-                        "Restart now")) return;
-
-                // A tool may have started work while the non-modal confirmation was open.
-                if (HasPendingWork)
-                {
-                    await ShowCloseWarningAsync();
-                    return;
-                }
-                TaskStatusMessage = "TASKS: RESTARTING";
-                NativeCommandResult result = await _commandRunner.RunAsync(
-                    "shutdown.exe", new[] { "/r", "/t", "0" }, TimeSpan.FromSeconds(10));
-                if (result.ExitCode != 0)
-                    throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.CombinedOutput)
-                        ? $"shutdown.exe returned exit code {result.ExitCode}." : result.CombinedOutput);
-                restartAccepted = true;
-            }
-            catch (Exception exception)
-            {
-                TaskStatusMessage = "TASKS: FAILED";
-                await ShowMessageDialogAsync("Restart failed", exception.Message);
-            }
-            finally
-            {
-                if (!restartAccepted)
-                {
-                    _rebootInProgress = false;
-                    RebootButton.IsEnabled = true;
-                    TaskStatusMessage = _taskActivityService.HeaderStatus;
-                }
-            }
         }
 
         private async Task RunInformationTaskAsync(

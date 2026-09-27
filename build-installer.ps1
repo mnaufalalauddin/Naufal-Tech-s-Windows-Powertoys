@@ -3,7 +3,7 @@ param(
     [ValidateSet('Release')]
     [string]$Configuration = 'Release',
 
-    [ValidatePattern('^\d+\.\d+\.\d+$')]
+    [ValidatePattern('^\d+\.\d+\.\d+\.\d+$')]
     [string]$Version = '',
 
     [switch]$NoRestore,
@@ -20,7 +20,7 @@ $projectFile = Join-Path $projectRoot "Naufal Tech's Windows Powertoys.csproj"
 [xml]$versionProject = Get-Content -LiteralPath $projectFile -Raw
 $sourceVersion = $versionProject.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()
 if ([string]::IsNullOrWhiteSpace($Version)) { $Version = $sourceVersion }
-if ($Version -ne $sourceVersion -or $Version -notmatch '^\d+\.\d+\.\d+$') {
+if ($Version -ne $sourceVersion -or $Version -notmatch '^\d+\.\d+\.\d+\.\d+$') {
     throw 'Installer version must match the Version property in the project file.'
 }
 $installerScript = Join-Path $projectRoot 'Installer\NaufalWindowsPowertoys.iss'
@@ -53,9 +53,9 @@ if (-not $SkipPublish) {
         '-p:Platform=x64',
         '-p:PublishAot=true',
         "-p:Version=$Version",
-        "-p:InformationalVersion=$Version.0",
-        "-p:FileVersion=$Version.0",
-        "-p:AssemblyVersion=$Version.0",
+        "-p:InformationalVersion=$Version",
+        "-p:FileVersion=$Version",
+        "-p:AssemblyVersion=$Version",
         '-p:WindowsPackageType=None',
         '-p:WindowsAppSDKSelfContained=true'
     )
@@ -138,7 +138,7 @@ New-Item -ItemType Directory -Path $installerOutputDir -Force | Out-Null
 
 Write-Host 'Compiling Setup installer...' -ForegroundColor Cyan
 $programInfoFile = Join-Path $installerOutputDir 'ProgramInformation.generated.iss'
-& (Join-Path $projectRoot 'Installer\Generate-ProgramInformation.ps1') -ProjectRoot $projectRoot -OutputFile $programInfoFile -Version "$Version.0"
+& (Join-Path $projectRoot 'Installer\Generate-ProgramInformation.ps1') -ProjectRoot $projectRoot -OutputFile $programInfoFile -Version "$Version"
 & $iscc "/DSourceDir=$publishDir" "/DOutputDir=$installerOutputDir" "/DAppVersion=$Version" "/DProgramInfoFile=$programInfoFile" $installerScript
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup compilation failed with exit code $LASTEXITCODE."

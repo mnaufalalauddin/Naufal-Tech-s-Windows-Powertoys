@@ -31,7 +31,7 @@ public sealed partial class MainWindow
     {
         if (sender is not Grid grid || grid.ActualWidth <= 0) return;
         double minimum = (grid == StatusCardsGrid || grid == LiveChartsGrid ? 270 : 205) * UiDisplaySettings.GeometryScale;
-        int maximum = grid == UtilityButtonsGrid ? 4 : grid == LiveChartsGrid ? 2 : 3;
+        int maximum = grid == LiveChartsGrid ? 2 : 3;
         int columns = Math.Clamp((int)((grid.ActualWidth + grid.ColumnSpacing) / (minimum + grid.ColumnSpacing)), 1, maximum);
         int rows = (grid.Children.Count + columns - 1) / columns;
         if (grid.ColumnDefinitions.Count != columns || grid.RowDefinitions.Count != rows)

@@ -9,9 +9,9 @@ function Read-Copy([string]$Name) {
     return $match.Groups[1].Value
 }
 function Pascal([string]$Text) { return "'" + $Text.Replace("'", "''") + "'" }
-$lines = @('Naufal Windows Utility', "Version $Version", '', (Read-Copy 'AboutDescription'), '',
+$lines = @('Naufal Windows Utility', "Version v$Version", '', (Read-Copy 'AboutDescription'), '',
     (Read-Copy 'AboutPurpose'), '', 'Developed by: Muhammad Naufal Alauddin', 'Open-Source Software',
-    'Licensed under the MIT License', '', 'Source Code', 'https://github.com/mnaufalalauddin/Naufal-Tech-s-Windows-Powertoys')
+    'Licensed under the MIT License', '', 'Source Code', 'https://github.com/mnaufalalauddin/Naufal-Windows-Utility')
 $expression = ($lines | ForEach-Object { Pascal $_ }) -join ' + #13#10 + '
 $output = @('// Generated from EnglishUiText.cs. Do not edit.', 'procedure LoadProgramInformation;', 'begin',
     "  ProgramInfoPage.Caption := 'About';", ('  ProgramInfoText.Text := ' + $expression + ';'),

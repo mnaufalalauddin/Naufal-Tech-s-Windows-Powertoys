@@ -14,7 +14,7 @@ public sealed partial class MainWindow
             Text = AppIdentity.Product, Tag = "ui-literal", FontSize = 24,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap
         });
-        content.Children.Add(new TextBlock { Text = "Version " + AppIdentity.Version });
+        content.Children.Add(new TextBlock { Text = "Version " + AppIdentity.DisplayVersion });
         content.Children.Add(new TextBlock { Text = EnglishUiText.AboutDescription, TextWrapping = TextWrapping.Wrap });
         content.Children.Add(new TextBlock { Text = EnglishUiText.AboutPurpose, TextWrapping = TextWrapping.Wrap });
         content.Children.Add(new TextBlock { Text = "Developed by" });

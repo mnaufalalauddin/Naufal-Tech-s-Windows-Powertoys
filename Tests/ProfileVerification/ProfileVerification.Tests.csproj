@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\ApplicationLanguagePolicy.cs" Link="ApplicationLanguagePolicy.cs" />
+    <Compile Include="..\..\RestartPromptPolicy.cs" Link="RestartPromptPolicy.cs" />
     <Compile Include="..\..\PerformanceProfileService.cs" Link="PerformanceProfileService.cs" />
     <Compile Include="..\..\PerformanceProfileExtendedService.cs" Link="PerformanceProfileExtendedService.cs" />
     <Compile Include="..\..\GamingStatusService.cs" Link="GamingStatusService.cs" />

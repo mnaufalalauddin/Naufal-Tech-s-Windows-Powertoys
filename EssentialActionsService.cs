@@ -81,7 +81,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     true,
                     true,
                     "Disable NTFS last-access updates and 8.3-name creation? Some legacy software can depend on these features.",
-                    "Restore the exact NTFS/FileSystem values captured before Apply?"),
+                    "Restore the exact NTFS/FileSystem values captured before Apply?",
+                    RestartRecommended: true),
                 new ToolActionDefinition(
                     "StoragePowerLatency",
                     "System / Storage",

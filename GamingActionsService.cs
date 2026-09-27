@@ -170,7 +170,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     true,
                     "Apply the USB latency/power preset and save every original USBXHCI and per-device value? A reboot is recommended.",
                     "Restore every captured USBXHCI and per-device power-management value?",
-                    Risk: ToolActionRisk.Warning),
+                    Risk: ToolActionRisk.Warning,
+                    RestartRecommended: true),
                 new ToolActionDefinition(
                     "EthernetLatency",
                     "Network / USB",

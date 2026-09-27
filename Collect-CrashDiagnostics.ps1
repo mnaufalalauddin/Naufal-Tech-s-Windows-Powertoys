@@ -35,7 +35,9 @@ try {
 catch { $notes.Add('EventLog service query: ' + $_.Exception.Message) }
 . (Join-Path $PSScriptRoot 'Installer\PublishStage.ps1')
 try {
-    $stage = Get-CompletedPublishStage -PublishRoot (Join-Path $PSScriptRoot 'artifacts\publish') -Version '8.0.0'
+    [xml]$project = Get-Content -LiteralPath (Join-Path $PSScriptRoot "Naufal Tech's Windows Powertoys.csproj") -Raw
+    $version = $project.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
+    $stage = Get-CompletedPublishStage -PublishRoot (Join-Path $PSScriptRoot 'artifacts\publish') -Version $version
     if ($null -ne $stage) {
         $exe = Join-Path $stage.FullName 'Naufal Windows Utility.exe'
         $diagnostics['LatestBuild'] = [ordered]@{

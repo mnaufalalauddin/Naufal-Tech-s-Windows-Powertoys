@@ -127,6 +127,7 @@ public sealed partial class MainWindow : Window
         Check(Math.Abs(homeHeading.FontSize - Math.Max(4, 28 * UiDisplaySettings.TextScalePercent / 100d)) < 0.01, "unnamed Home heading scales from original size after GC");
         CheckThemePalette();
         CheckButtons();
+        CheckUtilityButtonLayout();
         foreach (FrameworkElement control in new FrameworkElement[] { TextScaleButton, ThemeButton })
         {
             Rect bounds = control.TransformToVisual(RootLayout).TransformBounds(new Rect(0, 0, control.ActualWidth, control.ActualHeight));
@@ -141,6 +142,45 @@ public sealed partial class MainWindow : Window
         Rect button = TextScaleButton.TransformToVisual(null).TransformBounds(new Rect(0, 0, TextScaleButton.ActualWidth, TextScaleButton.ActualHeight));
         Point center = new(button.X + button.Width / 2, button.Y + button.Height / 2);
         Check(VisualTreeHelper.FindElementsInHostCoordinates(center, RootLayout).Contains(TextScaleButton), "scaling button center is hit-testable");
+    }
+
+    private void CheckUtilityButtonLayout()
+    {
+        Button[] buttons = [AboutButton, TaskStatusButton, ExitButton];
+        var first = buttons[0];
+        foreach (Button button in buttons)
+        {
+            Check(double.IsNaN(button.Width), button.Name + " has no fixed width");
+            Check(Math.Abs(button.ActualWidth - first.ActualWidth) <= 1, button.Name + " fills an equal responsive column");
+            Check(Math.Abs(button.ActualHeight - first.ActualHeight) <= 1, button.Name + " matches adjacent heights");
+            Check(button.Padding.Equals(first.Padding) && button.Margin.Equals(first.Margin), button.Name + " shares padding and spacing");
+            Check(button.CornerRadius.Equals(first.CornerRadius) && button.FontSize == first.FontSize, button.Name + " shares radius and font size");
+            Check(button.HorizontalAlignment == HorizontalAlignment.Stretch && button.VerticalAlignment == VerticalAlignment.Center,
+                button.Name + " uses shared alignment");
+            Rect bounds = button.TransformToVisual(UtilityButtonsGrid).TransformBounds(new Rect(0, 0, button.ActualWidth, button.ActualHeight));
+            Check(bounds.Left >= -1 && bounds.Right <= UtilityButtonsGrid.ActualWidth + 1, button.Name + " fits the available row");
+            TextBlock measuredLabel = new()
+            {
+                Text = button.Content.ToString(), FontSize = button.FontSize,
+                FontFamily = button.FontFamily, FontWeight = button.FontWeight
+            };
+            measuredLabel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Check(measuredLabel.DesiredSize.Width <= button.ActualWidth - button.Padding.Left - button.Padding.Right - 2 + 1,
+                button.Name + " has enough width for the full label");
+            Check(measuredLabel.DesiredSize.Height <= button.ActualHeight - button.Padding.Top - button.Padding.Bottom - 2 + 1,
+                button.Name + " has enough height for the full label");
+        }
+        for (int index = 1; index < buttons.Length; index++)
+        {
+            Button previous = buttons[index - 1], next = buttons[index];
+            Rect before = previous.TransformToVisual(UtilityButtonsGrid).TransformBounds(new Rect(0, 0, previous.ActualWidth, previous.ActualHeight));
+            Rect after = next.TransformToVisual(UtilityButtonsGrid).TransformBounds(new Rect(0, 0, next.ActualWidth, next.ActualHeight));
+            if (Grid.GetRow(previous) == Grid.GetRow(next))
+                Check(Math.Abs(after.Left - before.Right - UtilityButtonsGrid.ColumnSpacing) <= 1, "consistent horizontal action spacing");
+            else
+                Check(after.Top >= before.Bottom + UtilityButtonsGrid.RowSpacing - 1, "wrapped actions do not overlap");
+        }
+        Check(RootLayout.FindName("RebootButton") is null, "standalone Reboot button removed");
     }
 
     private void Check(bool condition, string message)
@@ -188,7 +228,7 @@ public sealed partial class MainWindow : Window
     private void CheckButtons()
     {
         Button[] buttons = AuthoredButtons(RootLayout).Where(b => b.IsEnabled).ToArray();
-        Check(buttons.Length == 32, "all 32 enabled authored buttons are covered across all five pages");
+        Check(buttons.Length == 31, "all 31 enabled authored buttons are covered across all five pages");
         Check(buttons.Contains(AboutButton), "About participates in dashboard contrast checks");
         Check(AboutButton.Content?.ToString() == "About",
             "About caption remains English");
@@ -352,7 +392,6 @@ public sealed partial class MainWindow : Window
     // in this test-only host, so accidental input cannot launch a repair/tweak.
     private void TaskStatusButton_Click(object s, RoutedEventArgs e) { }
     private void AboutButton_Click(object s, RoutedEventArgs e) { }
-    private void RebootButton_Click(object s, RoutedEventArgs e) { }
     private void ExitButton_Click(object s, RoutedEventArgs e) { }
     private void FullRepairButton_Click(object s, RoutedEventArgs e) { }
     private void QuickRepairButton_Click(object s, RoutedEventArgs e) { }

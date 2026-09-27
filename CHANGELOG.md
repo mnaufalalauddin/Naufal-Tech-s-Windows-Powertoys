@@ -18,6 +18,52 @@ checkpoint, not a new execution of those tests while writing this file. A compil
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
 
+## 27 September 2026 — Contextual restart prompts and release previews
+
+- **Home:** Removed the standalone Reboot button. About, Task Monitoring and
+  Exit retain the shared responsive button style in a three-column wrapping row.
+- **Restart prompts:** Completed, verified restart-sensitive Apply/Restore
+  changes use one deferred, deduplicated prompt across catalogs. Explicit
+  restart flags also cover performance profiles, runtime/driver operations
+  and verified MSI changes. Failed/unavailable tweaks do not prompt.
+  Explorer-only refresh and immediately effective settings are excluded.
+- **Safety:** Offer Restart now or Later only after active tasks finish.
+  Re-check active work after confirmation. Later does not schedule a restart
+  or repeat the prompt for the same batch. No forced application termination.
+- **README:** Replaced both previews with the maintainer's 19:34 Light/Dark
+  screenshots, unmodified, and captioned the now-removed Reboot button.
+- **Verification:** Debug build passed with zero errors/warnings; 4,392
+  functional, 285 English-only and 151 static assertions passed. The isolated
+  Native AOT WinUI host passed 19,876 assertions across 128 layout cases and
+  eight flyouts. Restart dispatch is tested with a fake callback, never a real
+  PC reboot. Installer execution and Windows mutations are not certified by
+  these tests.
+
+## 27 September 2026 — v8.0.0.0 identity and responsive Reboot button
+
+- **Layout:** About, Task Monitoring, Reboot and Exit share the same sizing,
+  padding, font, corner radius, margins and alignment. Removed Reboot's fixed
+  92-DIP width; it follows the existing equal-column, wrapping layout. Its red
+  styling, click handler, confirmation and system behavior remain unchanged.
+- **Version:** The project version is now the canonical four-part `8.0.0.0`.
+  Assembly/file/informational metadata and installer numeric fields use it
+  directly without an automatic commit-hash suffix, while About and Setup
+  display `v8.0.0.0`. Corrected the native app
+  manifest's stale `7.8.0.0` identity. The MSIX version was already correct.
+  Dependency versions and previous changelog entries are unchanged.
+- **Repository:** Renamed the existing GitHub repository to
+  [Naufal-Windows-Utility](https://github.com/mnaufalalauddin/Naufal-Windows-Utility).
+  Repository ID `1364534535` and existing main commit were verified unchanged.
+  Updated origin, README, About source link and installer source/support links.
+  Local checkout/project filenames and recovery identities are retained.
+- **Checks:** Debug build passed with zero errors/warnings; 4,364 functional,
+  281 English-only and 151 static identity/location/publish/routing assertions
+  passed. The isolated Native AOT WinUI host passed 21,619 assertions across
+  128 layout cases (480/800/1280/1920 widths, Light/Dark and 25–200% app text
+  scaling), plus eight flyouts. Both theme previews were inspected. Reboot was
+  not invoked. These checks do not claim multi-monitor DPI or real installation
+  testing.
+
 ## 27 September 2026 — Installation folder correction and maintainer screenshots
 
 - **Installer:** Changed the default destination to
