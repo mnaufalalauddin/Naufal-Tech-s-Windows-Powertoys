@@ -12,11 +12,9 @@ Total host reads and writes use decimal **TB** (1 TB = 1,000,000,000,000 bytes),
 with thousands separators and two decimal places in both the dashboard and
 Copy / Save TXT. Original NVMe data-unit counters remain in the detailed report.
 
-The layout and standard SMART transports reference [CrystalDiskInfo](https://github.com/hiyohiyo/CrystalDiskInfo)
-at revision `9ac83d03283f2dcb6047b8fb162463469a7b6c74`. The NVMe/ATA/SAT approach
-and NVMe health rules have been adapted; its MIT notice is included in
-THIRD-PARTY-NOTICES.txt and the installer. No CrystalDiskInfo binary, artwork or
-vendor DLL is bundled. **This is not the complete CrystalDiskInfo engine.**
+The dashboard uses read-only NVMe, ATA and SAT transports with explicit health
+assessment rules. **Controller support is limited to the paths documented below;
+universal hardware compatibility is not claimed.**
 
 ### Sources and limitations
 
@@ -59,7 +57,7 @@ vendor DLL is bundled. **This is not the complete CrystalDiskInfo engine.**
 | ASMedia ASM2362 USB NVMe (`174C:2362`) and Realtek RTL9210 (`0BDA:9210`) | Read-only identify/log adapters implemented; exact PnP identity gating; synthetic packet/error tests only, no matching bridge available for live validation |
 | Intel RST NVMe behind RAID (`iaStorAC` / `iaStorAVC`, Intel PCI parent) | Miniport identify/log path implemented for an OS-exposed disk whose controller serial matches exactly; synthetic packet, completion and identity tests only; not aggregate array health or hidden-member enumeration |
 | SATA SSD endurance | Model-scoped Samsung retail/enterprise, Intel/Solidigm, Crucial/Micron, selected Kingston families (including SA400 firmware exception), Kioxia EXCERIA SATA/Toshiba TR rules; synthetic fixtures only |
-| Other controllers/bridges | VROC/VMD, AMD RAID, CSMI, hidden RAID members, JMicron NVMe staging and Realtek dual-drive mode switching are not implemented; no complete CrystalDiskInfo parity claim |
+| Other controllers/bridges | VROC/VMD, AMD RAID, CSMI, hidden RAID members, JMicron NVMe staging and Realtek dual-drive mode switching are not implemented; universal controller support is not claimed |
 
 ### Vendor endurance and controller safeguards
 
@@ -77,10 +75,9 @@ completion status, packet bounds, SCSI routing, and controller serial identity.
 A logical RAID volume or ambiguous member remains Unknown; a member's health
 is never presented as proof that an entire array is healthy.
 
-The port references CrystalDiskInfo's pinned `AtaSmart.cpp` / `AtaSmart.h` above.
 Firmware variants and different RAID driver versions can reject these paths.
 No bridge mode-switching, controller reconfiguration or device-writing command
-was ported. Hardware coverage must be expanded on machines containing those
+is implemented. Hardware coverage must be expanded on machines containing those
 specific controllers before claiming production hardware compatibility.
 
 The Windows IOCTL interface requires a read/write handle for ATA/SAT pass-through,
