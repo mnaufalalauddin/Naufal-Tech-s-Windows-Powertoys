@@ -18,6 +18,17 @@ checkpoint, not a new execution of those tests while writing this file. A compil
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
 
+## 28 September 2026 — Release refresh (build 20260928.2)
+
+- **Package:** Prepared the updated x64 installer and SHA-256 manifest for a
+  separate dated release; application version remains v8.0.0.0. Prior release
+  tags and assets are preserved.
+- **Documentation:** README now shows both current Light/Dark screenshots
+  directly, with versioned image paths. Release notes and current documentation
+  use neutral wording while retaining third-party copyright and MIT notices.
+- **Checks:** 4,558 regression assertions and 307 English-only checks passed
+  after the wording update. SMART calculations and device commands are unchanged.
+
 ## 28 September 2026 — Neutral SMART wording
 
 - **Changed:** Removed external utility names and comparisons from current

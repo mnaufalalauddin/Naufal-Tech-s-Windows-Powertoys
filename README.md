@@ -161,7 +161,7 @@ The 27 September 2026 live audit reached **23/23 checks for each of the three pe
 
 **Active development—not declared complete.** Broader device/Windows-version coverage and remaining feature-specific live audits are ongoing. Historical screenshots and guides may show the previous dashboard.
 
-The 28 September 2026 disk/report update passed **4,549 regression assertions**,
+The latest 28 September 2026 disk/report update passed **4,558 regression assertions**,
 **20,068 native UI assertions**, **307 English-only checks**, and **16 static
 report-export checks**. Read-only Native AOT probes successfully read two NVMe
 SSDs and 27 ATA attributes from one USB drive. The USB drive's overall SMART
@@ -169,6 +169,12 @@ health remained Unknown when the driver could not confirm it. These results do
 not certify every controller, Windows version, or system-changing operation.
 Application version remains **v8.0.0.0**; dated release tags distinguish builds
 without replacing earlier release history.
+
+The [28 September refresh build](https://github.com/mnaufalalauddin/Naufal-Windows-Utility/releases/tag/v8.0.0.0-build.20260928.2)
+includes neutral SMART report wording, the latest Light/Dark README previews,
+and updated documentation. Device calculations and read-only command behavior
+are unchanged from the earlier disk-health build. Third-party copyright and
+license notices are retained.
 
 ---
 
