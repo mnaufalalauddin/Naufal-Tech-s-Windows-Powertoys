@@ -9,8 +9,8 @@ using System.Text;
 
 namespace Naufal_Windows_Tech_s_Powertoys;
 
-// Read-only standard NVMe / ATA / SAT transports. Adapted with reference to
-// CrystalDiskInfo AtaSmart.cpp (MIT, hiyohiyo; full notice in THIRD-PARTY-NOTICES).
+// Read-only standard NVMe / ATA / SAT transports. Includes adapted MIT-licensed
+// code; full third-party copyright and license in THIRD-PARTY-NOTICES.txt.
 // No SMART enable/disable, self-test, firmware or write-sector commands.
 internal static partial class NativeDiskSmart
 {

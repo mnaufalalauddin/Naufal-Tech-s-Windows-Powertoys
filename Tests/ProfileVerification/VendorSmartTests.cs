@@ -68,7 +68,10 @@ internal static class VendorSmartTests
             ("Samsung SSD 860 EVO", "", 0xB1, 0, "000000000000", 0) })
         {
             SmartAttribute attr = new(id, current, current, null, raw);
-            check(SsdEndurance.Evaluate(model, firmware, [attr])?.Remaining == expected, "lifespan fixture: " + model + "/" + firmware);
+            var estimate = SsdEndurance.Evaluate(model, firmware, [attr]);
+            check(estimate?.Remaining == expected, "lifespan fixture: " + model + "/" + firmware);
+            if (estimate is not null)
+                check(estimate.Rule.EndsWith("; model-specific endurance rule", StringComparison.Ordinal), "endurance report uses neutral explanatory wording");
             check(SsdEndurance.Evaluate(model, firmware, [attr, attr]) is null, "duplicate lifespan ID rejected");
         }
     }

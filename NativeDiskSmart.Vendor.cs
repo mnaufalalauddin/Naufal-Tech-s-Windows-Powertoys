@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Naufal_Windows_Tech_s_Powertoys;
 
-// Read-only subset ported from CrystalDiskInfo AtaSmart.cpp (MIT). See notices.
+// Read-only subset adapted from MIT-licensed third-party code. See notices.
 // No controller mode changes, RAID configuration, SMART enable or device writes.
 internal static partial class NativeDiskSmart
 {

@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Naufal_Windows_Tech_s_Powertoys;
 
-// Model-scoped subset of CrystalDiskInfo's MIT vendor rules. Never interpret a
+// Model-scoped subset of MIT-licensed third-party vendor rules. See notices. Never interpret a
 // generic attribute ID as a percentage without a matching model family.
 internal static class SsdEndurance
 {
@@ -36,8 +36,8 @@ internal static class SsdEndurance
             remaining = (int)(value & 255);
         }
         if (offset100) remaining -= 100;
-        // CDI treats zero/negative in this offset-100 family as unreported.
+        // The offset-100 family treats zero/negative values as unreported.
         if (remaining < 0 || remaining > 100 || (offset100 && remaining == 0)) return null;
-        return new(remaining, $"{model}; attribute 0x{id:X2}; " + (raw ? "raw byte 0" : offset100 ? "normalized current minus 100" : "normalized current") + "; CrystalDiskInfo model-scoped rule");
+        return new(remaining, $"{model}; attribute 0x{id:X2}; " + (raw ? "raw byte 0" : offset100 ? "normalized current minus 100" : "normalized current") + "; model-specific endurance rule");
     }
 }

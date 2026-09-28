@@ -24,14 +24,12 @@ installers obtained by optional application actions retain their respective
 vendor terms. They are not relicensed by this project. Product and component
 names are used for identification.
 
-CrystalDiskInfo source reference / adapted SMART transport and health logic
-https://github.com/hiyohiyo/CrystalDiskInfo
-Reference revision: 9ac83d03283f2dcb6047b8fb162463469a7b6c74 (AtaSmart.cpp / AtaSmart.h)
+Adapted SMART transport and health logic — third-party MIT-licensed code
 NativeDiskSmart.cs, NativeDiskSmart.Vendor.cs, DeviceSmartReport.cs and
 SsdEndurance.cs adapt the standard NVMe storage-query, ATA/SAT read-command
 approach, ASMedia/Realtek USB and Intel RST read transports, NVMe health rules
-and a model-scoped subset of SATA SSD endurance rules. This is not the complete
-CrystalDiskInfo engine; no CrystalDiskInfo binary, artwork or vendor DLL is bundled.
+and a model-scoped subset of SATA SSD endurance rules. These adaptations cover
+only the implemented paths; no third-party utility binary, artwork or vendor DLL is bundled.
 Changes include strict buffer validation, full 128-bit counters, explicit unknown
 states, safe identity matching, and a read-only command allowlist.
 

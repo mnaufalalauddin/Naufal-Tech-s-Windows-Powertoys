@@ -8,7 +8,7 @@ using System.Numerics;
 namespace Naufal_Windows_Tech_s_Powertoys;
 
 // Protocol decoding is pure and independently testable. See THIRD-PARTY-NOTICES
-// for the CrystalDiskInfo source reference used for transport/health algorithms.
+// for the third-party attribution covering adapted transport/health algorithms.
 internal sealed record DeviceSmartSnapshot(string Serial, string Size, string Bus,
     IReadOnlyList<SystemReportEntry> Rows);
 

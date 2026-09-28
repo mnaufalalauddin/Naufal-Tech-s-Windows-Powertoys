@@ -18,6 +18,15 @@ checkpoint, not a new execution of those tests while writing this file. A compil
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
 
+## 28 September 2026 — Neutral SMART wording
+
+- **Changed:** Removed external utility names and comparisons from current
+  source comments, UI/report wording, README and documentation. SSD endurance
+  details now use the label "model-specific endurance rule".
+- **Preserved:** Third-party copyright and the full MIT license remain in
+  THIRD-PARTY-NOTICES.txt and packaging. No SMART calculations or device commands
+  changed. Historical Git commits and previously published binaries remain intact.
+
 ## 28 September 2026 — Readable disk transfer totals
 
 - **Changed:** Disk Info Total host reads/writes now display decimal terabytes
@@ -54,9 +63,9 @@ mutation, complete visual validation, or full behavioral parity.
 - **ATA/SAT:** Added read-only IDENTIFY, SMART data, thresholds and status reads;
   raw attributes are attached only to uniquely identified disks. Write/enable/
   firmware/self-test commands are not exposed.
-- **Attribution:** Referenced CrystalDiskInfo source revision
-  9ac83d03283f2dcb6047b8fb162463469a7b6c74; included its MIT notice. Full vendor
-  USB/RAID and SSD lifespan algorithm parity is not complete.
+- **Attribution:** Adapted MIT-licensed third-party SMART logic and included
+  its copyright and license notice. Vendor USB/RAID and SSD lifespan coverage
+  remains limited to the implemented and documented paths.
 - **Live read-only checks:** Two NVMe drives reported estimated endurance
   remaining of 96% and 81%; a USB drive returned 27 ATA attributes. USB overall
   health could not be verified and remains Unknown. Native ATA transport needs
@@ -64,7 +73,7 @@ mutation, complete visual validation, or full behavioral parity.
 
 ## 28 September 2026 — Disk dashboard and optional network addresses
 
-- **Disk Info:** Added a CrystalDiskInfo-inspired device selector, health and
+- **Disk Info:** Added an individual-device selector, health and
   temperature cards, drive details and reliability tables. Preserved the original
   physical/logical disk backend and complete Copy / Save TXT output in the overview.
 - **Data:** Added bounded native Windows reliability reads and validated legacy
