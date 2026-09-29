@@ -267,6 +267,9 @@
 <Button x:Name="RestoreDefenderButton" Content="Restore Defender"
                                         Click="RestoreDefenderButton_Click"
                                         Style="{StaticResource SuccessToolButtonStyle}"/>
+<Button x:Name="SecurityControlsButton" Content="Firewall, SmartScreen &amp; UAC"
+                                        Click="SecurityControlsButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="BitLockerManagerButton" Content="BitLocker Manager"
                                         Click="BitLockerManagerButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
