@@ -46,7 +46,7 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 | **Tweaks & De-Bloat** | Essential and Gaming catalogs, service controls, privacy and advertising policies, supported AI-related settings, and unique storage actions including Component Store analysis/cleanup and an explicitly irreversible ResetBase operation. Existing temp cleanup, hibernation and Reserved Storage owners are reused rather than duplicated. |
 | **Built-in Windows Apps** | Alphabetical app removal / recovery, including OneDrive, with Recommended, Optional, and Not Recommended removal guidance. |
 | **Security & Compatibility** | BitLocker Manager, automatic device-encryption policy, Defender controls, Smart App Control, separate Firewall / Windows SmartScreen / Edge SmartScreen / UAC controls, GPU Driver Manager, runtime checks, MSI Mode Utility, and opt-in VBS / Memory Integrity / Credential Guard / LSA Protection configuration under Advanced → Security & Mitigations. Reboot-sensitive mitigation writes remain verification-pending until effective state can be checked after restart. |
-| **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; Light/Dark themes; text scaling; an English-only interface; and five sidebar pages. |
+| **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; a two-pass Before / After Analyzer for RAM, commit, CPU, disk I/O, free space, Processes, Threads and Handles; Light/Dark themes; text scaling; an English-only interface; and five sidebar pages. |
 
 ### Navigation
 
