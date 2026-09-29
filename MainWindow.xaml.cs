@@ -2246,7 +2246,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         _debloatServiceGroupsService),
                     new CompositeToolActionService(
                         new BuiltInAppsService(),
-                        new StorageSlimmingActionsService()));
+                        new StorageSlimmingActionsService(),
+                        new WindowsFeatureManagementService()));
             }
             catch (Exception exception)
             {
