@@ -120,6 +120,7 @@ internal static class CatalogSelectionTests
         assert(analyzerSummary.SampleCount == 2 &&
                analyzerSummary.AveragePhysicalUsedBytes == 200 &&
                analyzerSummary.AverageCommitUsedBytes == 300 &&
+               analyzerSummary.CommitLimitBytes == 1000 &&
                analyzerSummary.AverageCpuPercent == 20 &&
                analyzerSummary.AverageProcesses == 60 &&
                analyzerSummary.AverageThreads == 600 &&
