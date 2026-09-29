@@ -112,6 +112,21 @@ internal static class CatalogSelectionTests
         catch (InvalidOperationException) { cycleRejected = true; }
         assert(cycleRejected, "Dependency cycles are rejected before execution");
 
+        var analyzerSummary = OptimizationAnalyzer.Summarize(new[]
+        {
+            new OptimizationSample(DateTimeOffset.UnixEpoch, TimeSpan.FromMinutes(10), 100, 200, 1000, 10, 20, 30, 4000, 50, 500, 5000),
+            new OptimizationSample(DateTimeOffset.UnixEpoch.AddSeconds(1), TimeSpan.FromMinutes(10).Add(TimeSpan.FromSeconds(1)), 300, 400, 1000, 30, 40, 50, 4500, 70, 700, 7000)
+        });
+        assert(analyzerSummary.SampleCount == 2 &&
+               analyzerSummary.AveragePhysicalUsedBytes == 200 &&
+               analyzerSummary.AverageCommitUsedBytes == 300 &&
+               analyzerSummary.AverageCpuPercent == 20 &&
+               analyzerSummary.AverageProcesses == 60 &&
+               analyzerSummary.AverageThreads == 600 &&
+               analyzerSummary.AverageHandles == 6000 &&
+               analyzerSummary.SystemDriveFreeBytes == 4500,
+            "Optimization analyzer reports averages and final free space without inventing a boost score");
+
         var service = new RecordingService();
         foreach (var definition in plan.ToApply)
         {
