@@ -127,6 +127,14 @@ internal static class CatalogSelectionTests
                analyzerSummary.SystemDriveFreeBytes == 4500,
             "Optimization analyzer reports averages and final free space without inventing a boost score");
 
+        var firewallProfiles = WindowsSecurityControlsService.ParseFirewallProfiles(
+            "Domain|True\r\nPrivate|False\r\nPublic|True\r\n");
+        assert(firewallProfiles.Count == 3 &&
+               firewallProfiles["domainprofile"] &&
+               !firewallProfiles["privateprofile"] &&
+               firewallProfiles["publicprofile"],
+            "Firewall parser keeps Domain, Private and Public states distinct");
+
         var service = new RecordingService();
         foreach (var definition in plan.ToApply)
         {
