@@ -18,6 +18,15 @@ checkpoint, not a new execution of those tests while writing this file. A compil
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
 
+## 29 September 2026 — Canonical action planning (P0)
+
+- **Audit:** Preserved the existing C# / WinUI / .NET 10 / Native AOT architecture and v8.0.0.0 identity. The catalog already has verified state reads, snapshot-aware restore, progress isolation and broad non-mutating regression coverage, but selection planning was still row/ID-oriented and did not model canonical effects, dependencies or conflicts.
+- **Deduplication:** Added a canonical action key to toggle definitions. Multiple UI/preset references to the same canonical operation now collapse to one execution-plan item instead of invoking the same underlying change repeatedly.
+- **Planning:** Added dependency expansion and deterministic dependency-before-dependant ordering. Missing dependencies, dependency cycles and explicitly conflicting actions are rejected before any backend mutation instead of relying on execution order.
+- **Classification:** Added internal impact and evidence metadata for Runtime Optimization, Storage Reduction, workload-dependent behavior, cosmetic/preferences, advanced security/mitigations and maintenance/repair. Existing actions default conservatively to Unknown / mechanism-unmeasured until individually audited; no savings figures are invented.
+- **Tests:** Extended the non-mutating catalog regression suite with duplicate-reference, dependency-order, conflict and cycle fixtures. These tests exercise planning only and do not change Windows settings.
+- **Scope:** This checkpoint does not claim live Windows validation, new security-disabling behavior, storage slimming, offline WinSxS removal or a new installer artifact. Those remain separate work after the P0 action inventory is mapped to canonical IDs.
+
 ## 28 September 2026 — Release refresh (build 20260928.2)
 
 - **Package:** Prepared the updated x64 installer and SHA-256 manifest for a
