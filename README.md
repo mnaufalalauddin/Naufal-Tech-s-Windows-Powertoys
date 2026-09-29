@@ -95,6 +95,10 @@ Per-user application files: `%LOCALAPPDATA%\Naufal Windows Powertoys`. Some snap
 
 ---
 
+For the current optimization/de-bloat ownership, deduplication, measurement, security, storage and validation status, see [OPTIMIZATION-AUDIT.md](OPTIMIZATION-AUDIT.md).
+
+---
+
 ## Build & Develop
 
 Built with **C# / WinUI**, **.NET 10**, **Native AOT**, and **Inno Setup 7**.
