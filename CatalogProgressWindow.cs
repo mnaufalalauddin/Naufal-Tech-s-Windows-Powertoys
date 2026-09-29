@@ -358,6 +358,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
             string report = CatalogVerificationReport.FormatResult(GetName(id), _operationVerb, result);
             if (result.SkippedUnavailable && result.State.IsConfirmedUnavailable)
                 UnavailableItem(id, report);
+            else if (result.VerificationPending || result.State.EffectiveState == ToolEffectiveState.PendingReboot)
+            {
+                if (_progress.Update(id, "VERIFICATION PENDING", null, report))
+                {
+                    RenderItem(id);
+                    UpdateOverall(_progress.Settled, report);
+                }
+            }
             else CompleteItem(id, result.Success && result.Verified, report);
         }
 
@@ -436,19 +444,20 @@ namespace Naufal_Windows_Tech_s_Powertoys
             // The label is a terminal result, never a fabricated completion percentage.
             visuals.Bar.Value = failed || state == "COMPLETED" ? 100 : item.Percent ?? 0;
             visuals.Bar.Background = TrackBrush();
-            visuals.Bar.Foreground = failed ? FailureBrush() : state == "UNAVAILABLE" ? NeutralBrush() : WorkingBrush();
+            visuals.Bar.Foreground = failed ? FailureBrush() : state is "UNAVAILABLE" or "VERIFICATION PENDING" ? NeutralBrush() : WorkingBrush();
             visuals.Percent.Text = state switch
             {
                 "FAILED" => "Failed — see details",
                 "NOT VERIFIED" => "Not verified",
                 "UNAVAILABLE" => "Unavailable on this PC",
+                "VERIFICATION PENDING" => "Pending reboot — verification deferred",
                 "COMPLETED" => "100% complete — Verified",
                 "SKIPPED" => "Skipped — not started",
                 "WAITING" => "Waiting to start",
                 "VERIFYING" => "Verifying — waiting for Windows",
                 _ => item.Percent.HasValue ? $"Windows step: {item.Percent:0}% — Working" : "Working — waiting for Windows"
             };
-            visuals.Percent.Foreground = failed ? FailureBrush() : state == "UNAVAILABLE" ? SecondaryTextBrush() : WorkingBrush();
+            visuals.Percent.Foreground = failed ? FailureBrush() : state is "UNAVAILABLE" or "VERIFICATION PENDING" ? SecondaryTextBrush() : WorkingBrush();
             visuals.State.Text = state;
             visuals.State.Foreground = StatusBrush(state);
             visuals.Detail.Text = item.Detail;
