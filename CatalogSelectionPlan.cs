@@ -32,10 +32,10 @@ internal sealed class CatalogSelectionPlan
         List<ToolToggleDefinition> selected = new();
         List<ToolToggleDefinition> toApply = new();
         List<ToolToggleDefinition> toRestore = new();
-        foreach (ToolToggleDefinition definition in definitions)
+        CanonicalCatalogPlan canonical = CanonicalCatalogPlan.Create(definitions, isSelected);
+        foreach (ToolToggleDefinition definition in canonical.Ordered)
         {
-            if (!isSelected(definition) ||
-                !states.TryGetValue(definition.Id, out ToolToggleState state) ||
+            if (!states.TryGetValue(definition.Id, out ToolToggleState state) ||
                 !state.IsAvailable)
             {
                 continue;
