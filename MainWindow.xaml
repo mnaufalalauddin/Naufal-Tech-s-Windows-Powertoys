@@ -293,6 +293,9 @@
 <Button x:Name="GpuDriverManagerButton" Content="GPU Driver Manager"
                                         Click="GpuDriverManagerButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="WindowsInventoryButton" Content="Startup, Services, Tasks, Features &amp; Drivers"
+                                        Click="WindowsInventoryButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="DebloatButton" Content="Advanced Windows Tweaks &amp; De-Bloat"
                                         Click="DebloatButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
