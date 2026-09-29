@@ -278,6 +278,9 @@
                                         Style="{StaticResource ToolButtonStyle}"/>
 </StackPanel>
 <StackPanel x:Name="AdvancedPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="Advanced Windows Tweaks" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Explore optional configuration, applications, drivers, and runtime tools. Review each warning and keep a recovery backup." TextWrapping="Wrap"/>
+<Button x:Name="OptimizationAnalyzerButton" Content="Before / After Analyzer"
+                                        Click="OptimizationAnalyzerButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="EssentialTweaksButton" Content="Essential Windows Tweaks"
                                         Click="EssentialTweaksButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
