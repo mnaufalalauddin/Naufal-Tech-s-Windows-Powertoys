@@ -44,6 +44,74 @@ internal static class CatalogSelectionTests
             "Catalog Select all prepares OFF rows without changing their states");
         assert(!states["item3"].IsOn, "Catalog planning is non-mutating");
 
+        var canonicalBase = Row("canonical") with
+        {
+            CanonicalActionId = "runtime.telemetry",
+            Impact = ToolActionImpact.RuntimeOptimization,
+            Evidence = ToolActionEvidence.MechanismUnmeasured
+        };
+        var duplicateAlias = canonicalBase with { Name = "Telemetry alias", Description = "Same canonical operation" };
+        var canonicalStates = new Dictionary<string, ToolToggleState> { ["canonical"] = new(false, true, "OFF") };
+        var deduplicated = CatalogSelectionPlan.Create(
+            new[] { canonicalBase, duplicateAlias },
+            canonicalStates,
+            _ => true);
+        assert(deduplicated.Selected.Count == 1 && deduplicated.ToApply.Count == 1,
+            "Canonical action selected through two UI/preset references executes once");
+
+        var dependency = Row("dependency") with { CanonicalActionId = "runtime.dependency" };
+        var dependant = Row("dependant") with
+        {
+            CanonicalActionId = "runtime.dependant",
+            DependsOn = new[] { "runtime.dependency" }
+        };
+        var dependencyStates = new Dictionary<string, ToolToggleState>
+        {
+            ["dependency"] = new(false, true, "OFF"),
+            ["dependant"] = new(false, true, "OFF")
+        };
+        var dependencyPlan = CatalogSelectionPlan.Create(
+            new[] { dependant, dependency },
+            dependencyStates,
+            definition => definition.Id == "dependant");
+        assert(dependencyPlan.ToApply.Select(definition => definition.Id)
+            .SequenceEqual(new[] { "dependency", "dependant" }),
+            "Dependencies are included once and ordered before dependant actions");
+
+        bool conflictRejected = false;
+        try
+        {
+            var left = Row("left") with
+            {
+                CanonicalActionId = "service.mode.disabled",
+                ConflictsWith = new[] { "service.mode.manual" }
+            };
+            var right = Row("right") with { CanonicalActionId = "service.mode.manual" };
+            var conflictStates = new Dictionary<string, ToolToggleState>
+            {
+                ["left"] = new(false, true, "OFF"),
+                ["right"] = new(false, true, "OFF")
+            };
+            CatalogSelectionPlan.Create(new[] { left, right }, conflictStates, _ => true);
+        }
+        catch (InvalidOperationException) { conflictRejected = true; }
+        assert(conflictRejected, "Conflicting canonical actions are rejected before execution");
+
+        bool cycleRejected = false;
+        try
+        {
+            var first = Row("first") with { CanonicalActionId = "cycle.first", DependsOn = new[] { "cycle.second" } };
+            var second = Row("second") with { CanonicalActionId = "cycle.second", DependsOn = new[] { "cycle.first" } };
+            var cycleStates = new Dictionary<string, ToolToggleState>
+            {
+                ["first"] = new(false, true, "OFF"),
+                ["second"] = new(false, true, "OFF")
+            };
+            CatalogSelectionPlan.Create(new[] { first, second }, cycleStates, definition => definition.Id == "first");
+        }
+        catch (InvalidOperationException) { cycleRejected = true; }
+        assert(cycleRejected, "Dependency cycles are rejected before execution");
+
         var service = new RecordingService();
         foreach (var definition in plan.ToApply)
         {
