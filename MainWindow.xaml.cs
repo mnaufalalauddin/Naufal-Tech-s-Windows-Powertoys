@@ -2174,7 +2174,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             $"Samples: {value.SampleCount}\n" +
             $"Uptime: {value.Uptime}\n" +
             $"Physical RAM used (avg): {FormatBytes(value.AveragePhysicalUsedBytes)}\n" +
-            $"Commit used / limit (avg/final limit): {FormatBytes(value.AverageCommitUsedBytes)} / {FormatBytes(value.BaselineCommitLimit())}\n" +
+            $"Commit used / limit (avg/final limit): {FormatBytes(value.AverageCommitUsedBytes)} / {FormatBytes(value.CommitLimitBytes)}\n" +
             $"CPU (avg): {value.AverageCpuPercent:0.00}%\n" +
             $"Disk read/write (avg): {FormatBytes(value.AverageDiskReadBytesPerSecond)}/s / {FormatBytes(value.AverageDiskWriteBytesPerSecond)}/s\n" +
             $"Processes / Threads / Handles (avg): {value.AverageProcesses:0.0} / {value.AverageThreads:0.0} / {value.AverageHandles:0.0}\n" +
