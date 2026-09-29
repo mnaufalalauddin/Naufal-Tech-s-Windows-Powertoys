@@ -176,8 +176,8 @@ internal sealed class WindowsSecurityControlsService : IToolToggleService
         if (Convert.ToInt32(backup.GetValue("Captured", 0), CultureInfo.InvariantCulture) == 1) return;
         if (definition.Id == "Firewall")
         {
-            ToolToggleState state = await ReadFirewallAsync();
-            Dictionary<string, bool> profiles = ParseFirewallProfiles(state.ActualValue);
+            Dictionary<string, bool> profiles = await ReadFirewallProfilesAsync();
+            if (profiles.Count != 3) throw new InvalidOperationException("Could not capture all firewall profile states.");
             foreach ((string profile, bool enabled) in profiles)
                 backup.SetValue(profile, enabled ? 1 : 0, RegistryValueKind.DWord);
         }
@@ -193,35 +193,48 @@ internal sealed class WindowsSecurityControlsService : IToolToggleService
 
     private async Task<ToolToggleState> ReadFirewallAsync()
     {
-        NativeCommandResult result = await _runner.RunAsync("netsh.exe",
-            new[] { "advfirewall", "show", "allprofiles", "state" }, TimeSpan.FromSeconds(15));
+        try
+        {
+            Dictionary<string, bool> profiles = await ReadFirewallProfilesAsync();
+            if (profiles.Count != 3)
+                return new(false, false, "Firewall state unavailable", "Could not establish Domain, Private and Public profile states.");
+            bool allOn = profiles.Values.All(value => value);
+            return State(allOn, string.Join("; ", profiles.Select(pair => pair.Key + "=" + (pair.Value ? "ON" : "OFF"))));
+        }
+        catch (Exception exception)
+        {
+            return new(false, false, "Firewall state unavailable", exception.Message);
+        }
+    }
+
+    private async Task<Dictionary<string, bool>> ReadFirewallProfilesAsync()
+    {
+        const string script = "$ErrorActionPreference='Stop'; Get-NetFirewallProfile | ForEach-Object { Write-Output ($_.Name.ToString() + '|' + $_.Enabled.ToString()) }";
+        NativeCommandResult result = await _runner.RunAsync("powershell.exe",
+            new[] { "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script }, TimeSpan.FromSeconds(20));
         if (result.ExitCode != 0 || result.TimedOut)
-            return new(false, false, "Firewall state unavailable", result.StandardError);
-        Dictionary<string, bool> profiles = ParseFirewallProfiles(result.StandardOutput);
-        if (profiles.Count != 3)
-            return new(false, false, result.StandardOutput.Trim(), "Could not establish all three firewall profile states.");
-        bool allOn = profiles.Values.All(value => value);
-        return State(allOn, string.Join("; ", profiles.Select(pair => pair.Key + "=" + (pair.Value ? "ON" : "OFF"))));
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.StandardError) ? result.StandardOutput : result.StandardError);
+        return ParseFirewallProfiles(result.StandardOutput);
     }
 
     internal static Dictionary<string, bool> ParseFirewallProfiles(string output)
     {
-        Dictionary<string, bool> result = new(StringComparer.OrdinalIgnoreCase);
-        string current = "";
+        Dictionary<string, bool> profiles = new(StringComparer.OrdinalIgnoreCase);
         foreach (string raw in output.Replace("\r", "").Split('\n'))
         {
-            string line = raw.Trim();
-            if (line.StartsWith("Domain Profile", StringComparison.OrdinalIgnoreCase)) current = "domainprofile";
-            else if (line.StartsWith("Private Profile", StringComparison.OrdinalIgnoreCase)) current = "privateprofile";
-            else if (line.StartsWith("Public Profile", StringComparison.OrdinalIgnoreCase)) current = "publicprofile";
-            else if (current.Length > 0 && line.StartsWith("State", StringComparison.OrdinalIgnoreCase))
+            string[] pair = raw.Trim().Split('|', 2);
+            if (pair.Length != 2) continue;
+            string key = pair[0].Trim().ToLowerInvariant() switch
             {
-                string value = line.Substring(5).Trim();
-                if (value.Equals("ON", StringComparison.OrdinalIgnoreCase) || value.Equals("OFF", StringComparison.OrdinalIgnoreCase))
-                    result[current] = value.Equals("ON", StringComparison.OrdinalIgnoreCase);
-            }
+                "domain" => "domainprofile",
+                "private" => "privateprofile",
+                "public" => "publicprofile",
+                _ => ""
+            };
+            if (key.Length == 0 || !bool.TryParse(pair[1].Trim(), out bool enabled)) continue;
+            profiles[key] = enabled;
         }
-        return result;
+        return profiles;
     }
 
     private async Task RequireNetshAsync(params string[] args)
