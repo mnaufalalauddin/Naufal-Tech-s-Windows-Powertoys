@@ -2249,7 +2249,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     new CompositeToolActionService(
                         new BuiltInAppsService(),
                         new StorageSlimmingActionsService(),
-                        new WindowsFeatureManagementService()));
+                        new WindowsFeatureManagementService(),
+                        new OfflineImageActionsService()));
             }
             catch (Exception exception)
             {
