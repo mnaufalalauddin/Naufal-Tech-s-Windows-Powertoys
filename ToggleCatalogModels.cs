@@ -20,7 +20,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
         bool RestartRecommended,
         ToolToggleTier SelectionTier = ToolToggleTier.Unspecified,
         string Warning = "",
-        bool IsFeatureSwitch = false)
+        bool IsFeatureSwitch = false,
+        string CanonicalActionId = "",
+        IReadOnlyList<string>? DependsOn = null,
+        IReadOnlyList<string>? ConflictsWith = null,
+        ToolActionImpact Impact = ToolActionImpact.Unknown,
+        ToolActionEvidence Evidence = ToolActionEvidence.MechanismUnmeasured)
     {
         public string Name { get; init; } = CatalogDisplayNames.Simplify(Name);
     }
