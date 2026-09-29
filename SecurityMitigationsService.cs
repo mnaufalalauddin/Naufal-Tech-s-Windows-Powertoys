@@ -14,6 +14,7 @@ internal sealed class SecurityMitigationsService : IToolToggleService
     private const string DeviceGuard = @"SYSTEM\CurrentControlSet\Control\DeviceGuard";
     private const string Hvci = DeviceGuard + @"\Scenarios\HypervisorEnforcedCodeIntegrity";
     private const string Lsa = @"SYSTEM\CurrentControlSet\Control\Lsa";
+    private const string BackupRoot = @"Software\Naufal Windows Tech\Powertoys\Backups\SecurityMitigations";
 
     private static readonly IReadOnlyList<ToolToggleDefinition> Definitions = new[]
     {
@@ -80,6 +81,7 @@ internal sealed class SecurityMitigationsService : IToolToggleService
 
         try
         {
+            CaptureOriginal(definition);
             switch (definition.Id)
             {
                 case "VBS":
@@ -122,12 +124,45 @@ internal sealed class SecurityMitigationsService : IToolToggleService
         }
     }
 
-    public Task<ToolToggleOperationResult> RestoreOriginalAsync(ToolToggleDefinition definition) =>
-        Task.FromResult(new ToolToggleOperationResult(
-            false, false,
-            "No pre-change snapshot exists for this new advanced control yet. Use the explicit protection state selector rather than assuming a Windows default.",
-            new ToolToggleState(false, true, "Restore snapshot unavailable"),
-            OriginalBackupMissing: true));
+    public async Task<ToolToggleOperationResult> RestoreOriginalAsync(ToolToggleDefinition definition)
+    {
+        if (!WindowsPrivilegeService.IsAdministrator())
+        {
+            ToolToggleState denied = await ReadStateAsync(definition);
+            return new(false, false, "Administrator rights are required.", denied);
+        }
+        using RegistryKey? backup = Registry.CurrentUser.OpenSubKey(BackupRoot + "\\" + definition.Id);
+        if (backup is null)
+        {
+            ToolToggleState state = await ReadStateAsync(definition);
+            return new(false, false,
+                "No captured pre-change state exists. A universal Windows security default will not be guessed.",
+                state, OriginalBackupMissing: true);
+        }
+
+        string path = Convert.ToString(backup.GetValue("Path"), CultureInfo.InvariantCulture) ?? "";
+        string name = Convert.ToString(backup.GetValue("Name"), CultureInfo.InvariantCulture) ?? "";
+        bool existed = Convert.ToInt32(backup.GetValue("Existed", 0), CultureInfo.InvariantCulture) == 1;
+        if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(name))
+        {
+            ToolToggleState invalid = await ReadStateAsync(definition);
+            return new(false, false, "The captured mitigation snapshot is invalid.", invalid);
+        }
+        using (RegistryKey key = Registry.LocalMachine.CreateSubKey(path, writable: true))
+        {
+            if (existed) key.SetValue(name, Convert.ToInt32(backup.GetValue("Value", 0), CultureInfo.InvariantCulture), RegistryValueKind.DWord);
+            else key.DeleteValue(name, throwOnMissingValue: false);
+        }
+        ToolToggleState configured = await ReadStateAsync(definition);
+        ToolToggleState pending = configured with
+        {
+            EffectiveState = ToolEffectiveState.PendingReboot,
+            ActualValue = configured.ActualValue + "; original configuration restored; pending reboot/effective-state verification"
+        };
+        Registry.CurrentUser.DeleteSubKeyTree(BackupRoot + "\\" + definition.Id, throwOnMissingSubKey: false);
+        return new(true, false, $"{definition.Name} original configuration was restored. Effective state must be verified after restart.",
+            pending, VerificationPending: true, RebootRequired: true);
+    }
 
     public Task<ToolToggleOperationResult> RestoreWindowsDefaultAsync(ToolToggleDefinition definition) =>
         Task.FromResult(new ToolToggleOperationResult(
@@ -143,6 +178,29 @@ internal sealed class SecurityMitigationsService : IToolToggleService
             CanonicalActionId: "security.mitigation." + id.ToLowerInvariant(),
             Impact: ToolActionImpact.AdvancedSecurityMitigation,
             Evidence: ToolActionEvidence.MechanismUnmeasured);
+
+    private static void CaptureOriginal(ToolToggleDefinition definition)
+    {
+        string backupPath = BackupRoot + "\\" + definition.Id;
+        using RegistryKey backup = Registry.CurrentUser.CreateSubKey(backupPath, writable: true);
+        if (Convert.ToInt32(backup.GetValue("Captured", 0), CultureInfo.InvariantCulture) == 1) return;
+        (string path, string name) = Target(definition.Id);
+        int? value = ReadDword(path, name);
+        backup.SetValue("Path", path, RegistryValueKind.String);
+        backup.SetValue("Name", name, RegistryValueKind.String);
+        backup.SetValue("Existed", value.HasValue ? 1 : 0, RegistryValueKind.DWord);
+        if (value.HasValue) backup.SetValue("Value", value.Value, RegistryValueKind.DWord);
+        backup.SetValue("Captured", 1, RegistryValueKind.DWord);
+    }
+
+    private static (string Path, string Name) Target(string id) => id switch
+    {
+        "VBS" => (DeviceGuard, "EnableVirtualizationBasedSecurity"),
+        "HVCI" => (Hvci, "Enabled"),
+        "CredentialGuard" => (Lsa, "LsaCfgFlags"),
+        "LsaProtection" => (Lsa, "RunAsPPL"),
+        _ => throw new InvalidOperationException($"Unknown mitigation: {id}")
+    };
 
     private static int? ReadDword(string path, string name)
     {
