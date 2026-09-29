@@ -132,19 +132,26 @@ This development environment cannot execute the Windows/WinUI/.NET build and no 
 
 Historical changelog entries contain earlier Windows/build validation; they are not evidence that these new changes have been validated on those builds.
 
+## Additional implemented inventory/recovery surface
+
+The Advanced page now exposes read-only/export actions for Startup locations, Services, Scheduled Tasks, Windows Capabilities, Optional Features, installed user languages, third-party Driver Store packages, Windows RE/Compact OS status and volume information. Driver Store packages can be exported to an application-owned backup directory before any later removal work.
+
+Compact OS now has explicit enable/disable actions with query verification. Windows RE has explicit enable/disable actions with reagentc status verification. These are reversible controls; neither deletes the recovery partition.
+
+Offline-image support now includes a documented supported DISM workflow, mounted-image inventory and stale-mount cleanup. It deliberately does not guess a WIM/ESD path, edition index, package identity or removal list.
+
 ## Remaining work
 
-The following requirements are intentionally not represented by empty buttons and remain incomplete:
+The following requirements remain incomplete rather than being represented by fake controls:
 - full App & Background Owner Finder
-- full Startup inventory/disable/restore UI with publisher/signature evidence
-- generalized Service + Scheduled Task inventory with task XML backup
-- Language/Capability manager
-- Optional Feature manager
-- general Driver Store inventory/export/removal manager
+- Startup disable/restore UI with per-entry publisher/signature evidence (inventory is implemented)
+- generalized Service mutation UI and Scheduled Task disable/restore with task XML backup (inventory is implemented)
+- Language/Capability mutation manager (inventory is implemented)
+- Optional Feature mutation manager (inventory is implemented)
+- general Driver Store selective removal manager (inventory + full third-party export are implemented)
 - Previous Windows installation preview/removal workflow
-- Compact OS manager
-- Recovery footprint manager
-- supported offline-image mount/index/commit/discard workflow
+- Recovery footprint deletion manager (status + WinRE enable/disable are implemented)
+- full interactive offline-image source/index/mount/commit/discard UI (workflow/mount inventory/recovery are implemented)
 - build-specific experimental deep component/WinSxS removal
 - granular Exploit Protection / hardware-enforced stack protection controls
 - CPU-mitigation controls with CPU/build-specific detection
