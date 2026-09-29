@@ -261,10 +261,10 @@
                                         Style="{StaticResource ToolButtonStyle}"/>
 </StackPanel>
 <StackPanel x:Name="SecurityPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="Windows Security" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Review protection and encryption. Security changes require confirmation; understand the consequences before proceeding." TextWrapping="Wrap"/>
-<Button x:Name="DisableDefenderButton" Content="Disable Defender"
+<Button x:Name="DisableDefenderButton" Content="Disable Defender policies"
                                         Click="DisableDefenderButton_Click"
                                         Style="{StaticResource DangerToolButtonStyle}"/>
-<Button x:Name="RestoreDefenderButton" Content="Restore Defender"
+<Button x:Name="RestoreDefenderButton" Content="Restore Defender policies"
                                         Click="RestoreDefenderButton_Click"
                                         Style="{StaticResource SuccessToolButtonStyle}"/>
 <Button x:Name="SecurityControlsButton" Content="Firewall, SmartScreen &amp; UAC"
