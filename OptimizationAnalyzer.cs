@@ -36,6 +36,19 @@ internal readonly record struct OptimizationSummary(
     long SystemDriveFreeBytes,
     TimeSpan Uptime);
 
+internal readonly record struct OptimizationComparison(
+    OptimizationSummary Baseline,
+    OptimizationSummary After,
+    double PhysicalUsedBytesDelta,
+    double CommitUsedBytesDelta,
+    double CpuPercentDelta,
+    double DiskReadBytesPerSecondDelta,
+    double DiskWriteBytesPerSecondDelta,
+    double ProcessesDelta,
+    double ThreadsDelta,
+    double HandlesDelta,
+    long FreeSpaceDelta);
+
 internal sealed class OptimizationAnalyzer
 {
     internal async Task<IReadOnlyList<OptimizationSample>> CaptureAsync(
@@ -47,7 +60,6 @@ internal sealed class OptimizationAnalyzer
         if (interval < TimeSpan.FromMilliseconds(250)) throw new ArgumentOutOfRangeException(nameof(interval));
 
         List<OptimizationSample> samples = new();
-        using Process self = Process.GetCurrentProcess();
         TimeSpan previousCpu = TotalCpu();
         DateTimeOffset previousTime = DateTimeOffset.UtcNow;
         IoCounters previousIo = ReadSystemIo();
@@ -107,6 +119,20 @@ internal sealed class OptimizationAnalyzer
             samples[^1].SystemDriveFreeBytes,
             samples[^1].Uptime);
     }
+
+    internal static OptimizationComparison Compare(OptimizationSummary baseline, OptimizationSummary after) =>
+        new(baseline, after,
+            after.AveragePhysicalUsedBytes - baseline.AveragePhysicalUsedBytes,
+            after.AverageCommitUsedBytes - baseline.AverageCommitUsedBytes,
+            after.AverageCpuPercent - baseline.AverageCpuPercent,
+            after.AverageDiskReadBytesPerSecond - baseline.AverageDiskReadBytesPerSecond,
+            after.AverageDiskWriteBytesPerSecond - baseline.AverageDiskWriteBytesPerSecond,
+            after.AverageProcesses - baseline.AverageProcesses,
+            after.AverageThreads - baseline.AverageThreads,
+            after.AverageHandles - baseline.AverageHandles,
+            after.SystemDriveFreeBytes >= 0 && baseline.SystemDriveFreeBytes >= 0
+                ? after.SystemDriveFreeBytes - baseline.SystemDriveFreeBytes
+                : 0);
 
     private static TimeSpan TotalCpu()
     {
