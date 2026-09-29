@@ -35,8 +35,7 @@ internal sealed class StorageSlimmingActionsService : IToolActionService
             Warning: "Irreversible: installed updates cannot be uninstalled after ResetBase.",
             Impact: ToolActionImpact.StorageReduction,
             Evidence: ToolActionEvidence.MechanismUnmeasured,
-            CanonicalActionId: "storage.component-store.resetbase",
-            DependsOn: new[] { "storage.component-store.cleanup" })
+            CanonicalActionId: "storage.component-store.resetbase")
     };
 
     public IReadOnlyList<ToolActionDefinition> GetActions() => Actions;
