@@ -290,6 +290,9 @@
 <Button x:Name="DebloatButton" Content="Advanced Windows Tweaks &amp; De-Bloat"
                                         Click="DebloatButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="SecurityMitigationsButton" Content="Security &amp; Mitigations"
+                                        Click="SecurityMitigationsButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="MsiModeUtilityButton" Content="MSI Mode Utility"
                                         Click="MsiModeUtilityButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
