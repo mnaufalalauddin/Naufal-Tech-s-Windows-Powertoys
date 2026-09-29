@@ -52,7 +52,8 @@ internal sealed class SecurityMitigationsService : IToolToggleService
             };
             string detail = locked ? actual + "; physical-presence removal may be required." : actual;
             return Task.FromResult(new ToolToggleState(
-                enabled, true, detail, EffectiveState: enabled ? ToolEffectiveState.Active : ToolEffectiveState.Inactive));
+                enabled, true, detail + "; effective runtime state not yet queried",
+                EffectiveState: ToolEffectiveState.Unknown));
         }
         catch (Exception exception)
         {
@@ -71,7 +72,8 @@ internal sealed class SecurityMitigationsService : IToolToggleService
         ToolToggleState before = await ReadStateAsync(definition);
         if (!before.IsAvailable) return new(false, false, before.Error, before);
 
-        if (!targetOn && definition.Id is "CredentialGuard" or "LsaProtection" &&
+        if (!targetOn &&
+            (definition.Id is "CredentialGuard" or "LsaProtection") &&
             before.ActualValue.Contains("UEFI lock configured", StringComparison.Ordinal))
         {
             return new(false, false,
