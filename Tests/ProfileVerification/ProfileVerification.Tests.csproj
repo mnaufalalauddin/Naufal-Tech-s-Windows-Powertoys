@@ -83,6 +83,9 @@
     <Compile Include="..\..\CatalogSelectionPlan.cs" Link="CatalogSelectionPlan.cs" />
     <Compile Include="..\..\ActionPlanning.cs" Link="ActionPlanning.cs" />
     <Compile Include="..\..\OptimizationAnalyzer.cs" Link="OptimizationAnalyzer.cs" />
+    <Compile Include="..\..\WindowsPrivilegeService.cs" Link="WindowsPrivilegeService.cs" />
+    <Compile Include="..\..\SecurityMitigationsService.cs" Link="SecurityMitigationsService.cs" />
+    <Compile Include="..\..\WindowsSecurityControlsService.cs" Link="WindowsSecurityControlsService.cs" />
     <Compile Include="..\..\ToggleCatalogModels.cs" Link="ToggleCatalogModels.cs" />
     <Compile Include="..\..\PerformanceProfileVerification.cs" Link="PerformanceProfileVerification.cs" />
     <Compile Include="..\..\PerformanceProfileVerificationService.cs" Link="PerformanceProfileVerificationService.cs" />
