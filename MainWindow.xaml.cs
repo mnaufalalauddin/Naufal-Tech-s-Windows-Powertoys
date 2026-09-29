@@ -43,6 +43,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private readonly WindowsAiService _windowsAiService = new();
         private readonly DefenderPolicyService _defenderPolicyService = new();
         private readonly SecurityMitigationsService _securityMitigationsService = new();
+        private readonly WindowsSecurityControlsService _windowsSecurityControlsService = new();
         private readonly MsiModeService _msiModeService = new();
         private readonly GpuDriverService _gpuDriverService = new();
         private readonly DebloatService _debloatService = new();
@@ -5393,6 +5394,25 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 Task delay = Task.Delay(TimeSpan.FromSeconds(2));
                 await Task.WhenAny(delay, closed);
             }
+        }
+
+        private async void SecurityControlsButton_Click(object sender, RoutedEventArgs e)
+        {
+            TaskStatusMessage = "TASKS: WINDOWS SECURITY CONTROLS";
+            try
+            {
+                await ShowToggleCatalogDialogAsync(
+                    "Windows Security - Firewall, SmartScreen & UAC",
+                    _windowsSecurityControlsService,
+                    ownershipNotice:
+                        "These toggles describe protection state: ON means protection enabled; OFF means disabled. Windows and Edge SmartScreen are separate. Firewall controls all three profiles without deleting the firewall service. UAC OFF changes EnableLUA and remains Verification Pending until restart.");
+            }
+            catch (Exception exception)
+            {
+                TaskStatusMessage = "TASKS: FAILED";
+                await ShowMessageDialogAsync("Windows Security controls failed", exception.Message);
+            }
+            finally { RefreshManagedTaskHeader(); }
         }
 
         private async void SmartAppControlButton_Click(object sender, RoutedEventArgs e)
