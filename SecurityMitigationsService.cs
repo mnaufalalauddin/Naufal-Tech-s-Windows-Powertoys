@@ -30,34 +30,42 @@ internal sealed class SecurityMitigationsService : IToolToggleService
 
     public IReadOnlyList<ToolToggleDefinition> GetDefinitions() => Definitions;
 
-    public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
+    public async Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
     {
         try
         {
-            (bool enabled, string actual, bool locked) = definition.Id switch
+            (bool configured, string actual, bool locked) = ReadConfigured(definition.Id);
+            DeviceGuardRuntime? runtime = definition.Id == "LsaProtection"
+                ? null
+                : await Task.Run(ReadDeviceGuardRuntime).ConfigureAwait(false);
+
+            bool isOn = configured;
+            ToolEffectiveState effective = ToolEffectiveState.Unknown;
+            string runtimeText = "effective runtime state unavailable";
+            if (runtime is DeviceGuardRuntime deviceGuard)
             {
-                "VBS" => ReadDword(DeviceGuard, "EnableVirtualizationBasedSecurity") is int vbs
-                    ? (vbs != 0, $"EnableVirtualizationBasedSecurity={vbs}", false)
-                    : (false, "EnableVirtualizationBasedSecurity=<absent/default>", false),
-                "HVCI" => ReadDword(Hvci, "Enabled") is int hvci
-                    ? (hvci != 0, $"HVCI Enabled={hvci}", false)
-                    : (false, "HVCI Enabled=<absent/default>", false),
-                "CredentialGuard" => ReadDword(Lsa, "LsaCfgFlags") is int cg
-                    ? (cg != 0, $"LsaCfgFlags={cg}" + (cg == 1 ? " (UEFI lock configured)" : ""), cg == 1)
-                    : (false, "LsaCfgFlags=<absent/default>", false),
-                "LsaProtection" => ReadDword(Lsa, "RunAsPPL") is int ppl
-                    ? (ppl != 0, $"RunAsPPL={ppl}" + (ppl == 1 ? " (UEFI lock configured)" : ""), ppl == 1)
-                    : (false, "RunAsPPL=<absent/default>", false),
-                _ => throw new InvalidOperationException($"Unknown mitigation: {definition.Id}")
-            };
-            string detail = locked ? actual + "; physical-presence removal may be required." : actual;
-            return Task.FromResult(new ToolToggleState(
-                enabled, true, detail + "; effective runtime state not yet queried",
-                EffectiveState: ToolEffectiveState.Unknown));
+                (isOn, effective, runtimeText) = definition.Id switch
+                {
+                    "VBS" => (deviceGuard.VbsStatus == 2,
+                        deviceGuard.VbsStatus == 2 ? ToolEffectiveState.Active : ToolEffectiveState.Inactive,
+                        $"VBS runtime={deviceGuard.VbsStatus}"),
+                    "HVCI" => (deviceGuard.Running.Contains(2u),
+                        deviceGuard.Running.Contains(2u) ? ToolEffectiveState.Active : ToolEffectiveState.Inactive,
+                        $"HVCI runtime={(deviceGuard.Running.Contains(2u) ? "running" : "not running")}"),
+                    "CredentialGuard" => (deviceGuard.Running.Contains(1u),
+                        deviceGuard.Running.Contains(1u) ? ToolEffectiveState.Active : ToolEffectiveState.Inactive,
+                        $"Credential Guard runtime={(deviceGuard.Running.Contains(1u) ? "running" : "not running")}"),
+                    _ => (configured, ToolEffectiveState.Unknown, runtimeText)
+                };
+            }
+
+            string detail = actual + "; " + runtimeText +
+                (locked ? "; physical-presence removal may be required" : "");
+            return new ToolToggleState(isOn, true, detail, EffectiveState: effective);
         }
         catch (Exception exception)
         {
-            return Task.FromResult(new ToolToggleState(false, false, "Unable to read", exception.Message));
+            return new(false, false, "Unable to read", exception.Message);
         }
     }
 
@@ -103,7 +111,7 @@ internal sealed class SecurityMitigationsService : IToolToggleService
             }
 
             ToolToggleState configured = await ReadStateAsync(definition);
-            bool configMatches = configured.IsAvailable && configured.IsOn == targetOn;
+            bool configMatches = ReadConfigured(definition.Id).Configured == targetOn;
             ToolToggleState pending = configured with
             {
                 EffectiveState = configMatches ? ToolEffectiveState.PendingReboot : ToolEffectiveState.Unknown,
@@ -180,6 +188,39 @@ internal sealed class SecurityMitigationsService : IToolToggleService
             CanonicalActionId: "security.mitigation." + id.ToLowerInvariant(),
             Impact: ToolActionImpact.AdvancedSecurityMitigation,
             Evidence: ToolActionEvidence.MechanismUnmeasured);
+
+    private static (bool Configured, string Actual, bool Locked) ReadConfigured(string id) => id switch
+    {
+        "VBS" => ReadDword(DeviceGuard, "EnableVirtualizationBasedSecurity") is int vbs
+            ? (vbs != 0, $"EnableVirtualizationBasedSecurity={vbs}", false)
+            : (false, "EnableVirtualizationBasedSecurity=<absent/default>", false),
+        "HVCI" => ReadDword(Hvci, "Enabled") is int hvci
+            ? (hvci != 0, $"HVCI Enabled={hvci}", false)
+            : (false, "HVCI Enabled=<absent/default>", false),
+        "CredentialGuard" => ReadDword(Lsa, "LsaCfgFlags") is int cg
+            ? (cg != 0, $"LsaCfgFlags={cg}" + (cg == 1 ? " (UEFI lock configured)" : ""), cg == 1)
+            : (false, "LsaCfgFlags=<absent/default>", false),
+        "LsaProtection" => ReadDword(Lsa, "RunAsPPL") is int ppl
+            ? (ppl != 0, $"RunAsPPL={ppl}" + (ppl == 1 ? " (UEFI lock configured)" : ""), ppl == 1)
+            : (false, "RunAsPPL=<absent/default>", false),
+        _ => throw new InvalidOperationException($"Unknown mitigation: {id}")
+    };
+
+    private static DeviceGuardRuntime ReadDeviceGuardRuntime()
+    {
+        DeviceGuardRuntime? found = null;
+        NativeRscReader.Visit((_, instance) =>
+        {
+            uint vbs = uint.TryParse(NativeRscReader.ReadValue(instance, "VirtualizationBasedSecurityStatus"),
+                NumberStyles.Integer, CultureInfo.InvariantCulture, out uint value) ? value : 0;
+            uint[] running = NativeRscReader.ReadUInt32Array(instance, "SecurityServicesRunning");
+            uint[] configured = NativeRscReader.ReadUInt32Array(instance, "SecurityServicesConfigured");
+            found = new DeviceGuardRuntime(vbs, running, configured);
+        }, @"ROOT\Microsoft\Windows\DeviceGuard", "SELECT * FROM Win32_DeviceGuard");
+        return found ?? throw new InvalidOperationException("Win32_DeviceGuard returned no status row.");
+    }
+
+    private readonly record struct DeviceGuardRuntime(uint VbsStatus, uint[] Running, uint[] Configured);
 
     private static void CaptureOriginal(ToolToggleDefinition definition)
     {
