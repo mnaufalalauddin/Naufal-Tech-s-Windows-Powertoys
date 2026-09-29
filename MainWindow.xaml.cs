@@ -2211,6 +2211,23 @@ namespace Naufal_Windows_Tech_s_Powertoys
             finally { RefreshManagedTaskHeader(); }
         }
 
+        private async void WindowsInventoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            TaskStatusMessage = "TASKS: WINDOWS INVENTORY";
+            try
+            {
+                await ShowActionCatalogDialogAsync(
+                    "Windows Inventory & Recovery Exports",
+                    new WindowsInventoryActionsService());
+            }
+            catch (Exception exception)
+            {
+                TaskStatusMessage = "TASKS: FAILED";
+                await ShowMessageDialogAsync("Windows Inventory", exception.Message);
+            }
+            finally { RefreshManagedTaskHeader(); }
+        }
+
         private async void DebloatButton_Click(object sender, RoutedEventArgs e)
         {
             TaskStatusMessage = "TASKS: DE-BLOAT PREVIEW";
