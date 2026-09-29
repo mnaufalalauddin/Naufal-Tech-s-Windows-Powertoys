@@ -2218,7 +2218,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 await ShowActionCatalogDialogAsync(
                     "Windows Inventory & Recovery Exports",
-                    new WindowsInventoryActionsService());
+                    new CompositeToolActionService(
+                        new WindowsInventoryActionsService(),
+                        new WindowsComponentActionsService()));
             }
             catch (Exception exception)
             {
