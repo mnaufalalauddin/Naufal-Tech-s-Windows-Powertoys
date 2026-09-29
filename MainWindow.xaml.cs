@@ -42,6 +42,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private readonly EssentialActionsService _essentialActionsService = new();
         private readonly WindowsAiService _windowsAiService = new();
         private readonly DefenderPolicyService _defenderPolicyService = new();
+        private readonly SecurityMitigationsService _securityMitigationsService = new();
         private readonly MsiModeService _msiModeService = new();
         private readonly GpuDriverService _gpuDriverService = new();
         private readonly DebloatService _debloatService = new();
@@ -2108,6 +2109,25 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 RefreshManagedTaskHeader();
             }
+        }
+
+        private async void SecurityMitigationsButton_Click(object sender, RoutedEventArgs e)
+        {
+            TaskStatusMessage = "TASKS: SECURITY & MITIGATIONS";
+            try
+            {
+                await ShowToggleCatalogDialogAsync(
+                    "Advanced - Security & Mitigations",
+                    _securityMitigationsService,
+                    ownershipNotice:
+                        "These controls describe protection state, not an optimization state. They are opt-in, are not changed by performance presets, and do not claim a universal performance gain. Reboot-sensitive changes remain Verification Pending until effective state can be checked after restart.");
+            }
+            catch (Exception exception)
+            {
+                TaskStatusMessage = "TASKS: FAILED";
+                await ShowMessageDialogAsync("Security & Mitigations failed", exception.Message);
+            }
+            finally { RefreshManagedTaskHeader(); }
         }
 
         private async void DebloatButton_Click(object sender, RoutedEventArgs e)
