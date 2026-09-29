@@ -86,6 +86,8 @@
     <Compile Include="..\..\WindowsPrivilegeService.cs" Link="WindowsPrivilegeService.cs" />
     <Compile Include="..\..\SecurityMitigationsService.cs" Link="SecurityMitigationsService.cs" />
     <Compile Include="..\..\WindowsSecurityControlsService.cs" Link="WindowsSecurityControlsService.cs" />
+    <Compile Include="..\..\CompositeToolActionService.cs" Link="CompositeToolActionService.cs" />
+    <Compile Include="..\..\StorageSlimmingActionsService.cs" Link="StorageSlimmingActionsService.cs" />
     <Compile Include="..\..\ToggleCatalogModels.cs" Link="ToggleCatalogModels.cs" />
     <Compile Include="..\..\PerformanceProfileVerification.cs" Link="PerformanceProfileVerification.cs" />
     <Compile Include="..\..\PerformanceProfileVerificationService.cs" Link="PerformanceProfileVerificationService.cs" />
