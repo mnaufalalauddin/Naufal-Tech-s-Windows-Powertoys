@@ -106,6 +106,13 @@ internal static class CatalogInteractionTests
         absent.Update("missing", "UNAVAILABLE", null, "Not installed");
         absent.Finish(true, "Skipped absent device");
         assert(!absent.HasFailures && absent.CompletedWithoutErrors && absent.VerifiedCount == 0, "Unavailable stays neutral, not verified or failed");
+        var pending = new CatalogProgressState(new[] { "reboot" });
+        pending.Update("reboot", "RUNNING", null, "Writing configuration");
+        pending.Update("reboot", "VERIFICATION PENDING", null, "Restart required");
+        pending.Finish(true, "Configuration accepted");
+        assert(pending.PendingCount == 1 && !pending.HasFailures && pending.CompletedWithoutErrors && !pending.AllVerified,
+            "Reboot-pending configuration is terminal but never misreported as effectively verified");
+
         var interrupted = new CatalogProgressState(new[] { "active" });
         interrupted.Update("active", "RUNNING", null, "Running");
         interrupted.Finish(false, "Stopped");

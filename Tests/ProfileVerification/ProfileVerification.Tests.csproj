@@ -81,6 +81,17 @@
     <Compile Include="..\..\LiveMetricHistory.cs" Link="LiveMetricHistory.cs" />
     <Compile Include="..\..\HeaderLayoutPolicy.cs" Link="HeaderLayoutPolicy.cs" />
     <Compile Include="..\..\CatalogSelectionPlan.cs" Link="CatalogSelectionPlan.cs" />
+    <Compile Include="..\..\ActionPlanning.cs" Link="ActionPlanning.cs" />
+    <Compile Include="..\..\OptimizationAnalyzer.cs" Link="OptimizationAnalyzer.cs" />
+    <Compile Include="..\..\WindowsPrivilegeService.cs" Link="WindowsPrivilegeService.cs" />
+    <Compile Include="..\..\SecurityMitigationsService.cs" Link="SecurityMitigationsService.cs" />
+    <Compile Include="..\..\WindowsSecurityControlsService.cs" Link="WindowsSecurityControlsService.cs" />
+    <Compile Include="..\..\CompositeToolActionService.cs" Link="CompositeToolActionService.cs" />
+    <Compile Include="..\..\StorageSlimmingActionsService.cs" Link="StorageSlimmingActionsService.cs" />
+    <Compile Include="..\..\WindowsInventoryActionsService.cs" Link="WindowsInventoryActionsService.cs" />
+    <Compile Include="..\..\WindowsFeatureManagementService.cs" Link="WindowsFeatureManagementService.cs" />
+    <Compile Include="..\..\WindowsComponentActionsService.cs" Link="WindowsComponentActionsService.cs" />
+    <Compile Include="..\..\OfflineImageActionsService.cs" Link="OfflineImageActionsService.cs" />
     <Compile Include="..\..\ToggleCatalogModels.cs" Link="ToggleCatalogModels.cs" />
     <Compile Include="..\..\PerformanceProfileVerification.cs" Link="PerformanceProfileVerification.cs" />
     <Compile Include="..\..\PerformanceProfileVerificationService.cs" Link="PerformanceProfileVerificationService.cs" />

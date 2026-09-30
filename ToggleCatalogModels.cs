@@ -20,9 +20,24 @@ namespace Naufal_Windows_Tech_s_Powertoys
         bool RestartRecommended,
         ToolToggleTier SelectionTier = ToolToggleTier.Unspecified,
         string Warning = "",
-        bool IsFeatureSwitch = false)
+        bool IsFeatureSwitch = false,
+        string CanonicalActionId = "",
+        IReadOnlyList<string>? DependsOn = null,
+        IReadOnlyList<string>? ConflictsWith = null,
+        ToolActionImpact Impact = ToolActionImpact.Unknown,
+        ToolActionEvidence Evidence = ToolActionEvidence.MechanismUnmeasured)
     {
         public string Name { get; init; } = CatalogDisplayNames.Simplify(Name);
+    }
+
+    internal enum ToolEffectiveState
+    {
+        Unknown,
+        Active,
+        Inactive,
+        PendingReboot,
+        NotSupported,
+        NotApplicable
     }
 
     internal readonly record struct ToolToggleState(
@@ -31,7 +46,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         string ActualValue,
         string Error = "",
         bool HasAppliedParts = false,
-        bool UnavailableOnThisPc = false)
+        bool UnavailableOnThisPc = false,
+        ToolEffectiveState EffectiveState = ToolEffectiveState.Unknown)
     {
         // Only an explicit, successful absence probe may set this flag. An
         // unreadable registry, timeout or missing backup is NOT unavailability.
@@ -49,7 +65,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
         bool DefaultFallbackHandled = false,
         bool SkippedUnavailable = false,
         bool OriginalBackupMissing = false,
-        ToolToggleState? BeforeState = null);
+        ToolToggleState? BeforeState = null,
+        bool VerificationPending = false,
+        bool RebootRequired = false);
 
     internal interface IToolToggleService
     {

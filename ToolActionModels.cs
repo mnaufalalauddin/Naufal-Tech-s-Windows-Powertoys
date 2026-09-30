@@ -25,7 +25,12 @@ namespace Naufal_Windows_Tech_s_Powertoys
         string RestoreLabel = "Restore",
         ToolActionRisk Risk = ToolActionRisk.Default,
         string Warning = "",
-        bool RestartRecommended = false)
+        bool RestartRecommended = false,
+        string CanonicalActionId = "",
+        IReadOnlyList<string>? DependsOn = null,
+        IReadOnlyList<string>? ConflictsWith = null,
+        ToolActionImpact Impact = ToolActionImpact.Unknown,
+        ToolActionEvidence Evidence = ToolActionEvidence.MechanismUnmeasured)
     {
         public string Name { get; init; } = CatalogDisplayNames.Simplify(Name);
     }

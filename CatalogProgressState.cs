@@ -6,7 +6,7 @@ namespace Naufal_Windows_Tech_s_Powertoys;
 
 internal readonly record struct CatalogItemProgress(string Phase, double? Percent, string Detail)
 {
-    public bool IsTerminal => Phase is "COMPLETED" or "FAILED" or "SKIPPED" or "NOT VERIFIED" or "UNAVAILABLE";
+    public bool IsTerminal => Phase is "COMPLETED" or "FAILED" or "SKIPPED" or "NOT VERIFIED" or "UNAVAILABLE" or "VERIFICATION PENDING";
 }
 
 internal sealed class CatalogProgressState(IEnumerable<string> ids)
@@ -19,6 +19,7 @@ internal sealed class CatalogProgressState(IEnumerable<string> ids)
     public bool AllVerified => _items.Count > 0 && _items.Values.All(item => item.Phase == "COMPLETED");
     public int VerifiedCount => _items.Values.Count(item => item.Phase == "COMPLETED");
     public int UnavailableCount => _items.Values.Count(item => item.Phase == "UNAVAILABLE");
+    public int PendingCount => _items.Values.Count(item => item.Phase == "VERIFICATION PENDING");
     public bool HasFailures => _items.Values.Any(item => item.Phase is "FAILED" or "NOT VERIFIED");
     // A Windows command percentage is a step, not the completion percentage of
     // a multi-step tweak. Animate until the first settled item instead of
@@ -26,12 +27,12 @@ internal sealed class CatalogProgressState(IEnumerable<string> ids)
     public bool IsOverallIndeterminate => !Finished && Settled == 0 &&
         _items.Values.Any(item => item.Phase is "RUNNING" or "VERIFYING");
     public bool CompletedWithoutErrors => _items.Count > 0 &&
-        _items.Values.All(item => item.Phase is "COMPLETED" or "UNAVAILABLE");
+        _items.Values.All(item => item.Phase is "COMPLETED" or "UNAVAILABLE" or "VERIFICATION PENDING");
 
     public bool Update(string id, string phase, double? percent, string detail)
     {
         if (Finished || !_items.TryGetValue(id, out var current) || current.IsTerminal ||
-            phase is not ("RUNNING" or "VERIFYING" or "COMPLETED" or "FAILED" or "SKIPPED" or "NOT VERIFIED" or "UNAVAILABLE") ||
+            phase is not ("RUNNING" or "VERIFYING" or "COMPLETED" or "FAILED" or "SKIPPED" or "NOT VERIFIED" or "UNAVAILABLE" or "VERIFICATION PENDING") ||
             current.Phase == "VERIFYING" && phase == "RUNNING") return false;
         _items[id] = new(phase, percent is double value && double.IsFinite(value) ? Math.Clamp(value, 0, 100) : null, detail);
         return true;

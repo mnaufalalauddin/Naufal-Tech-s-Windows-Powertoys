@@ -43,10 +43,10 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 | --- | --- |
 | **Repair** | Full Repair, Quick Repair, Windows Update Fix, Microsoft Store Fix, and Explorer Fix. |
 | **System** | Disk dashboard with device-derived SMART health, NVMe endurance/read-write/error counters, ATA/SAT attributes and Windows reliability fallback; system reports with opt-in local IP/MAC addresses; Windows / Office activation status tools. A valid license is still required. |
-| **Tweaks & De-Bloat** | Essential and Gaming catalogs, service controls, privacy and advertising policies, and supported AI-related settings. |
+| **Tweaks & De-Bloat** | Essential and Gaming catalogs, service controls, privacy and advertising policies, supported AI-related settings, and unique storage actions including Component Store analysis/cleanup and an explicitly irreversible ResetBase operation. Existing temp cleanup, hibernation and Reserved Storage owners are reused rather than duplicated. |
 | **Built-in Windows Apps** | Alphabetical app removal / recovery, including OneDrive, with Recommended, Optional, and Not Recommended removal guidance. |
-| **Security & Compatibility** | BitLocker Manager, automatic device-encryption policy, Defender controls, Smart App Control, GPU Driver Manager, runtime checks, and MSI Mode Utility. |
-| **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; Light/Dark themes; text scaling; an English-only interface; and five sidebar pages. |
+| **Security & Compatibility** | BitLocker Manager, automatic device-encryption policy, Defender controls, Smart App Control, separate Firewall / Windows SmartScreen / Edge SmartScreen / UAC controls, GPU Driver Manager, runtime checks, MSI Mode Utility, and opt-in VBS / Memory Integrity / Credential Guard / LSA Protection configuration under Advanced → Security & Mitigations. Reboot-sensitive mitigation writes remain verification-pending until effective state can be checked after restart. |
+| **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; a two-pass Before / After Analyzer for RAM, commit, CPU, disk I/O, free space, Processes, Threads and Handles; Light/Dark themes; text scaling; an English-only interface; and five sidebar pages. |
 
 ### Navigation
 
@@ -95,6 +95,10 @@ Per-user application files: `%LOCALAPPDATA%\Naufal Windows Powertoys`. Some snap
 
 ---
 
+For the current optimization/de-bloat ownership, deduplication, measurement, security, storage and validation status, see [OPTIMIZATION-AUDIT.md](OPTIMIZATION-AUDIT.md).
+
+---
+
 ## Build & Develop
 
 Built with **C# / WinUI**, **.NET 10**, **Native AOT**, and **Inno Setup 7**.
@@ -138,7 +142,9 @@ The functional and localization checks do not apply Windows tweaks. The separate
 | Source | Purpose |
 | --- | --- |
 | `MainWindow.xaml`, `MainWindow*.cs` | Dashboard, dialogs, and catalog interaction. |
-| `*Service.cs`, catalog and policy files | Inspection, repair, tweaks, app management, and restore behavior. |
+| `*Service.cs`, catalog and policy files | Inspection, repair, tweaks, app management, restore behavior, and opt-in security/mitigation controls. |
+| `ActionPlanning.cs` | Canonical action deduplication, dependency ordering and pre-execution conflict detection. |
+| `OptimizationAnalyzer.cs` | Multi-sample RAM/commit/CPU/disk/process/thread/handle/free-space measurements without a synthetic boost score. |
 | `DiskInfoView.cs`, `NativeDiskSmart*.cs`, `DeviceSmartReport.cs`, `SsdEndurance.cs` | Disk dashboard, read-only SMART transports, health decoding and model-scoped endurance. |
 | `NetworkReport.cs`, `SystemReportEntry.cs` | Local network report and opt-in address visibility/export. |
 | `EnglishUiText.cs`, `UiTextKeys.cs` | Shared English application/installer copy. |

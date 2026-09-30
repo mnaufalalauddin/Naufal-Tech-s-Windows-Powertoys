@@ -121,6 +121,38 @@ namespace Naufal_Windows_Tech_s_Powertoys
             finally { VariantClear(ref value); }
         }
 
+        internal static uint[] ReadUInt32Array(nint instance, string name)
+        {
+            Variant value = default;
+            bool locked = false;
+            try
+            {
+                Get(instance, name, &value);
+                // VT_ARRAY | VT_UI4
+                if (value.Type != 0x2013 || value.Pointer == 0 || SafeArrayGetDim(value.Pointer) != 1)
+                    throw new InvalidOperationException("Expected a one-dimensional WMI UInt32 array.");
+                Marshal.ThrowExceptionForHR(SafeArrayGetLBound(value.Pointer, 1, out int lower));
+                Marshal.ThrowExceptionForHR(SafeArrayGetUBound(value.Pointer, 1, out int upper));
+                long length = (long)upper - lower + 1;
+                if (length < 0 || length > 256) throw new InvalidOperationException("Unexpected WMI UInt32-array size.");
+                Marshal.ThrowExceptionForHR(SafeArrayAccessData(value.Pointer, out nint data));
+                locked = true;
+                uint[] values = new uint[(int)length];
+                if (values.Length > 0)
+                {
+                    int[] signed = new int[values.Length];
+                    Marshal.Copy(data, signed, 0, signed.Length);
+                    for (int index = 0; index < signed.Length; index++) values[index] = unchecked((uint)signed[index]);
+                }
+                return values;
+            }
+            finally
+            {
+                if (locked) SafeArrayUnaccessData(value.Pointer);
+                VariantClear(ref value);
+            }
+        }
+
         internal static byte[] ReadByteArray(nint instance, string name)
         {
             Variant value = default;

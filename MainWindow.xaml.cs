@@ -42,6 +42,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
         private readonly EssentialActionsService _essentialActionsService = new();
         private readonly WindowsAiService _windowsAiService = new();
         private readonly DefenderPolicyService _defenderPolicyService = new();
+        private readonly SecurityMitigationsService _securityMitigationsService = new();
+        private readonly WindowsSecurityControlsService _windowsSecurityControlsService = new();
+        private readonly OptimizationAnalyzer _optimizationAnalyzer = new();
+        private OptimizationSummary? _optimizationBaseline;
         private readonly MsiModeService _msiModeService = new();
         private readonly GpuDriverService _gpuDriverService = new();
         private readonly DebloatService _debloatService = new();
@@ -2110,6 +2114,122 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
         }
 
+        private async void OptimizationAnalyzerButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_utilityTaskInProgress) return;
+            string phase = _optimizationBaseline.HasValue ? "comparison" : "baseline";
+            if (!await ShowConfirmationWindowAsync(
+                    "Before / After Analyzer",
+                    $"Capture a 10-second {phase} using one-second samples? Keep foreground apps and workload comparable. No Windows setting will be changed.",
+                    _optimizationBaseline.HasValue ? "Capture comparison" : "Capture baseline"))
+                return;
+
+            _utilityTaskInProgress = true;
+            try
+            {
+                TaskStatusMessage = "TASKS: MEASURING";
+                IReadOnlyList<OptimizationSample> samples = await _optimizationAnalyzer.CaptureAsync(
+                    TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1));
+                OptimizationSummary summary = OptimizationAnalyzer.Summarize(samples);
+                if (!_optimizationBaseline.HasValue)
+                {
+                    _optimizationBaseline = summary;
+                    await ShowMessageDialogAsync("Baseline captured",
+                        FormatOptimizationSummary(summary) +
+                        "\n\nApply the intended actions, complete any required reboot, return to a comparable workload, then run Before / After Analyzer again.");
+                }
+                else
+                {
+                    OptimizationComparison comparison = OptimizationAnalyzer.Compare(_optimizationBaseline.Value, summary);
+                    await ShowMessageDialogAsync("Before / After comparison",
+                        FormatOptimizationSummary(summary) +
+                        "\n\nDELTA (After - Baseline; negative resource-use values mean lower measured use)\n" +
+                        $"Physical RAM: {FormatSignedBytes(comparison.PhysicalUsedBytesDelta)}\n" +
+                        $"Commit: {FormatSignedBytes(comparison.CommitUsedBytesDelta)}\n" +
+                        $"CPU: {comparison.CpuPercentDelta:+0.00;-0.00;0.00} percentage points\n" +
+                        $"Disk read: {FormatSignedBytes(comparison.DiskReadBytesPerSecondDelta)}/s\n" +
+                        $"Disk write: {FormatSignedBytes(comparison.DiskWriteBytesPerSecondDelta)}/s\n" +
+                        $"Processes: {comparison.ProcessesDelta:+0.0;-0.0;0.0}\n" +
+                        $"Threads: {comparison.ThreadsDelta:+0.0;-0.0;0.0}\n" +
+                        $"Handles: {comparison.HandlesDelta:+0.0;-0.0;0.0}\n" +
+                        $"Free space: {FormatSignedBytes(comparison.FreeSpaceDelta)}\n\n" +
+                        "This is a measurement, not a causal performance score. Re-run samples under comparable conditions before drawing conclusions.");
+                    _optimizationBaseline = null;
+                }
+                TaskStatusMessage = "TASKS: COMPLETE";
+            }
+            catch (Exception exception)
+            {
+                TaskStatusMessage = "TASKS: FAILED";
+                await ShowMessageDialogAsync("Before / After Analyzer", exception.Message);
+            }
+            finally
+            {
+                _utilityTaskInProgress = false;
+                RefreshManagedTaskHeader();
+            }
+        }
+
+        private static string FormatOptimizationSummary(OptimizationSummary value) =>
+            $"Samples: {value.SampleCount}\n" +
+            $"Uptime: {value.Uptime}\n" +
+            $"Physical RAM used (avg): {FormatBytes(value.AveragePhysicalUsedBytes)}\n" +
+            $"Commit used / limit (avg/final limit): {FormatBytes(value.AverageCommitUsedBytes)} / {FormatBytes(value.CommitLimitBytes)}\n" +
+            $"CPU (avg): {value.AverageCpuPercent:0.00}%\n" +
+            $"Disk read/write (avg): {FormatBytes(value.AverageDiskReadBytesPerSecond)}/s / {FormatBytes(value.AverageDiskWriteBytesPerSecond)}/s\n" +
+            $"Processes / Threads / Handles (avg): {value.AverageProcesses:0.0} / {value.AverageThreads:0.0} / {value.AverageHandles:0.0}\n" +
+            $"System drive free: {(value.SystemDriveFreeBytes >= 0 ? FormatBytes(value.SystemDriveFreeBytes) : "Unavailable")}";
+
+        private static string FormatBytes(double bytes)
+        {
+            double absolute = Math.Abs(bytes);
+            if (absolute >= 1024d * 1024d * 1024d) return $"{bytes / (1024d * 1024d * 1024d):0.00} GiB";
+            if (absolute >= 1024d * 1024d) return $"{bytes / (1024d * 1024d):0.00} MiB";
+            if (absolute >= 1024d) return $"{bytes / 1024d:0.00} KiB";
+            return $"{bytes:0} B";
+        }
+
+        private static string FormatSignedBytes(double bytes) =>
+            (bytes > 0 ? "+" : "") + FormatBytes(bytes);
+
+        private async void SecurityMitigationsButton_Click(object sender, RoutedEventArgs e)
+        {
+            TaskStatusMessage = "TASKS: SECURITY & MITIGATIONS";
+            try
+            {
+                await ShowToggleCatalogDialogAsync(
+                    "Advanced - Security & Mitigations",
+                    _securityMitigationsService,
+                    ownershipNotice:
+                        "These controls describe protection state, not an optimization state. They are opt-in, are not changed by performance presets, and do not claim a universal performance gain. Reboot-sensitive changes remain Verification Pending until effective state can be checked after restart.");
+            }
+            catch (Exception exception)
+            {
+                TaskStatusMessage = "TASKS: FAILED";
+                await ShowMessageDialogAsync("Security & Mitigations failed", exception.Message);
+            }
+            finally { RefreshManagedTaskHeader(); }
+        }
+
+        private async void WindowsInventoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            TaskStatusMessage = "TASKS: WINDOWS INVENTORY";
+            try
+            {
+                await ShowActionCatalogDialogAsync(
+                    "Windows Inventory & Recovery Exports",
+                    new CompositeToolActionService(
+                        new WindowsInventoryActionsService(),
+                        new WindowsComponentActionsService()));
+            }
+            catch (Exception exception)
+            {
+                TaskStatusMessage = "TASKS: FAILED";
+                await ShowMessageDialogAsync("Windows Inventory", exception.Message);
+            }
+            finally { RefreshManagedTaskHeader(); }
+        }
+
         private async void DebloatButton_Click(object sender, RoutedEventArgs e)
         {
             TaskStatusMessage = "TASKS: DE-BLOAT PREVIEW";
@@ -2126,7 +2246,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         _debloatNetworkStorageService,
                         _xboxComponentsService,
                         _debloatServiceGroupsService),
-                    new BuiltInAppsService());
+                    new CompositeToolActionService(
+                        new BuiltInAppsService(),
+                        new StorageSlimmingActionsService(),
+                        new WindowsFeatureManagementService(),
+                        new OfflineImageActionsService()));
             }
             catch (Exception exception)
             {
@@ -5373,6 +5497,25 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 Task delay = Task.Delay(TimeSpan.FromSeconds(2));
                 await Task.WhenAny(delay, closed);
             }
+        }
+
+        private async void SecurityControlsButton_Click(object sender, RoutedEventArgs e)
+        {
+            TaskStatusMessage = "TASKS: WINDOWS SECURITY CONTROLS";
+            try
+            {
+                await ShowToggleCatalogDialogAsync(
+                    "Windows Security - Firewall, SmartScreen & UAC",
+                    _windowsSecurityControlsService,
+                    ownershipNotice:
+                        "These toggles describe protection state: ON means protection enabled; OFF means disabled. Windows and Edge SmartScreen are separate. Firewall controls all three profiles without deleting the firewall service. UAC OFF changes EnableLUA and remains Verification Pending until restart.");
+            }
+            catch (Exception exception)
+            {
+                TaskStatusMessage = "TASKS: FAILED";
+                await ShowMessageDialogAsync("Windows Security controls failed", exception.Message);
+            }
+            finally { RefreshManagedTaskHeader(); }
         }
 
         private async void SmartAppControlButton_Click(object sender, RoutedEventArgs e)

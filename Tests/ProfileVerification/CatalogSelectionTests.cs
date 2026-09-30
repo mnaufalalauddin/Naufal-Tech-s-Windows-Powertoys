@@ -44,6 +44,98 @@ internal static class CatalogSelectionTests
             "Catalog Select all prepares OFF rows without changing their states");
         assert(!states["item3"].IsOn, "Catalog planning is non-mutating");
 
+        var canonicalBase = Row("canonical") with
+        {
+            CanonicalActionId = "runtime.telemetry",
+            Impact = ToolActionImpact.RuntimeOptimization,
+            Evidence = ToolActionEvidence.MechanismUnmeasured
+        };
+        var duplicateAlias = canonicalBase with { Name = "Telemetry alias", Description = "Same canonical operation" };
+        var canonicalStates = new Dictionary<string, ToolToggleState> { ["canonical"] = new(false, true, "OFF") };
+        var deduplicated = CatalogSelectionPlan.Create(
+            new[] { canonicalBase, duplicateAlias },
+            canonicalStates,
+            _ => true);
+        assert(deduplicated.Selected.Count == 1 && deduplicated.ToApply.Count == 1,
+            "Canonical action selected through two UI/preset references executes once");
+
+        var dependency = Row("dependency") with { CanonicalActionId = "runtime.dependency" };
+        var dependant = Row("dependant") with
+        {
+            CanonicalActionId = "runtime.dependant",
+            DependsOn = new[] { "runtime.dependency" }
+        };
+        var dependencyStates = new Dictionary<string, ToolToggleState>
+        {
+            ["dependency"] = new(false, true, "OFF"),
+            ["dependant"] = new(false, true, "OFF")
+        };
+        var dependencyPlan = CatalogSelectionPlan.Create(
+            new[] { dependant, dependency },
+            dependencyStates,
+            definition => definition.Id == "dependant");
+        assert(dependencyPlan.ToApply.Select(definition => definition.Id)
+            .SequenceEqual(new[] { "dependency", "dependant" }),
+            "Dependencies are included once and ordered before dependant actions");
+
+        bool conflictRejected = false;
+        try
+        {
+            var left = Row("left") with
+            {
+                CanonicalActionId = "service.mode.disabled",
+                ConflictsWith = new[] { "service.mode.manual" }
+            };
+            var right = Row("right") with { CanonicalActionId = "service.mode.manual" };
+            var conflictStates = new Dictionary<string, ToolToggleState>
+            {
+                ["left"] = new(false, true, "OFF"),
+                ["right"] = new(false, true, "OFF")
+            };
+            CatalogSelectionPlan.Create(new[] { left, right }, conflictStates, _ => true);
+        }
+        catch (InvalidOperationException) { conflictRejected = true; }
+        assert(conflictRejected, "Conflicting canonical actions are rejected before execution");
+
+        bool cycleRejected = false;
+        try
+        {
+            var first = Row("first") with { CanonicalActionId = "cycle.first", DependsOn = new[] { "cycle.second" } };
+            var second = Row("second") with { CanonicalActionId = "cycle.second", DependsOn = new[] { "cycle.first" } };
+            var cycleStates = new Dictionary<string, ToolToggleState>
+            {
+                ["first"] = new(false, true, "OFF"),
+                ["second"] = new(false, true, "OFF")
+            };
+            CatalogSelectionPlan.Create(new[] { first, second }, cycleStates, definition => definition.Id == "first");
+        }
+        catch (InvalidOperationException) { cycleRejected = true; }
+        assert(cycleRejected, "Dependency cycles are rejected before execution");
+
+        var analyzerSummary = OptimizationAnalyzer.Summarize(new[]
+        {
+            new OptimizationSample(DateTimeOffset.UnixEpoch, TimeSpan.FromMinutes(10), 100, 200, 1000, 10, 20, 30, 4000, 50, 500, 5000),
+            new OptimizationSample(DateTimeOffset.UnixEpoch.AddSeconds(1), TimeSpan.FromMinutes(10).Add(TimeSpan.FromSeconds(1)), 300, 400, 1000, 30, 40, 50, 4500, 70, 700, 7000)
+        });
+        assert(analyzerSummary.SampleCount == 2 &&
+               analyzerSummary.AveragePhysicalUsedBytes == 200 &&
+               analyzerSummary.AverageCommitUsedBytes == 300 &&
+               analyzerSummary.CommitLimitBytes == 1000 &&
+               analyzerSummary.AverageCpuPercent == 20 &&
+               analyzerSummary.AverageProcesses == 60 &&
+               analyzerSummary.AverageThreads == 600 &&
+               analyzerSummary.AverageHandles == 6000 &&
+               analyzerSummary.SystemDriveFreeBytes == 4500,
+            "Optimization analyzer reports averages and final free space without inventing a boost score");
+
+        var firewallProfiles = WindowsSecurityControlsService.ParseFirewallProfiles(
+            "Domain|True\r\nPrivate|False\r\nPublic|True\r\n");
+        assert(firewallProfiles.Count == 3 &&
+               firewallProfiles["domainprofile"] &&
+               !firewallProfiles["privateprofile"] &&
+               firewallProfiles["publicprofile"],
+            "Firewall parser keeps Domain, Private and Public states distinct");
+
         var service = new RecordingService();
         foreach (var definition in plan.ToApply)
         {

@@ -261,12 +261,15 @@
                                         Style="{StaticResource ToolButtonStyle}"/>
 </StackPanel>
 <StackPanel x:Name="SecurityPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="Windows Security" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Review protection and encryption. Security changes require confirmation; understand the consequences before proceeding." TextWrapping="Wrap"/>
-<Button x:Name="DisableDefenderButton" Content="Disable Defender"
+<Button x:Name="DisableDefenderButton" Content="Disable Defender policies"
                                         Click="DisableDefenderButton_Click"
                                         Style="{StaticResource DangerToolButtonStyle}"/>
-<Button x:Name="RestoreDefenderButton" Content="Restore Defender"
+<Button x:Name="RestoreDefenderButton" Content="Restore Defender policies"
                                         Click="RestoreDefenderButton_Click"
                                         Style="{StaticResource SuccessToolButtonStyle}"/>
+<Button x:Name="SecurityControlsButton" Content="Firewall, SmartScreen &amp; UAC"
+                                        Click="SecurityControlsButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="BitLockerManagerButton" Content="BitLocker Manager"
                                         Click="BitLockerManagerButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
@@ -275,6 +278,9 @@
                                         Style="{StaticResource ToolButtonStyle}"/>
 </StackPanel>
 <StackPanel x:Name="AdvancedPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="Advanced Windows Tweaks" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Explore optional configuration, applications, drivers, and runtime tools. Review each warning and keep a recovery backup." TextWrapping="Wrap"/>
+<Button x:Name="OptimizationAnalyzerButton" Content="Before / After Analyzer"
+                                        Click="OptimizationAnalyzerButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="EssentialTweaksButton" Content="Essential Windows Tweaks"
                                         Click="EssentialTweaksButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
@@ -287,8 +293,14 @@
 <Button x:Name="GpuDriverManagerButton" Content="GPU Driver Manager"
                                         Click="GpuDriverManagerButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="WindowsInventoryButton" Content="Startup, Services, Tasks, Features &amp; Drivers"
+                                        Click="WindowsInventoryButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="DebloatButton" Content="Advanced Windows Tweaks &amp; De-Bloat"
                                         Click="DebloatButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button x:Name="SecurityMitigationsButton" Content="Security &amp; Mitigations"
+                                        Click="SecurityMitigationsButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="MsiModeUtilityButton" Content="MSI Mode Utility"
                                         Click="MsiModeUtilityButton_Click"
