@@ -10,7 +10,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
     /// utility builds 49 atomic backends, then merges recommendation, privacy,
     /// taskbar, and Explorer children into four user-facing controls.
     /// </summary>
-    internal sealed class DebloatCatalogService : IToolToggleService
+    internal sealed class DebloatCatalogService : IToolToggleService, ICatalogPlanSource
     {
         private readonly IReadOnlyDictionary<string, CatalogItem> _items;
 
@@ -156,6 +156,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() =>
             _items.Values.Select(item => item.Definition).ToArray();
+
+        public IReadOnlyList<CatalogPlanAction> GetPlanActions(ToolToggleDefinition definition) =>
+            Resolve(definition).Children.SelectMany(child => CatalogEffectPlan.Expand(child.Service, child.Definition)).ToArray();
 
         public async Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
         {

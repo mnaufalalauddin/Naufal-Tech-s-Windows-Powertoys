@@ -12,7 +12,7 @@ using Windows.Management.Deployment;
 
 namespace Naufal_Windows_Tech_s_Powertoys
 {
-    internal sealed class EssentialTweaksService : IToolToggleService
+    internal sealed class EssentialTweaksService : IToolToggleService, ICatalogEffectSource
     {
         private const string BackupRoot =
             @"Software\Naufal Windows Tech\Powertoys\Backups\Essential";
@@ -167,6 +167,19 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() => Definitions;
 
+        public IReadOnlyList<CatalogEffect> GetEffects(ToolToggleDefinition definition) => definition.Id switch
+        {
+            "Telemetry" => TelemetryTargets.Select(t => SharedPrivacySnapshot.Describe("Telemetry",
+                CatalogEffect.Registry(t.Hive.ToString(), t.Path, t.Name, "DWord", t.AppliedValue))).ToArray(),
+            "ServicesManual" => ManualServiceTargets.Select(t => CatalogEffect.Registry("HKLM", @"SYSTEM\CurrentControlSet\Services\" + t.Name, "Start", "DWord", t.StartValue))
+                .Append(CatalogEffect.Registry("HKLM", ServiceControlPath, "SvcHostSplitThresholdInKB", "DynamicDWord", "installed physical memory in KiB")).ToArray(),
+            "Hibernation" => new[] { CatalogEffect.Registry("HKLM", PowerPath, "HibernateEnabled", "DWord", 0), new CatalogEffect("Power/Hibernation", "Disabled") },
+            "EndTask" => new[] { CatalogEffect.Registry("HKCU", EndTaskPath, "TaskbarEndTask", "DWord", 1) },
+            "ConsumerFeatures" => new[] { CatalogEffect.Registry("HKLM", ConsumerFeaturesPath, "DisableWindowsConsumerFeatures", "DWord", 1) },
+            "DeliveryOptimization" => new[] { CatalogEffect.Registry("HKLM", DeliveryOptimizationPath, "DODownloadMode", "DWord", 0) },
+            _ => Array.Empty<CatalogEffect>()
+        };
+
         public async Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
         {
             try
@@ -300,6 +313,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 if (definition.Id != "Widgets")
                 {
+                    if (definition.Id == "Telemetry")
+                        DebloatService.PrepareSharedSnapshots(definition.Id, SharedSnapshotPreparation.Restore);
                     using RegistryKey? snapshot = Registry.CurrentUser.OpenSubKey($@"{BackupRoot}\{definition.Id}", writable: false);
                     if (snapshot is null)
                     {
@@ -386,6 +401,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         SetDword(RegistryHive.LocalMachine, MapsPath, "AutoUpdateEnabled", 1);
                         break;
                     case "Telemetry":
+                        DebloatService.PrepareSharedSnapshots("Telemetry", SharedSnapshotPreparation.Validate);
                         foreach (RegistryTarget target in TelemetryTargets)
                         {
                             DeleteRegistryValue(target.Hive, target.Path, target.Name);
@@ -511,6 +527,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     break;
 
                 case "Telemetry":
+                    DebloatService.PrepareSharedSnapshots(id, SharedSnapshotPreparation.Capture);
                     foreach (RegistryTarget target in TelemetryTargets)
                     {
                         CaptureRegistryValue(id, RegistryTargetTag(target), target.Hive, target.Path, target.Name);
@@ -642,6 +659,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     break;
 
                 case "Telemetry":
+                    DebloatService.PrepareSharedSnapshots(id, SharedSnapshotPreparation.Restore);
                     EnsureBackupExists(id);
                     foreach (RegistryTarget target in TelemetryTargets)
                     {
@@ -1158,6 +1176,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     BackupRoot,
                     writable: true);
                 root?.DeleteSubKeyTree(id, throwOnMissingSubKey: false);
+                root?.Flush();
+                SharedPrivacySnapshot.RetireUnused(id);
             }
             catch
             {

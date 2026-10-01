@@ -1,6 +1,6 @@
 # Naufal Windows Utility — Changelog
 
-Development history from **30 August 2026** through **28 September 2026**.
+Development history from **30 August 2026** through **1 October 2026**.
 
 **Original history snapshot:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
 Later development entries are appended below with their own dates.
@@ -17,6 +17,168 @@ source changes. **Verification** describes the evidence available at that
 checkpoint, not a new execution of those tests while writing this file. A compiled
 feature or passing synthetic test is not equivalent to a successful Windows
 mutation, complete visual validation, or full behavioral parity.
+
+Historical report filenames identify the records used when this history was
+assembled. Reports not included in this repository are shown as plain references,
+not download links; private backups and raw machine evidence are not published.
+
+## 1 October 2026 — Shared privacy originals and isolated validation preparation
+
+- **Documentation/source publication preparation:** Updated README with the new
+  development modules, an explicit source-versus-release distinction, the final
+  guest acceptance result and known limitations. Existing screenshots, version
+  8.0.0.0 and prior release history are preserved; no new release is implied.
+- **Pre-push verification:** Debug x64 built with zero warnings/errors. Re-ran
+  4,786 profile/action, 353 English UI, 54 LSA, 70 security/offline, 33 storage,
+  22 VM-guard and 51 WIM-readiness assertions successfully. No live mutation or
+  reboot was performed for source publication. Application source is unchanged
+  by this documentation refresh; the previously built installer is not republished.
+- **Final guest evidence:** The user-provided continuation reached
+  `CompletedWithSkippedControls`, with Print to PDF restored after reboot and no
+  further reboot requested. HVCI was not exercised and LSA stayed read-only.
+- **Known reporting defect, not fixed:** The LSA baseline field is omitted by
+  default JSON serialization of its internal property, making the audit's
+  `LSA read-only baseline=False` inconclusive. It does not establish a protection
+  change; serialization and honest unknown-state reporting need a follow-up fix.
+- **Recorded native guest results:** Print to PDF reached Disabled after the first
+  reboot and returned to its exact Enabled baseline after the second reboot.
+  This verifies one feature round trip, not document printing or all storage tools.
+  HVCI Apply/rollback was not exercised because eligibility checks blocked it;
+  LSA remained read-only and reported LSA-light protection.
+- **Fixed test orchestration:** Skipped HVCI no longer requests an unnecessary
+  third reboot. The prior no-change waiting manifest can be finalized read-only
+  with the same identity and verified storage baseline; actual security changes
+  and unfinished storage stages still require a new boot. The suite now passes
+  **4,786 regression assertions**. Later user evidence confirms guest finalization
+  as `CompletedWithSkippedControls`, not a pass for skipped protections.
+- **Recorded legacy migration rehearsal:** Advertising ID migrated on a copy;
+  Tailored Experiences correctly blocked conflicting original DWORD values
+  (Essential 1, Advanced 0). Neither production backup was altered. Seven native
+  registry-format fixtures passed; resolving the real conflict remains outstanding.
+
+- **Recorded guest evidence:** User-provided logs show all three profiles at 23/23
+  with exact baseline rollback after intentional failure; RSC was not applicable.
+  Shared snapshot ownership/retirement checks passed but both values were already
+  applied (0/2 changed). This does not establish post-reboot or migration coverage.
+- **Added validation tooling:** Copy-based legacy registry backup migration audit,
+  guarded staged Print-to-PDF and eligible HVCI round trips, boot-bound resume
+  manifests and a read-only WIM/ESD readiness collector. LSA remains evidence-only.
+  These new live stages have not yet run; fixture passes are not native passes.
+  Profile/action regression suite now has **4,768 assertions**; WIM readiness has
+  **51 pure checks**. The original installation ISO contains ESD, requiring a
+  separate export to new WIM before testing the application offline workflow.
+
+- **Guest-audit follow-up:** The first manual guest run stopped before mutation
+  because the cloned machine already contained a Telemetry snapshot; Profile was
+  not started. SharedSnapshot now uses unique test-only backup storage through the
+  same native implementation, preserving production snapshots. The shipping app's
+  backup root is unchanged. Test logs distinguish changed from already-applied
+  targets; existing-backup migration is explicitly outside this isolated test.
+  Updated pure/mock regression suite at that stage: **4,708 assertions passed**.
+  The later guest rerun is recorded above; the original refusal was not a pass.
+- **Changed:** Advertising ID and tailored-experience aliases in Essential and
+  Advanced use a shared durable original with validated legacy mirrors. Conflicting
+  originals, malformed records and unfinished commits block changes; Restore never
+  recaptures the current modified value. Originals remain until all participating
+  backups retire. Other primitives are not claimed migrated.
+- **Fixed:** An identity-only canonical key left by an interrupted write is now
+  rejected instead of being treated as permission to capture a new original.
+- **Changed:** Effect planning recognizes only explicitly migrated shared-original
+  owners. Equal values from unrelated owners still conflict; opposing requested
+  values remain blocked even when an original owner is shared. Inventory exposes
+  the registered owner without claiming the on-disk snapshot was verified by a scan.
+- **Added:** Guarded LSA protection enable without adding a firmware lock, separate
+  configured/live protection evidence, control-specific durable snapshots and mock
+  tests. Automatic LSA disable/rollback is not provided; see recovery limitations.
+- **Validation preparation:** An authorized independent VirtualBox clone is retained
+  with networking/sharing disabled. A guarded guest launcher and hash-listed test
+  media support manual in-guest execution. Clone startup and media preparation are
+  not Apply/rollback or WIM deployment passes.
+- **Safety:** Both live harness entry points require an explicit matching VirtualBox
+  hardware identity before any reports or mutations; launching the profile harness
+  directly no longer relies only on the user's SID and Administrator status.
+- **Verification:** 4,703 profile/action/snapshot assertions, 353 English UI/resource
+  assertions, 54 LSA assertions, 70 security/offline assertions, 33 storage assertions
+  and 22 VM guard assertions passed. These are pure/mock tests, not host mutations.
+  Broader live VM controls, post-reboot effectiveness and WIM deployment remain unverified.
+
+## 30 September 2026 — Canonical batches and guarded servicing workspaces
+
+- **Changed:** Composite catalog operations dispatch their canonical leaf owners.
+  A scoped execution batch shares in-flight and completed results, including
+  failures and Restore, so aliases do not consume the same original snapshot twice.
+  No legacy IDs or backup locations are renamed. Independently owned overlapping
+  effects remain blocked pending snapshot migration.
+- **Added:** Storage / Windows Servicing panel: feature/capability inventory and
+  individual changes, readback, durable operation logs, component analysis/cleanup,
+  separately confirmed irreversible ResetBase, driver inventory/export, and
+  read-only Reserved Storage / CompactOS / Windows RE information. Stale or unknown
+  pre-state blocks changes; reboot-pending is not reported as effective.
+- **Added:** Individual Memory integrity control with exact first-state snapshots,
+  fail-closed administrator/build/policy/management/lock checks, and separate
+  configured/runtime DeviceGuard evidence. Existing security managers stay intact.
+  No generic CPU mitigation mask or protection change is added to presets.
+- **Added:** Clone-only offline WIM workspace with index/build/edition/architecture
+  validation, checksum verification, conservative removable-item inventory,
+  per-change manifest and DISM logs, supported cleanup, Commit/Discard, export,
+  and explicit recovery of interrupted sessions. No original-image or host servicing
+  is performed by this offline workflow; no direct WinSxS deletion is implemented.
+- **Verification:** Mocked regression and read-only native checks are documented in
+  [the checkpoint report](docs/backlog-20260930.md). Native servicing/rollback,
+  WIM deployment and the full Windows 10/11 matrix remain unverified.
+- **Scope:** v8.0.0.0, English-only, existing framework preserved. Local development;
+  no automatic GitHub publication. This is not completion of the entire backlog.
+- **Build fix:** Successful installer builds now refresh the companion
+  `SHA256SUMS.txt`; an older checksum was found beside the newly built installer.
+
+## 29 September 2026 — Effect audit, durable journals and background ownership
+
+- **Added:** Read-only Action Inventory / Shared Targets for the three existing
+  toggle catalogs, using their actual cached factories and leaf backend owners.
+  Registry/service effect declarations support preflight conflict detection.
+  Compatible overlaps with separate snapshots are blocked, not falsely described
+  as fully consolidated. Missing/partial coverage stays visible.
+- **Added:** Durable per-operation JSON journals for catalog toggles, including
+  intent before mutation, actual completion evidence and honest Unknown/reboot
+  outcomes. Existing snapshot and AppData locations are preserved.
+- **Fixed:** Journaled operations invalidate old open-catalog scans. Analyze /
+  reload is required before the next operation, and queued Apply/Restore requests
+  reject stale previews after admission to the mutation lock.
+- **Added:** On-demand Background Owner Finder with process memory/thread/handle
+  snapshots, executable paths, creation-time-checked parent relationships,
+  bracketed service PID correlation and explicitly tentative WebView2 ancestors.
+  No command lines are collected and no process is terminated.
+- **Safety correction:** New Apply of the legacy generic CPU-mitigation/HVCI
+  bundle is blocked in preflight/backend. Its stable ID, prior settings, backup
+  and original Restore path remain. Granular replacement controls are not yet
+  implemented; security protections were not changed on the development host.
+- **Verification:** 4,634 mocked/pure regression assertions; 333 English UI checks;
+  21,115 Native AOT WinUI assertions across 128 layouts and 8 flyouts. A native
+  read-only owner scan returned 188 processes and 294 services on the development
+  host. These are not live Apply/rollback or Windows 10 compatibility tests.
+- **Scope:** v8.0.0.0 remains unchanged. Local continuation, no GitHub publication.
+  See [the full backlog status](docs/backlog-progress.md) for unfinished runtime,
+  storage, security and offline work; this is not completion of the entire backlog.
+
+## 29 September 2026 — P0 execution safeguards and resource measurement
+
+- **Added:** On-demand Resource Analyzer in System Info, with ten-sample baseline
+  and after captures, median/range/valid counts, signed deltas, context annotations,
+  and complete raw-sample Copy/Save TXT. Native counters cover RAM, commit/limit,
+  CPU, disk read/write rates, Windows-volume free space, processes/threads/handles,
+  and the utility's own overhead. Unavailable counters are not reported as zero.
+- **Fixed:** Catalog selection deduplicates identical stable action IDs and rejects
+  incompatible definitions of the same ID. Composite services dispatch the owner's
+  canonical definition. After queue admission, already-applied configurations skip
+  writes without replacing the original restore snapshot.
+- **Fixed:** Bulk Apply rejects simultaneous Disable Hibernation and Fast Startup
+  ON requests. Fast Startup checks its hibernation dependency again at execution
+  through the existing Essential catalog. Preview now includes descriptions,
+  warnings, and restart-sensitive caveats rather than only action names.
+- **Scope:** This is a completed P0 slice, not completion of the full optimization
+  backlog or universal effect-level deduplication. No new security-disable, offline
+  removal or servicing-removal capability is introduced. No host tweaks were applied.
+  Version remains v8.0.0.0; this source update has not been pushed or published.
 
 ## 28 September 2026 — Release refresh (build 20260928.2)
 
@@ -478,7 +640,7 @@ mutation, complete visual validation, or full behavioral parity.
   Setup: `artifacts/installer/Naufal-Windows-Powertoys-Setup-8.0.0-x64.exe`.
   Version 8.0.0.0; publisher Naufal Tech's Ltd.; unsigned; 38,159,096 bytes.
   SHA-256: `B32D19D04775DF9D3F84B0007639B6E8BA57AA0F7167D05A2498E21AC316C7B1`.
-  See [Photo Viewer repair notes](PHOTO_VIEWER_FIX.md) for user confirmation steps.
+  See Photo Viewer repair notes (`PHOTO_VIEWER_FIX.md`; historical report) for user confirmation steps.
 
 ## 12 September 2026 — Setup installer delivery requirement
 
@@ -530,7 +692,7 @@ mutation, complete visual validation, or full behavioral parity.
 - **Initial delivery limitation:** Native AOT was blocked by the missing C++
   linker; the later toolchain checkpoint above resolves publish. Setup packaging
   still requires Inno Setup 7. See
-  [the correction report](ONEDRIVE_GAMEMODE_FIX.md) for details and test commands.
+  the correction report (`ONEDRIVE_GAMEMODE_FIX.md`; historical report) for details and test commands.
 
 ## 12 September 2026 — Text Scaling header recovery
 
@@ -728,7 +890,7 @@ management—are retained instead of copying the original appearance literally.
   An auxiliary probe emitted NU1900 because vulnerability metadata was unreachable;
   this did not occur in the application's recorded clean build.
 
-Evidence: [Built-in Windows Apps implementation and recovery map](BUILT_IN_APPS.md).
+Evidence: Built-in Windows Apps implementation and recovery map (`BUILT_IN_APPS.md`; historical report).
 
 ## 11 September 2026 — Windows 10/11 first-run prerequisites
 
@@ -754,7 +916,7 @@ Evidence: [Built-in Windows Apps implementation and recovery map](BUILT_IN_APPS.
 - Read-only native WMI checks passed on the available Windows 11 system.
   Windows 10 behavior was covered synthetically, not by a Windows 10 runtime test.
 
-Evidence: [WMI and first-run update](WMI_WIZARD_UPDATE_2026-09-11.md).
+Evidence: WMI and first-run update (`WMI_WIZARD_UPDATE_2026-09-11.md`; historical report).
 
 ## 10 September 2026 — Reference buttons, installation and data locations
 
@@ -787,8 +949,8 @@ Evidence: [WMI and first-run update](WMI_WIZARD_UPDATE_2026-09-11.md).
 - An earlier candidate rendered its Main UI, but the final binary was not fully
   interactively verified. Install/upgrade/uninstall behavior remains untested.
 
-Evidence: [Button audit](PROGRAM_BUTTON_AUDIT_2026-09-10.md) and
-[storage-location update](STORAGE_LOCATION_UPDATE_2026-09-10.md).
+Evidence: Button audit (`PROGRAM_BUTTON_AUDIT_2026-09-10.md`; historical report) and
+storage-location update (`STORAGE_LOCATION_UPDATE_2026-09-10.md`; historical report).
 
 ## 9 September 2026 — Restore recovery, version 8, branding and feature recovery
 
@@ -870,12 +1032,12 @@ Evidence: [Button audit](PROGRAM_BUTTON_AUDIT_2026-09-10.md) and
 - Remaining default gaps and native runtime/visual parity were explicitly left
   open; these audits did not certify every service, device, or Windows edition.
 
-Evidence: [Whole-program re-audit](PROGRAM_REAUDIT_2026-09-09.md),
-[restore follow-up](RESTORE_FOLLOWUP_2026-09-09.md),
-[default-restore audit and source references](RESTORE_DEFAULTS_AUDIT_2026-09-09.md),
-[initial icon audit](ICON_AUDIT_2026-09-09.md),
-[NT branding audit](NT_BRANDING_PROGRAM_AUDIT_2026-09-09.md), and
-[catalog recovery](CATALOG_RECOVERY_AUDIT_2026-09-09.md).
+Evidence: Whole-program re-audit (`PROGRAM_REAUDIT_2026-09-09.md`; historical report),
+restore follow-up (`RESTORE_FOLLOWUP_2026-09-09.md`; historical report),
+default-restore audit and source references (`RESTORE_DEFAULTS_AUDIT_2026-09-09.md`; historical report),
+initial icon audit (`ICON_AUDIT_2026-09-09.md`; historical report),
+NT branding audit (`NT_BRANDING_PROGRAM_AUDIT_2026-09-09.md`; historical report), and
+catalog recovery (`CATALOG_RECOVERY_AUDIT_2026-09-09.md`; historical report).
 
 ## 7 September 2026 — Localization and language-switch reliability
 
@@ -911,9 +1073,9 @@ Evidence: [Whole-program re-audit](PROGRAM_REAUDIT_2026-09-09.md),
   evidence. No changes or release are invented for that date; this does not imply
   that no work took place.
 
-Evidence: [Localization audit](LOCALIZATION_AUDIT_2026-09-07.md),
-[language-switch fixes](LANGUAGE_SWITCH_FIX_2026-09-07.md), and
-[program audit](PROGRAM_AUDIT_2026-09-07.md).
+Evidence: Localization audit (`LOCALIZATION_AUDIT_2026-09-07.md`; historical report),
+language-switch fixes (`LANGUAGE_SWITCH_FIX_2026-09-07.md`; historical report), and
+program audit (`PROGRAM_AUDIT_2026-09-07.md`; historical report).
 
 ## 6 September 2026 — Profile application and Windows repair corrections
 
@@ -963,9 +1125,9 @@ Evidence: [Localization audit](LOCALIZATION_AUDIT_2026-09-07.md),
   repair follow-ups; build and publication succeeded. User-supplied repair logs
   motivated the changes but are not developer-run end-to-end tests.
 
-Evidence: [Profile apply fixes](PROFILE_APPLY_FIX_2026-09-06.md),
-[repair fixes and diagnostics](REPAIR_FIX_2026-09-06.md), and
-[repair verification follow-up](REPAIR_VERIFICATION_FIX_2026-09-06.md).
+Evidence: Profile apply fixes (`PROFILE_APPLY_FIX_2026-09-06.md`; historical report),
+repair fixes and diagnostics (`REPAIR_FIX_2026-09-06.md`; historical report), and
+repair verification follow-up (`REPAIR_VERIFICATION_FIX_2026-09-06.md`; historical report).
 
 ## 5 September 2026 — Service restore, clearer catalogs and dedicated progress
 
@@ -1027,8 +1189,8 @@ Evidence: [Profile apply fixes](PROFILE_APPLY_FIX_2026-09-06.md),
   checks and clean builds. Protected Windows/service/device changes were not run
   merely to verify these source changes.
 
-Evidence: [Advanced service audit](ADVANCED_DEBLOAT_AUDIT_2026-09-05.md) and
-[program/progress audit](PROGRAM_AUDIT_2026-09-05.md).
+Evidence: Advanced service audit (`ADVANCED_DEBLOAT_AUDIT_2026-09-05.md`; historical report) and
+program/progress audit (`PROGRAM_AUDIT_2026-09-05.md`; historical report).
 
 ## 4 September 2026 — Full profile verification and multiple audit-fix passes
 
@@ -1108,11 +1270,11 @@ Evidence: [Advanced service audit](ADVANCED_DEBLOAT_AUDIT_2026-09-05.md) and
 - Debug, Native AOT and Setup builds succeeded. Final elevated UI interaction,
   real system mutations, and install/upgrade/uninstall were not certified.
 
-Evidence: [Profile audit](PARITY_AUDIT_2026-09-04.md),
-[nine-finding re-audit](PARITY_REAUDIT_2026-09-04.md),
-[F01–F09 fixes](AUDIT_FIXES_2026-09-04.md),
-[catalog button fixes](CATALOG_BUTTON_FIX_2026-09-04.md), and
-[general audit](GENERAL_AUDIT_2026-09-04.md).
+Evidence: Profile audit (`PARITY_AUDIT_2026-09-04.md`; historical report),
+nine-finding re-audit (`PARITY_REAUDIT_2026-09-04.md`; historical report),
+F01–F09 fixes (`AUDIT_FIXES_2026-09-04.md`; historical report),
+catalog button fixes (`CATALOG_BUTTON_FIX_2026-09-04.md`; historical report), and
+general audit (`GENERAL_AUDIT_2026-09-04.md`; historical report).
 
 ## 3 September 2026 — Reference identity, task scheduling and publish pipeline
 
@@ -1149,8 +1311,8 @@ Evidence: [Profile audit](PARITY_AUDIT_2026-09-04.md),
   functions, administrative operations, or cross-version behavior. Signing and
   clean-machine installation testing remained outstanding.
 
-Evidence: [Reference parity audit](PARITY_AUDIT_2026-09-03.md) and
-[reference parity notes](REFERENCE_PARITY.md).
+Evidence: Reference parity audit (`PARITY_AUDIT_2026-09-03.md`; historical report) and
+reference parity notes (`REFERENCE_PARITY.md`; historical report).
 
 ## 1–2 September 2026 — Native feature coverage and early read-only UI validation
 
@@ -1200,7 +1362,7 @@ but not every individual change has an independently preserved implementation da
 
 Evidence: the workspace's `analysis/v78-static/feature-parity-audit.md` and
 `feature-migration-matrix.md` (both updated 1 September 2026), plus the historical
-verification section of [Porting status](PORTING_STATUS.md).
+verification section of Porting status (`PORTING_STATUS.md`; historical report).
 
 ## 30–31 August 2026 — Project foundation and initial native port
 
@@ -1244,7 +1406,7 @@ reconstructed here.
   not evidence that all native application crashes were permanently eliminated.
 
 Evidence: retained 30 August analysis scripts and initial source snapshots in the
-workspace, [Porting status](PORTING_STATUS.md), and the dated reference audits above.
+workspace, Porting status (`PORTING_STATUS.md`; historical report), and the dated reference audits above.
 
 ## Recorded verification progression
 
@@ -1319,7 +1481,7 @@ This documentation-only update does not rebuild or replace either artifact.
 ## Evidence and maintenance notes
 
 - The primary chronology comes from the dated audit files linked beside each
-  entry. [PORTING_STATUS.md](PORTING_STATUS.md) is cumulative and also contains
+  entry. PORTING_STATUS.md (`PORTING_STATUS.md`; historical report) is cumulative and also contains
   historical statements superseded by newer checkpoints.
 - Early workspace evidence is retained under
   `<private-analysis-directory>/v78-static`, including

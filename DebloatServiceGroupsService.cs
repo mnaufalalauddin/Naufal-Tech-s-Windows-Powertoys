@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Naufal_Windows_Tech_s_Powertoys
 {
-    internal sealed class DebloatServiceGroupsService : IToolToggleService
+    internal sealed class DebloatServiceGroupsService : IToolToggleService, ICatalogEffectSource
     {
         private const string BackupRoot =
             @"Software\Naufal Windows Tech\Powertoys\Backups\DebloatServiceGroups";
@@ -21,6 +21,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() =>
             Catalog.Values.Select(item => item.Definition).ToArray();
+
+        public IReadOnlyList<CatalogEffect> GetEffects(ToolToggleDefinition definition)
+        {
+            var group = Catalog[definition.Id];
+            return group.Services.Select(name => CatalogEffect.Registry("HKLM", @"SYSTEM\CurrentControlSet\Services\" + name, "Start", "DWord", 4))
+                .Concat(group.Settings.Select(s => CatalogEffect.Registry("HKLM", s.Path, s.Name, "DWord", s.Value))).ToArray();
+        }
 
         public async Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
         {

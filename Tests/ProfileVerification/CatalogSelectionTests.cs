@@ -95,18 +95,50 @@ internal static class CatalogSelectionTests
         try { await CatalogOperationRunner.ExecuteAsync(service, definitions[0], (CatalogOperation)99); }
         catch (ArgumentOutOfRangeException) { invalidRejected = true; }
         assert(invalidRejected && service.Calls.Count == 0, "Catalog invalid command cannot call the backend");
+        var duplicatePlan = CatalogSelectionPlan.Create(new[] { definitions[3], definitions[3], definitions[3] }, states, _ => true);
+        assert(duplicatePlan.Selected.Count == 1 && duplicatePlan.ToApply.Count == 1, "Repeated canonical action is planned once");
+        service.Calls.Clear();
+        foreach (var item in duplicatePlan.ToApply) await CatalogOperationRunner.ExecuteAsync(service, item, CatalogOperation.Apply);
+        assert(service.Calls.Count == 1, "Repeated preset references execute once through the existing runner");
+        bool conflictRejected = false;
+        try { CatalogSelectionPlan.Create(new[] { definitions[3], definitions[3] with { IsFeatureSwitch = true } }, states, _ => true); }
+        catch (InvalidOperationException) { conflictRejected = true; }
+        assert(conflictRejected, "Same ID with incompatible definition is rejected before execution");
+        service.Calls.Clear();
+        service.ReadOn = true;
+        var already = await CatalogOperationRunner.ExecuteAsync(service, definitions[3], CatalogOperation.Apply);
+        assert(already.AlreadyApplied && already.Verified && service.Calls.Count == 0, "Admission recheck skips writes and preserves backup when already applied");
+        await CatalogOperationRunner.ExecuteAsync(service, definitions[3], CatalogOperation.RestoreSavedState);
+        assert(service.Calls.SequenceEqual(new[] { "restore:item3" }), "Already applied does not suppress exact rollback");
+        var canonical = definitions[3];
+        var composite = new CompositeToolToggleService(new CanonicalService(canonical, assert));
+        await composite.SetStateAsync(canonical with { Id = "ITEM3", Description = "caller override" }, true);
+        assert(CatalogPlanSafety.ApplyConflicts(new[] { Row("Hibernation"), Row("FastStartupEnable") }).Count == 1,
+            "Effect dependency rejects disabling hibernation while enabling Fast Startup");
+        assert(CatalogPlanSafety.ApplyConflicts(new[] { Row("Hibernation"), Row("GameMode") }).Count == 0,
+            "Unrelated actions are not merged or blocked by name similarity");
+        var dependencyService = new DependencyService();
+        var dependencyDenied = await CatalogOperationRunner.ExecuteAsync(dependencyService, Row("FastStartupEnable"), CatalogOperation.Apply);
+        assert(!dependencyDenied.Success && dependencyService.Writes == 0, "Hibernation dependency blocks writes after queue admission");
+        dependencyService.Hibernation = new(false, false, "Unknown", "read denied");
+        dependencyDenied = await CatalogOperationRunner.ExecuteAsync(dependencyService, Row("FastStartupEnable"), CatalogOperation.Apply);
+        assert(!dependencyDenied.Success && dependencyService.Writes == 0, "Unreadable dependency is not considered enabled");
+        dependencyService.Hibernation = new(false, true, "Enabled");
+        await CatalogOperationRunner.ExecuteAsync(dependencyService, Row("FastStartupEnable"), CatalogOperation.Apply);
+        assert(dependencyService.Writes == 1, "Verified enabled hibernation permits Fast Startup configuration");
     }
 
     private sealed class RecordingService : IToolToggleService
     {
         public List<string> Calls { get; } = new();
         public bool Fail { get; set; }
+        public bool ReadOn { get; set; }
         public bool MissingSnapshot { get; set; }
         public bool ConfirmMissingSnapshot { get; set; } = true;
         public bool DefaultFallbackHandled { get; set; }
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() => Array.Empty<ToolToggleDefinition>();
         public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition) =>
-            Task.FromResult(new ToolToggleState(false, true, "fake"));
+            Task.FromResult(new ToolToggleState(ReadOn, true, "fake"));
         public Task<ToolToggleOperationResult> SetStateAsync(ToolToggleDefinition definition, bool targetOn)
         {
             Calls.Add($"apply:{definition.Id}:{targetOn}");
@@ -130,6 +162,30 @@ internal static class CatalogSelectionTests
         {
             Calls.Add("default:" + definition.Id);
             return Task.FromResult(new ToolToggleOperationResult(true, true, "fake default", new(false, true, "fake")));
+        }
+    }
+
+    private sealed class CanonicalService(ToolToggleDefinition canonical, Action<bool, string> assert) : IToolToggleService
+    {
+        public IReadOnlyList<ToolToggleDefinition> GetDefinitions() => new[] { canonical };
+        public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition) => Task.FromResult(new ToolToggleState(false, true, "test"));
+        public Task<ToolToggleOperationResult> SetStateAsync(ToolToggleDefinition definition, bool targetOn)
+        {
+            assert(definition == canonical, "Composite routes canonical metadata and legacy ID casing to owner");
+            return Task.FromResult(new ToolToggleOperationResult(true, true, "test", new(true, true, "test")));
+        }
+    }
+
+    private sealed class DependencyService : IToolToggleService
+    {
+        public int Writes;
+        public ToolToggleState Hibernation = new(true, true, "Disabled");
+        public IReadOnlyList<ToolToggleDefinition> GetDefinitions() => new[] { new ToolToggleDefinition("Hibernation", "Test", "Disable Hibernation", "Fixture", false, false) };
+        public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition) => Task.FromResult(definition.Id == "Hibernation" ? Hibernation : new(false, true, "Off"));
+        public Task<ToolToggleOperationResult> SetStateAsync(ToolToggleDefinition definition, bool targetOn)
+        {
+            Writes++;
+            return Task.FromResult(new ToolToggleOperationResult(true, true, "Fixture", new(true, true, "On")));
         }
     }
 }

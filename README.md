@@ -10,6 +10,12 @@ A native Windows dashboard to **repair system components**, **inspect disk healt
 
 Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under active development. **Not affiliated with Microsoft or Microsoft PowerToys.**
 
+> **Source update — 1 October 2026:** `main` includes the Resource Analyzer,
+> action conflict checks and journals, shared privacy snapshots, Background Owner
+> Finder, storage servicing, individual protection controls, and an offline WIM
+> workspace. These additions are under validation and are **not all present in
+> the downloadable release**. See [current verification and known limits](#current-verification--known-limits).
+
 ### Dark Mode
 
 ![Naufal Windows Utility — Dark Mode, 28 September 2026](docs/images/dashboard-dark-20260928-012955.png)
@@ -47,6 +53,8 @@ Developed by **Muhammad Naufal Alauddin**. Independent, open-source, and under a
 | **Built-in Windows Apps** | Alphabetical app removal / recovery, including OneDrive, with Recommended, Optional, and Not Recommended removal guidance. |
 | **Security & Compatibility** | BitLocker Manager, automatic device-encryption policy, Defender controls, Smart App Control, GPU Driver Manager, runtime checks, and MSI Mode Utility. |
 | **Monitoring & Interface** | CPU, RAM, GPU 3D and network graphs; Task Monitoring; per-operation progress; Light/Dark themes; text scaling; an English-only interface; and five sidebar pages. |
+| **Development diagnostics** | Before/after resource measurements, read-only background ownership, catalog action inventory, conflict checks, and durable operation journals. |
+| **Development servicing** | Individual feature/capability operations, guarded HVCI/LSA controls, and copy-based offline WIM workspaces. Live coverage is limited; see below. |
 
 ### Navigation
 
@@ -61,6 +69,116 @@ The sidebar contains **Home**, **System Repair**, **System Info**, **Windows Sec
 - **Optional network addresses:** System Report can show local IPv4/IPv6 and MAC addresses. These are hidden by default and included in Copy / Save TXT only when selected; no public-IP lookup is performed. Other report fields can still contain identifying information.
 
 Availability depends on the drive, controller, firmware, and Windows driver. Endurance is a write-wear estimate, not a prediction of years remaining or a guarantee against failure. See [supported paths, data sources, and limitations](docs/disk-info.md).
+
+## Resource Analyzer (development source)
+
+Open **System Info → Resource Analyzer — Before / After**. Capture a baseline,
+apply only your chosen actions through their existing controls, then capture an
+after run under comparable workload conditions. Each run takes ten samples at a
+requested one-second interval. Reports include physical RAM, commit/limit, CPU,
+disk throughput, Windows-volume free space, processes, threads, handles and the
+utility's own memory/CPU/thread/handle usage. Copy or Save TXT retains the raw
+samples and median/range summaries.
+
+This is read-only measurement, not automatic optimization or proof of causation.
+Missing counters remain Unknown. The baseline lasts for the application session;
+cross-reboot baseline import is not implemented. Reboot/action notes are user
+annotations, not verified state. See the [P0 audit and limitations](docs/performance-p0-audit.md).
+
+### Action audit and background diagnostics (development source)
+
+- **System Info → Action Inventory / Shared Targets** inspects the existing three
+  toggle catalogs and their declared registry/service effects. Missing coverage
+  is labeled. Conflicting writes are blocked; compatible overlaps with separate
+  restore owners remain blocked until their snapshots can be consolidated.
+- **System Info → Background Owner Finder — Read-only** reports processes,
+  parent evidence, service PID associations and WebView2 owner candidates, with
+  Copy / Save TXT. No process is stopped and no shared runtime is removed. Review
+  executable paths before sharing a report.
+- Catalog toggle operations now write durable local journals. After a journaled
+  operation, open catalog scans become stale: use **Analyze / reload** before
+  another Apply/Restore. Queued operations recheck the scan generation.
+- Shared canonical leaf actions execute once per selected batch, including
+  Restore. Independent legacy snapshot owners are not silently merged.
+- The legacy combined CPU-mitigation/HVCI override no longer accepts new Apply;
+  its original backup/Restore path remains. The new individual HVCI control is
+  described below; this is not completion of all requested security controls.
+
+See the [implementation checkpoint and full remaining backlog](docs/backlog-progress.md)
+for test evidence, coverage limits and work still required.
+
+### Storage, individual protection and offline images (development source)
+
+Under **Advanced Windows Tweaks**:
+
+- **Storage / Windows Servicing** inventories optional features and capabilities,
+  applies an individually confirmed enable/install or disable/remove, and saves
+  before/after command evidence. Component-store analysis and normal cleanup are
+  separate from irreversible **ResetBase**, which requires typed confirmation.
+  Third-party drivers can be inventoried/exported; no driver removal is provided.
+  Reserved storage, CompactOS and Windows RE are inspection-only in this panel.
+- **Security & Mitigations — Individual Controls** separates configured and running
+  DeviceGuard protection. HVCI / Memory integrity supports Enable, Disable and exact
+  snapshot Restore only after strict eligibility checks. Unknown locks, policy,
+  management indicators or incomplete evidence block writes. VBS, Credential Guard
+  and stack-protection evidence is read-only here; generic CPU masks are never used.
+  Disabling protection is not presented as a measured performance improvement.
+  LSA protection adds a separately confirmed, protection-strengthening control on
+  eligible Windows 11 clients. It separates configuration from live process
+  protection; automatic LSA Disable/Restore is deliberately unavailable when a
+  previous firmware lock cannot be excluded. See [security controls](docs/security-controls.md).
+- **Offline Image Workspace** inspects a local WIM, validates its selected client
+  index/build/edition/architecture, creates a checksum-verified copy, and mounts
+  only that copy. A conservative selection of features, capabilities and provisioned
+  apps can be removed. Supported component cleanup, explicit Commit/Discard,
+  export to a new WIM and manifest-based recovery are included. No ISO builder,
+  arbitrary WinSxS deletion or removal of servicing itself is implemented.
+
+These are **work-in-progress source features**, not a claim that the existing
+GitHub release contains them. Most new mutation tests use fakes. User-supplied
+disposable-guest logs verify three profile Apply/intentional-rollback cycles, but
+not post-reboot effectiveness; RSC was not applicable. HVCI Apply/rollback and image
+deployment remain unverified. A guest Print-to-PDF disable/restore cycle was
+verified across two reboots; this does not test printing or all storage controls.
+Legacy migration on copies passed Advertising ID but blocked conflicting Tailored
+Experiences originals. Keep tested backups and original images.
+The two shared Advertising ID / tailored-experience registry settings now retain
+one authoritative original across Essential and Advanced aliases. Conflicting or
+interrupted old snapshots block writes. Other independently owned overlaps remain
+blocked; this is not whole-program snapshot consolidation.
+
+See the [1 October continuation report](docs/checkpoint-20261001.md),
+[30 September baseline](docs/backlog-20260930.md), and
+[disposable VM validation protocol](docs/vm-validation.md) for evidence and remaining work.
+
+### Current verification & known limits
+
+The following records refer to the **1 October 2026 development checkpoint**, not
+certification of every feature or a new binary release. Normal regression tests
+do not invoke the opt-in live mutation harnesses.
+
+| Area | Evidence and remaining limits |
+| --- | --- |
+| Regression checks | 4,786 profile/action assertions; 353 English UI checks; 54 LSA, 70 security/offline, 33 storage, 22 VM-isolation and 51 WIM-readiness checks. These use pure logic, fakes or test-owned data, not a full native mutation matrix. |
+| Performance profiles | All three reached 23/23 in the disposable guest and returned to the captured baseline after intentional failure. RSC was not applicable; post-reboot profile effectiveness remains unverified. |
+| Shared privacy snapshots | Ownership, alternate-catalog restore and retirement checks passed, but both values were already applied: **0/2 changed**. Other modules have not been fully consolidated. |
+| Legacy backup migration | Advertising ID migrated on a test-owned copy. Tailored Experiences correctly blocked conflicting original values; production backups were retained. |
+| Storage | Print to PDF completed Enabled → Disabled → reboot → Restore → reboot → Enabled. This does not verify printing, other features/capabilities, cleanup or drivers. |
+| Security | HVCI Apply/rollback was **not exercised** because eligibility checks blocked it. LSA remained read-only and reported live LSA-light protection. No safety gate was bypassed for coverage. |
+| Offline images | Readiness tooling and mocked workflows exist. Real WIM modification/export, deployment to a separate blank virtual disk and first boot remain unverified. |
+
+The final guest audit reached **CompletedWithSkippedControls** and requested no
+further reboot. Skipped controls are not successful Apply/rollback tests.
+
+**Known audit-report defect:** the guest summary can print
+`LSA read-only baseline=False` because the internal LSA snapshot property is not
+retained by the default JSON serialization. This comparison is inconclusive,
+not evidence that LSA protection changed. A serialization/reporting fix and a new
+comparison test remain outstanding. Do not change protection settings to make
+the report pass.
+
+Broader Windows 10/11 and controller coverage, additional snapshot migrations,
+and the remaining live security/storage/image tests are still open.
 
 ## Performance Profiles
 
@@ -141,6 +259,9 @@ The functional and localization checks do not apply Windows tweaks. The separate
 | `*Service.cs`, catalog and policy files | Inspection, repair, tweaks, app management, and restore behavior. |
 | `DiskInfoView.cs`, `NativeDiskSmart*.cs`, `DeviceSmartReport.cs`, `SsdEndurance.cs` | Disk dashboard, read-only SMART transports, health decoding and model-scoped endurance. |
 | `NetworkReport.cs`, `SystemReportEntry.cs` | Local network report and opt-in address visibility/export. |
+| `Catalog*`, `SharedPrivacySnapshot.cs` | Action planning, effect conflicts, journals, scan invalidation and the two migrated shared privacy originals. |
+| `ResourceMeasurement.cs`, `NativeResourceProbe.cs`, `BackgroundOwner*.cs` | Read-only before/after measurements and process/service ownership diagnostics. |
+| `StorageServicing.cs`, `SecurityMitigation*.cs`, `OfflineImage*.cs` | Guarded servicing, individual protection controls and copy-based image workflows. |
 | `EnglishUiText.cs`, `UiTextKeys.cs` | Shared English application/installer copy. |
 | `Installer/`, `build-installer.ps1` | Installer definition, packaging, icons, and dependency notices. |
 | `Tests/` | Functional, English-only contract, static, and native UI checks. |
@@ -161,7 +282,7 @@ The 27 September 2026 live audit reached **23/23 checks for each of the three pe
 
 **Active development—not declared complete.** Broader device/Windows-version coverage and remaining feature-specific live audits are ongoing. Historical screenshots and guides may show the previous dashboard.
 
-The latest 28 September 2026 disk/report update passed **4,558 regression assertions**,
+The published 28 September 2026 disk/report checkpoint recorded **4,558 regression assertions**,
 **20,068 native UI assertions**, **307 English-only checks**, and **16 static
 report-export checks**. Read-only Native AOT probes successfully read two NVMe
 SSDs and 27 ATA attributes from one USB drive. The USB drive's overall SMART

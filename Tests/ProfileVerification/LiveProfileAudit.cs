@@ -9,6 +9,7 @@ internal static class LiveProfileAudit
 {
     internal static async Task RunAsync(string[] args)
     {
+        GuestAuditIdentity.Require(args); // Before reports, BCD access or any state-changing backend.
         string folder = Path.GetFullPath(args[Array.IndexOf(args, "--report-directory") + 1]);
         Directory.CreateDirectory(folder);
         string log = Path.Combine(folder, "result.txt");

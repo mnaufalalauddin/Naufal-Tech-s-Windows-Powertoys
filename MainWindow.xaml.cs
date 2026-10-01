@@ -2051,10 +2051,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 await ShowToggleCatalogDialogAsync(
                     "Gaming Tweaks",
-                    _gamingCatalog ??= GamingCatalogOwnership.Create(
-                        _gamingTweaksService,
-                        new GamingBcdService(),
-                        new PerformanceLabService("Gaming Tweaks")),
+                    GamingCatalog(),
                     _gamingActionsService,
                     GamingCatalogOwnership.Notice + "\n" + GamingCatalogOwnership.IndependentNotice);
             }
@@ -2078,16 +2075,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 await ShowToggleCatalogDialogAsync(
                     "Essential Windows Tweaks",
-                    _essentialCatalog ??= new CompositeToolToggleService(
-                        new FilteredToolToggleService(
-                            _essentialTweaksService,
-                            "EndTask",
-                            "ClassicContext",
-                            "Hibernation",
-                            "ServicesManual",
-                            "PhotoViewer"),
-                        new PerformanceLabService("Essential Windows Tweaks"),
-                        new EssentialBulkActionsService(_essentialActionsService, _essentialActionsService.ReadBulkStateAsync)),
+                    EssentialCatalog(),
                     new FilteredToolActionService(
                         _essentialActionsService,
                         "IconCache",
@@ -2117,15 +2105,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
             {
                 await ShowToggleCatalogDialogAsync(
                     "Advanced Windows Tweaks & De-Bloat",
-                    _advancedCatalog ??= new DebloatCatalogService(
-                        _debloatService,
-                        _essentialTweaksService,
-                        _essentialActionsService,
-                        _windowsAiService,
-                        _debloatRegistryLabService,
-                        _debloatNetworkStorageService,
-                        _xboxComponentsService,
-                        _debloatServiceGroupsService),
+                    AdvancedCatalog(),
                     new BuiltInAppsService());
             }
             catch (Exception exception)
@@ -2722,6 +2702,18 @@ namespace Naufal_Windows_Tech_s_Powertoys
             bool statesLoaded = false;
             bool applyInProgress = false;
             bool stateLoadInProgress = false;
+            long loadedAtEpoch = -1;
+            void InvalidateCatalogView()
+            {
+                if (window.IsClosed || loadedAtEpoch == CatalogStateEpoch.Version || applyInProgress || stateLoadInProgress) return;
+                statesLoaded = false;
+                SetCatalogInteraction(false);
+                analyzeButton.IsEnabled = !individualActionGate.IsBusy;
+                availabilityBadge.View.Visibility = Visibility.Collapsed;
+                selectionSummary.Text = "Configuration changed since this scan. Analyze / reload before another operation.";
+                foreach (var text in stateTexts.Values) text.Text = "Stale snapshot — Analyze / reload";
+            }
+            void OnCatalogStateChanged() => DispatcherQueue.TryEnqueue(InvalidateCatalogView);
             window.IsBusy = () => applyInProgress || stateLoadInProgress || individualActionGate.IsBusy;
             canStartIndividualAction = () => !window.IsClosed && statesLoaded &&
                 !applyInProgress && !stateLoadInProgress && !individualActionGate.IsBusy;
@@ -2766,7 +2758,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 if (!statesLoaded)
                 {
                     availabilityBadge.View.Visibility = Visibility.Collapsed;
-                    selectionSummary.Text = "Analyzing the current Windows state...";
+                    selectionSummary.Text = stateLoadInProgress || loadedAtEpoch < 0 ? "Analyzing the current Windows state..." : "Configuration changed since this scan. Analyze / reload before another operation.";
                     return;
                 }
 
@@ -2849,6 +2841,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     // Lock before awaiting the prompt: rapid clicks must not
                     // open concurrent operations against the same snapshot.
                     SetCatalogInteraction(false);
+                    var restoreConflicts = CatalogEffectPlan.Create(service, availableItems).Conflicts;
+                    if (restoreConflicts.Count > 0)
+                    {
+                        statusText.Text = "Restore blocked: overlapping actions have independent or incompatible owners. Select one owner and review its original snapshot.\n" + string.Join(Environment.NewLine, restoreConflicts);
+                        await ShowMessageDialogAsync("Conflicting restore owners", statusText.Text);
+                        return;
+                    }
                     string targetDescription = windowsDefault
                         ? "Windows-controlled/default behavior. This intentionally discards saved pre-tweak snapshots for these items."
                         : "their captured pre-tweak state; when no snapshot exists, a documented Windows default is used instead.";
@@ -2874,6 +2873,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         return;
                     }
 
+                    if (loadedAtEpoch != CatalogStateEpoch.Version)
+                    {
+                        statusText.Text = "Configuration changed while waiting. Analyze / reload and review Restore again; nothing was applied by this request.";
+                        taskLease.Complete("WARNING", statusText.Text);
+                        return;
+                    }
+
                     window.PrimaryButton.IsEnabled = false;
                     window.SecondaryButton.IsEnabled = false;
                     foreach (ToggleSwitch toggle in toggles.Values)
@@ -2896,6 +2902,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             .Select(item => new CatalogProgressItem(item.Id, item.Name))
                             .ToArray());
                     progressWindow.Show();
+                    using var executionBatch = CatalogExecutionBatch.Begin();
                     int succeeded = 0;
                     int completed = 0;
                     List<string> failures = new();
@@ -2908,13 +2915,15 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         ToolToggleOperationResult result;
                         try
                         {
-                            result = await CatalogOperationRunner.ExecuteAsync(
+                            result = await CatalogOperationJournal.RunAsync(CatalogOperationJournal.DirectoryPath, definition,
+                                windowsDefault ? CatalogOperation.RestoreWindowsDefaults : CatalogOperation.RestoreSavedState,
+                                () => CatalogOperationRunner.ExecuteAsync(
                                 service,
                                 definition,
                                 windowsDefault
                                     ? CatalogOperation.RestoreWindowsDefaults
                                     : CatalogOperation.RestoreSavedState,
-                                progressWindow.CreateReporter(definition.Id));
+                                progressWindow.CreateReporter(definition.Id)));
                             progressWindow.VerifyItem(definition.Id);
                         }
                         catch (Exception exception)
@@ -2988,6 +2997,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     SetCatalogInteraction(true);
                     UpdateSelectionSummary();
                     analyzeButton.IsEnabled = true;
+                    InvalidateCatalogView();
                 }
             }
 
@@ -3105,6 +3115,15 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     IReadOnlyList<ToolToggleDefinition> changes = targetOn ? plan.ToApply
                         : plan.Selected.Where(item => item.IsFeatureSwitch && currentStates[item.Id].IsOn).ToArray();
 
+                    var conflicts = targetOn ? CatalogPlanSafety.ApplyConflicts(plan.Selected) : Array.Empty<string>();
+                    conflicts = conflicts.Concat(CatalogEffectPlan.Create(service, plan.Selected).Conflicts).ToArray();
+                    if (conflicts.Count > 0)
+                    {
+                        statusText.Text = string.Join(Environment.NewLine, conflicts);
+                        await ShowMessageDialogAsync("Conflicting actions", statusText.Text);
+                        return;
+                    }
+
                     if (changes.Count == 0)
                     {
                         statusText.Text = plan.Selected.Count == 0
@@ -3134,7 +3153,11 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             $"{title} - Apply selected",
                             $"Apply {changes.Count} selected tweak(s)? {plan.Selected.Count - changes.Count} already-applied item(s) will be skipped." +
                             Environment.NewLine + Environment.NewLine +
-                            string.Join(Environment.NewLine, changes.Select(item => "• " + item.Name + (item.IsFeatureSwitch ? (targetOn ? ": ON" : ": OFF") : ""))) +
+                            string.Join(Environment.NewLine + Environment.NewLine, changes.Select(item => "• " + item.Name + (item.IsFeatureSwitch ? (targetOn ? ": ON" : ": OFF") : "") +
+                                Environment.NewLine + item.Description +
+                                (item.RestartRecommended ? Environment.NewLine + "Restart-sensitive: saved configuration is not proof of post-reboot effectiveness." : "") +
+                                (string.IsNullOrWhiteSpace(item.Warning) ? "" : Environment.NewLine + item.Warning))) +
+                            Environment.NewLine + Environment.NewLine + "Restore uses the saved state when available; default fallback and app recovery limitations are described by each option. Review these before applying." +
                             Environment.NewLine + Environment.NewLine +
                             (changes.All(item => item.IsFeatureSwitch) ? string.Empty :
                             "ON means the tweak is applied, not that the affected Windows service or feature is enabled."),
@@ -3153,6 +3176,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         new[] { "SystemMutation", $"Catalog:{title}" });
                     if (taskLease is null)
                     {
+                        return;
+                    }
+
+                    if (loadedAtEpoch != CatalogStateEpoch.Version)
+                    {
+                        statusText.Text = "Configuration changed while waiting. Analyze / reload and review Apply again; nothing was applied by this request.";
+                        taskLease.Complete("WARNING", statusText.Text);
                         return;
                     }
 
@@ -3178,6 +3208,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                             .Select(item => new CatalogProgressItem(item.Id, item.Name))
                             .ToArray());
                     progressWindow.Show();
+                    using var executionBatch = CatalogExecutionBatch.Begin();
                     int succeeded = 0;
                     int completed = 0;
                     List<string> failures = new();
@@ -3190,11 +3221,13 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         ToolToggleOperationResult result;
                         try
                         {
-                            result = await CatalogOperationRunner.ExecuteAsync(
+                            result = await CatalogOperationJournal.RunAsync(CatalogOperationJournal.DirectoryPath, definition,
+                                targetOn ? CatalogOperation.Apply : CatalogOperation.SetOff,
+                                () => CatalogOperationRunner.ExecuteAsync(
                                 service,
                                 definition,
                                 targetOn ? CatalogOperation.Apply : CatalogOperation.SetOff,
-                                progressWindow.CreateReporter(definition.Id));
+                                progressWindow.CreateReporter(definition.Id)));
                             progressWindow.VerifyItem(definition.Id);
                         }
                         catch (Exception exception)
@@ -3264,6 +3297,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     SetCatalogInteraction(true);
                     UpdateSelectionSummary();
                     analyzeButton.IsEnabled = true;
+                    InvalidateCatalogView();
                 }
             }
 
@@ -3275,6 +3309,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 }
 
                 stateLoadInProgress = true;
+                long scanEpoch = CatalogStateEpoch.Version;
                 statesLoaded = false;
                 SetCatalogInteraction(false);
                 window.PrimaryButton.IsEnabled = false;
@@ -3357,7 +3392,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         synchronizingControls = false;
                     }
 
-                    statesLoaded = true;
+                    loadedAtEpoch = scanEpoch;
+                    statesLoaded = loadedAtEpoch == CatalogStateEpoch.Version;
                     window.PrimaryButton.IsEnabled = true;
                     window.SecondaryButton.IsEnabled = true;
                     foreach (Button button in toolbarButtons)
@@ -3395,15 +3431,21 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     stateLoadInProgress = false;
                     SetCatalogInteraction(true);
                     analyzeButton.IsEnabled = true;
+                    InvalidateCatalogView();
                 }
             }
 
             analyzeButton.Click += async (_, _) => await LoadCatalogStatesAsync();
             refreshBulkSummary = UpdateSelectionSummary;
 
-            Task<ToolWindowResult> windowTask = window.ShowAsync();
-            await LoadCatalogStatesAsync();
-            await windowTask;
+            CatalogStateEpoch.Changed += OnCatalogStateChanged;
+            try
+            {
+                Task<ToolWindowResult> windowTask = window.ShowAsync();
+                await LoadCatalogStatesAsync();
+                await windowTask;
+            }
+            finally { CatalogStateEpoch.Changed -= OnCatalogStateChanged; }
         }
 
         private static void UpdateCatalogStateText(TextBlock text, ToolToggleState state)

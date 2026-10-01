@@ -229,7 +229,9 @@ public sealed partial class MainWindow : Window
     private void CheckButtons()
     {
         Button[] buttons = AuthoredButtons(RootLayout).Where(b => b.IsEnabled).ToArray();
-        Check(buttons.Length == 31, "all 31 enabled authored buttons are covered across all five pages");
+        Check(buttons.Length == 37, "all 37 enabled authored buttons are covered across all five pages");
+        Check(buttons.Any(b => b.Content?.ToString() == "Resource Analyzer — Before / After"),
+            "Resource Analyzer participates in theme/scale contrast checks");
         Check(buttons.Contains(AboutButton), "About participates in dashboard contrast checks");
         Check(AboutButton.Content?.ToString() == "About",
             "About caption remains English");
@@ -401,6 +403,12 @@ public sealed partial class MainWindow : Window
     private void ExplorerFixButton_Click(object s, RoutedEventArgs e) { }
     private void DiskInfoButton_Click(object s, RoutedEventArgs e) { }
     private void SystemReportButton_Click(object s, RoutedEventArgs e) { }
+    private void ResourceAnalyzer_Click(object s, RoutedEventArgs e) { }
+    private void CatalogInventory_Click(object s, RoutedEventArgs e) { }
+    private void BackgroundOwners_Click(object s, RoutedEventArgs e) { }
+    private void SecurityMitigations_Click(object s, RoutedEventArgs e) { }
+    private void StorageManager_Click(object s, RoutedEventArgs e) { }
+    private void OfflineImages_Click(object s, RoutedEventArgs e) { }
     private void WindowsActivationButton_Click(object s, RoutedEventArgs e) { }
     private void OfficeActivationButton_Click(object s, RoutedEventArgs e) { }
     private void DisableDefenderButton_Click(object s, RoutedEventArgs e) { }

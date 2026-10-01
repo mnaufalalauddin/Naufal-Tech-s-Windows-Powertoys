@@ -2,12 +2,33 @@ using Naufal_Windows_Tech_s_Powertoys;
 
 try
 {
+if (args.Contains("--security-read-probe"))
+{
+    var snapshot = await Task.Run(() => new SecurityMitigationNative().Read()).WaitAsync(TimeSpan.FromSeconds(30));
+    Console.WriteLine(SecurityMitigationPolicy.Report(snapshot));
+    if (snapshot.Configured is null || snapshot.Running is null || snapshot.Hardware is null || snapshot.VbsStatus is null)
+        throw new Exception("Native DeviceGuard evidence incomplete; mutation controls remain blocked.");
+    Console.WriteLine("PASS: read-only DeviceGuard probe. No security settings changed; configured and runtime state are not conflated.");
+    return;
+}
+if (args.Contains("--resource-read-probe"))
+{
+    using var probe = new NativeResourceProbe();
+    var run = await ResourceMeasurements.CaptureAsync(probe, "Development host; build/editor workload, not an idle benchmark", "Read-only probe; no tweaks applied", "Unknown / not checked", CancellationToken.None);
+    Console.WriteLine(ResourceMeasurements.Report(run));
+    if (ResourceMeasurements.Summarize(run, "ram") is null || ResourceMeasurements.Summarize(run, "processes") is null)
+        throw new Exception("Native memory/process counters unavailable");
+    return;
+}
 if (args.Contains("--report-read-probe"))
 {
     string? report = args.Contains("--probe-report") ? args[Array.IndexOf(args, "--probe-report") + 1] : null;
     await ReportInformationTests.ReadProbeAsync(report);
     return;
 }
+if (args.Contains("--vm-legacy-migration-audit")) { LegacySnapshotLiveAudit.Run(args); return; }
+if (args.Contains("--live-security-storage-audit")) { await SecurityStorageLiveAudit.RunAsync(args); return; }
+if (args.Contains("--vm-shared-snapshot-audit")) { SharedPrivacyLiveAudit.Run(args); return; }
 if (args.Contains("--live-profile-audit")) { await LiveProfileAudit.RunAsync(args); return; }
 if (OneDriveExecutionTests.Child(args)) return;
 if (args.Contains("--onedrive-user-probe"))
@@ -62,6 +83,8 @@ void Assert(bool value, string name)
     if (!value) throw new Exception("FAILED: " + name);
     passed++;
 }
+SecurityStorageAuditTests.Run(Assert);
+LegacyMigrationAuditTests.Run(Assert);
 ProfileRegistryValue Set(uint value) => new(true, true, value);
 ProfileRegistryValue Absent() => new(true, false, 0);
 string plan = "13747e58-d717-436b-8947-c2403425186c";
@@ -126,6 +149,12 @@ Assert(GamingLiveStatusService.FormatRsc(true, new[] { new ProfileRscAdapter("a"
 Assert(GamingLiveStatusService.FormatRsc(true, new[] { new ProfileRscAdapter("a", true, true), new ProfileRscAdapter("b", false, false) }) == "MIXED", "RSC mixed adapters live status");
 await AuditRegressionTests.RunAsync(Assert);
 await CatalogSelectionTests.RunAsync(Assert);
+await CatalogEngineTests.RunAsync(Assert);
+await CatalogBatchTests.RunAsync(Assert);
+SharedPrivacySnapshotTests.Run(Assert);
+BackgroundOwnerTests.Run(Assert);
+if (args.Contains("--background-read-probe")) await BackgroundOwnerTests.ProbeAsync();
+await ResourceMeasurementTests.RunAsync(Assert);
 await CatalogInteractionTests.RunAsync(Assert);
 await RecoveredCatalogFeaturesTests.RunAsync(Assert);
 await GeneralAuditTests.RunAsync(Assert);

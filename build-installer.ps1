@@ -151,6 +151,13 @@ if (-not (Test-Path -LiteralPath $installerExe -PathType Leaf)) {
 $installerItem = Get-Item -LiteralPath $installerExe
 $installerHash = Get-FileHash -LiteralPath $installerExe -Algorithm SHA256
 
+# Refresh the companion checksum on every successful build. A hash left over
+# from an older release must not be shipped beside a newly compiled installer.
+$checksumPath = Join-Path $installerOutputDir 'SHA256SUMS.txt'
+$checksumTemporary = Join-Path $installerOutputDir ('SHA256SUMS.' + [Guid]::NewGuid().ToString('N') + '.tmp')
+[System.IO.File]::WriteAllText($checksumTemporary, "$($installerHash.Hash)  $($installerItem.Name)`n", [System.Text.UTF8Encoding]::new($false))
+Move-Item -LiteralPath $checksumTemporary -Destination $checksumPath -Force
+
 Write-Host ''
 Write-Host 'Installer created successfully.' -ForegroundColor Green
 Write-Host "File   : $($installerItem.FullName)"

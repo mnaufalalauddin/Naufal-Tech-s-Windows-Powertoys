@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Naufal_Windows_Tech_s_Powertoys
 {
-    internal sealed class DebloatService : IToolToggleService
+    internal sealed class DebloatService : IToolToggleService, ICatalogEffectSource
     {
         private const string BackupRoot =
             @"Software\Naufal Windows Tech\Powertoys\Backups\Debloat";
@@ -26,6 +26,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 .Select(item => item.Definition)
                 .ToArray();
         }
+
+        public IReadOnlyList<CatalogEffect> GetEffects(ToolToggleDefinition definition) => Catalog[definition.Id].Settings
+            .Select(s => SharedPrivacySnapshot.Describe(definition.Id,
+                CatalogEffect.Registry("HKCU", s.Path, s.Name, s.Kind.ToString(), s.Value, s.Remove))).ToArray();
 
         public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
         {
@@ -156,6 +160,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private static void Apply(DebloatDefinition definition)
         {
+            PrepareSharedSnapshots(definition.Definition.Id, SharedSnapshotPreparation.Capture);
             foreach (DebloatSetting setting in definition.Settings)
             {
                 Capture(definition.Definition.Id, setting);
@@ -173,9 +178,17 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
         }
 
+        internal static void PrepareSharedSnapshots(string owner, SharedSnapshotPreparation mode)
+        {
+            foreach (var target in SharedPrivacySnapshot.Targets.Where(t => owner == "Telemetry" || t.Id == owner))
+                TryImportPreviousSnapshot(Catalog[target.Id]);
+            SharedPrivacySnapshot.Prepare(owner, mode);
+        }
+
         private static bool Restore(DebloatDefinition definition)
         {
             TryImportPreviousSnapshot(definition);
+            PrepareSharedSnapshots(definition.Definition.Id, SharedSnapshotPreparation.Restore);
             bool ignoreIncompleteImport;
             using (RegistryKey? imported = Registry.CurrentUser.OpenSubKey(
                        $@"{BackupRoot}\{definition.Definition.Id}",
@@ -492,6 +505,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private static void RestoreWindowsDefault(DebloatDefinition definition)
         {
+            PrepareSharedSnapshots(definition.Definition.Id, SharedSnapshotPreparation.Validate);
             if (definition.Definition.Id == "OneDriveAutoStartup")
             {
                 string? executable = FindOneDriveExecutable();
@@ -586,6 +600,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
                     BackupRoot,
                     writable: true);
                 root?.DeleteSubKeyTree(id, throwOnMissingSubKey: false);
+                root?.Flush();
+                SharedPrivacySnapshot.RetireUnused(id);
             }
             catch
             {

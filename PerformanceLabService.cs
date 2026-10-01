@@ -15,7 +15,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
     /// The legacy PowerShell source is used only as a static behavioral specification;
     /// no script is loaded or executed at runtime.
     /// </summary>
-    internal sealed class PerformanceLabService : IToolToggleService
+    internal sealed class PerformanceLabService : IToolToggleService, ICatalogEffectSource
     {
         private const string BackupRoot =
             @"Software\Naufal Windows Tech\Powertoys\Backups\PerformanceLab";
@@ -41,7 +41,17 @@ namespace Naufal_Windows_Tech_s_Powertoys
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() =>
             _catalog.Values.Select(lab => lab.Definition.Id == "FastStartupEnable"
                 ? lab.Definition with { IsFeatureSwitch = true, Name = "Fast Startup", Description = "ON enables Fast Startup; OFF disables it by setting HiberbootEnabled=0. Restore is separate and replays the saved setting. Fast Startup also requires hibernation; disabling it can increase cold-start time." }
-                : lab.Definition).ToArray();
+                : LegacyMitigationPolicy.IsBlocked(lab.Definition.Id)
+                    ? lab.Definition with { Description = LegacyMitigationPolicy.ApplyBlocked, Warning = "Restore-only legacy bundle. Registry values below describe its old configuration, not current effective protection. Resource savings are unmeasured." }
+                    : lab.Definition).ToArray();
+
+        public IReadOnlyList<CatalogEffect> GetEffects(ToolToggleDefinition definition) => Resolve(definition).Settings.Select(s =>
+        {
+            int separator = s.Path.IndexOf(':');
+            return separator > 0
+                ? CatalogEffect.Registry(s.Path[..separator], s.Path[(separator + 1)..], s.Name, s.Kind.ToString(), s.Value)
+                : new CatalogEffect("DynamicRegistry/" + s.Path.ToUpperInvariant() + "/" + s.Name.ToUpperInvariant(), s.Kind + ":" + Convert.ToString(s.Value, CultureInfo.InvariantCulture));
+        }).ToArray();
 
         public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition)
         {
@@ -91,6 +101,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
             ToolToggleDefinition definition,
             bool targetOn, bool restoreOriginal)
         {
+            if (targetOn && LegacyMitigationPolicy.IsBlocked(definition.Id))
+                return new ToolToggleOperationResult(false, false, LegacyMitigationPolicy.ApplyBlocked, await ReadStateAsync(definition));
+
             if (definition.RequiresAdministrator && !WindowsPrivilegeService.IsAdministrator())
             {
                 ToolToggleState denied = await ReadStateAsync(definition);

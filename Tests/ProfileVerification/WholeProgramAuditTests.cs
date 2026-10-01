@@ -52,8 +52,9 @@ internal static class WholeProgramAuditTests
         string main = File.ReadAllText(Path.Combine(root, "MainWindow.xaml.cs"));
         assert(!main.Contains("await progressWindow.WaitUntilClosedAsync();"), "audit task lifetime ends with backend, not user closing results");
         assert(main.Contains("CatalogStateReader.ReadAsync(service, definition"), "audit shared read probe wired into catalogs");
+        string catalogFactory = File.ReadAllText(Path.Combine(root, "MainWindow.CatalogInventory.cs"));
         foreach (string catalog in new[] { "_gamingCatalog", "_essentialCatalog", "_advancedCatalog" })
-            assert(main.Contains(catalog + " ??="), "audit catalog identity retained on reopen " + catalog);
+            assert(catalogFactory.Contains(catalog + " ??="), "audit catalog identity retained on reopen " + catalog);
         assert(File.ReadAllText(Path.Combine(root, "WindowsRepairService.cs")).Contains("RepairCommandClassification.Sfc(sfcResult)"), "audit SFC policy wired");
         assert(File.ReadAllText(Path.Combine(root, "GpuDriverService.cs")).Contains("targetMatch == DriverVersionMatch.Mismatch && !restartRequired"), "audit GPU mismatch blocks success unless explicitly deferred to restart");
 

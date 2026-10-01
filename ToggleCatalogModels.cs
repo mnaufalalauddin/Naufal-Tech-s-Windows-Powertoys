@@ -49,7 +49,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
         bool DefaultFallbackHandled = false,
         bool SkippedUnavailable = false,
         bool OriginalBackupMissing = false,
-        ToolToggleState? BeforeState = null);
+        ToolToggleState? BeforeState = null,
+        bool AlreadyApplied = false);
 
     internal interface IToolToggleService
     {

@@ -64,7 +64,8 @@ internal static class GamingOwnershipTests
         CaptureSwitch(check);
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
         string main = File.ReadAllText(Path.Combine(root, "MainWindow.xaml.cs"));
-        check(main.Contains("_gamingCatalog ??= GamingCatalogOwnership.Create("), "Main UI uses audited ownership factory");
+        string factory = File.ReadAllText(Path.Combine(root, "MainWindow.CatalogInventory.cs"));
+        check(main.Contains("GamingCatalog(),") && factory.Contains("_gamingCatalog ??= GamingCatalogOwnership.Create("), "Main UI uses shared audited ownership factory");
         check(main.Contains("GamingCatalogOwnership.Notice +"), "Gaming informational ownership note is wired");
         string gaming = File.ReadAllText(Path.Combine(root, "GamingTweaksService.cs"));
         check(gaming.Contains("GameDvrSetting.Apply(targetOn,"), "Explicit capture switch uses tested writer");

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Naufal_Windows_Tech_s_Powertoys
 {
-    internal sealed class CompositeToolToggleService : IToolToggleService
+    internal sealed class CompositeToolToggleService : IToolToggleService, ICatalogPlanSource
     {
         private readonly IReadOnlyDictionary<string, (IToolToggleService Service, ToolToggleDefinition Definition)> _items;
 
@@ -30,21 +30,27 @@ namespace Naufal_Windows_Tech_s_Powertoys
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() =>
             _items.Values.Select(item => item.Definition).ToArray();
 
+        public IReadOnlyList<CatalogPlanAction> GetPlanActions(ToolToggleDefinition definition)
+        {
+            var owner = Resolve(definition);
+            return CatalogEffectPlan.Expand(owner.Service, owner.Definition);
+        }
+
         public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition) =>
-            Resolve(definition).Service.ReadStateAsync(definition);
+            Resolve(definition).Service.ReadStateAsync(Resolve(definition).Definition);
 
         public Task<ToolToggleOperationResult> SetStateAsync(
             ToolToggleDefinition definition,
             bool targetOn) =>
-            Resolve(definition).Service.SetStateAsync(definition, targetOn);
+            Resolve(definition).Service.SetStateAsync(Resolve(definition).Definition, targetOn);
 
         public Task<ToolToggleOperationResult> RestoreOriginalAsync(
             ToolToggleDefinition definition) =>
-            Resolve(definition).Service.RestoreOriginalAsync(definition);
+            Resolve(definition).Service.RestoreOriginalAsync(Resolve(definition).Definition);
 
         public Task<ToolToggleOperationResult> RestoreWindowsDefaultAsync(
             ToolToggleDefinition definition) =>
-            Resolve(definition).Service.RestoreWindowsDefaultAsync(definition);
+            Resolve(definition).Service.RestoreWindowsDefaultAsync(Resolve(definition).Definition);
 
         private (IToolToggleService Service, ToolToggleDefinition Definition) Resolve(
             ToolToggleDefinition definition)
@@ -55,7 +61,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
         }
     }
 
-    internal sealed class FilteredToolToggleService : IToolToggleService
+    internal sealed class FilteredToolToggleService : IToolToggleService, ICatalogPlanSource
     {
         private readonly IToolToggleService _source;
         private readonly IReadOnlyDictionary<string, ToolToggleDefinition> _definitions;
@@ -82,6 +88,9 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         public IReadOnlyList<ToolToggleDefinition> GetDefinitions() =>
             _definitions.Values.ToArray();
+
+        public IReadOnlyList<CatalogPlanAction> GetPlanActions(ToolToggleDefinition definition) =>
+            CatalogEffectPlan.Expand(_source, Resolve(definition));
 
         public Task<ToolToggleState> ReadStateAsync(ToolToggleDefinition definition) =>
             _source.ReadStateAsync(Resolve(definition));

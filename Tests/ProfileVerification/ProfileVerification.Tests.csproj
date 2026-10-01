@@ -8,6 +8,22 @@
     <DefineConstants>$(DefineConstants);PROFILE_LIVE_AUDIT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\StorageServicing.cs" Link="StorageServicing.cs" />
+    <Compile Include="..\..\OfflineImageModels.cs" Link="OfflineImageModels.cs" />
+    <Compile Include="..\..\ResourceMeasurement.cs" Link="ResourceMeasurement.cs" />
+    <Compile Include="..\..\CatalogPlanSafety.cs" Link="CatalogPlanSafety.cs" />
+    <Compile Include="..\..\LegacyMitigationPolicy.cs" Link="LegacyMitigationPolicy.cs" />
+    <Compile Include="..\..\CatalogInventoryReport.cs" Link="CatalogInventoryReport.cs" />
+    <Compile Include="..\..\CatalogEffectPlan.cs" Link="CatalogEffectPlan.cs" />
+    <Compile Include="..\..\CatalogOperationJournal.cs" Link="CatalogOperationJournal.cs" />
+    <Compile Include="..\..\CatalogStateEpoch.cs" Link="CatalogStateEpoch.cs" />
+    <Compile Include="..\..\CatalogExecutionBatch.cs" Link="CatalogExecutionBatch.cs" />
+    <Compile Include="..\..\SecurityMitigationModels.cs" Link="SecurityMitigationModels.cs" />
+    <Compile Include="..\..\SecurityMitigationNative.cs" Link="SecurityMitigationNative.cs" />
+    <Compile Include="..\..\WindowsPrivilegeService.cs" Link="WindowsPrivilegeService.cs" />
+    <Compile Include="..\..\BackgroundOwnerReport.cs" Link="BackgroundOwnerReport.cs" />
+    <Compile Include="..\..\BackgroundOwnerService.cs" Link="BackgroundOwnerService.cs" />
+    <Compile Include="..\..\NativeResourceProbe.cs" Link="NativeResourceProbe.cs" />
     <Compile Include="..\..\ApplicationLanguagePolicy.cs" Link="ApplicationLanguagePolicy.cs" />
     <Compile Include="..\..\SystemReportEntry.cs" Link="SystemReportEntry.cs" />
     <Compile Include="..\..\SystemReportService.cs" Link="SystemReportService.cs" />
@@ -76,6 +92,7 @@
     <Compile Include="..\..\AtomicDownloadFile.cs" Link="AtomicDownloadFile.cs" />
     <Compile Include="..\..\OperationGate.cs" Link="OperationGate.cs" />
     <Compile Include="..\..\RegistrySnapshotCommit.cs" Link="RegistrySnapshotCommit.cs" />
+    <Compile Include="..\..\SharedPrivacySnapshot.cs" Link="SharedPrivacySnapshot.cs" />
     <Compile Include="..\..\ServiceRestoreSnapshot.cs" Link="ServiceRestoreSnapshot.cs" />
     <Compile Include="..\..\TaskActivityService.cs" Link="TaskActivityService.cs" />
     <Compile Include="..\..\LiveMetricHistory.cs" Link="LiveMetricHistory.cs" />

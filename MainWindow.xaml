@@ -256,6 +256,12 @@
 <Button x:Name="WindowsActivationButton" Content="Windows Activation Status"
                                         Click="WindowsActivationButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
+<Button Content="Resource Analyzer — Before / After" Click="ResourceAnalyzer_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button Content="Action Inventory / Shared Targets" Click="CatalogInventory_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button Content="Background Owner Finder — Read-only" Click="BackgroundOwners_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="OfficeActivationButton" Content="Office Activation Status"
                                         Click="OfficeActivationButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
@@ -292,6 +298,12 @@
                                         Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="MsiModeUtilityButton" Content="MSI Mode Utility"
                                         Click="MsiModeUtilityButton_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button Content="Storage / Windows Servicing" Click="StorageManager_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button Content="Security &amp; Mitigations — Individual Controls" Click="SecurityMitigations_Click"
+                                        Style="{StaticResource ToolButtonStyle}"/>
+<Button Content="Offline Image Workspace" Click="OfflineImages_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
 </StackPanel>
                 </StackPanel>
