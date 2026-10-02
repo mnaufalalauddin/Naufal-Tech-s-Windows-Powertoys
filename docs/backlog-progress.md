@@ -1,10 +1,10 @@
 # Optimization backlog — implementation checkpoint
 
-**Latest continuation: [30 September 2026 report](backlog-20260930.md).** It adds
-canonical batch execution, storage servicing, guarded individual HVCI controls and
-a clone-only offline WIM workspace. Read that report for current limits and tests.
-The checkpoint below is historical; its statement that these modules are absent
-and its artifact hashes refer only to the 29 September build.
+**Historical checkpoint.** On 1 October 2026, Resource Analyzer, Background Owner
+Finder, Storage / Windows Servicing, Offline Image Workspace and app HVCI mutation
+controls were retired at the owner's request. See the [current README](../README.md)
+for the supported interface. Tests/RetiredModules retains historical backend
+fixtures, excluded from the app build. Descriptions and hashes below are historical.
 
 Date: **29 September 2026**. Application: **Naufal Windows Utility v8.0.0.0**.
 Status: **Work in progress, local source; not pushed or published.**

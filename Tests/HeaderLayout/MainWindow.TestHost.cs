@@ -89,6 +89,7 @@ public sealed partial class MainWindow : Window
             await CheckDynamicButtonsAsync();
             await SaveThemePreviewsAsync();
             await CheckDiskDashboardAsync();
+            await CheckDialogScrollingAsync();
             File.AppendAllText(App.ResultPath, $"PASS: {_checks} native WinUI assertions, {_cases} layout cases, 8 flyouts. Minimum header contrast: {_minimumHeaderContrast:F2}:1; button contrast: {_minimumButtonContrast:F2}:1. No Windows settings changed.\n");
             Environment.ExitCode = 0;
         }
@@ -229,9 +230,8 @@ public sealed partial class MainWindow : Window
     private void CheckButtons()
     {
         Button[] buttons = AuthoredButtons(RootLayout).Where(b => b.IsEnabled).ToArray();
-        Check(buttons.Length == 37, "all 37 enabled authored buttons are covered across all five pages");
-        Check(buttons.Any(b => b.Content?.ToString() == "Resource Analyzer — Before / After"),
-            "Resource Analyzer participates in theme/scale contrast checks");
+        Check(buttons.Length == 33, "all 33 enabled authored buttons are covered across all five pages");
+        Check(!buttons.Any(b => b.Content?.ToString()?.Contains("Resource Analyzer") == true), "retired analyzer absent");
         Check(buttons.Contains(AboutButton), "About participates in dashboard contrast checks");
         Check(AboutButton.Content?.ToString() == "About",
             "About caption remains English");
@@ -403,12 +403,8 @@ public sealed partial class MainWindow : Window
     private void ExplorerFixButton_Click(object s, RoutedEventArgs e) { }
     private void DiskInfoButton_Click(object s, RoutedEventArgs e) { }
     private void SystemReportButton_Click(object s, RoutedEventArgs e) { }
-    private void ResourceAnalyzer_Click(object s, RoutedEventArgs e) { }
     private void CatalogInventory_Click(object s, RoutedEventArgs e) { }
-    private void BackgroundOwners_Click(object s, RoutedEventArgs e) { }
     private void SecurityMitigations_Click(object s, RoutedEventArgs e) { }
-    private void StorageManager_Click(object s, RoutedEventArgs e) { }
-    private void OfflineImages_Click(object s, RoutedEventArgs e) { }
     private void WindowsActivationButton_Click(object s, RoutedEventArgs e) { }
     private void OfficeActivationButton_Click(object s, RoutedEventArgs e) { }
     private void DisableDefenderButton_Click(object s, RoutedEventArgs e) { }

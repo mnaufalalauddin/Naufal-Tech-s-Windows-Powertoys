@@ -8,9 +8,9 @@
     <DefineConstants>$(DefineConstants);PROFILE_LIVE_AUDIT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\StorageServicing.cs" Link="StorageServicing.cs" />
-    <Compile Include="..\..\OfflineImageModels.cs" Link="OfflineImageModels.cs" />
-    <Compile Include="..\..\ResourceMeasurement.cs" Link="ResourceMeasurement.cs" />
+    <Compile Include="../RetiredModules/StorageServicing.cs" Link="StorageServicing.cs" />
+    <Compile Include="../RetiredModules/OfflineImageModels.cs" Link="OfflineImageModels.cs" />
+    <Compile Include="../RetiredModules/ResourceMeasurement.cs" Link="ResourceMeasurement.cs" />
     <Compile Include="..\..\CatalogPlanSafety.cs" Link="CatalogPlanSafety.cs" />
     <Compile Include="..\..\LegacyMitigationPolicy.cs" Link="LegacyMitigationPolicy.cs" />
     <Compile Include="..\..\CatalogInventoryReport.cs" Link="CatalogInventoryReport.cs" />
@@ -21,9 +21,9 @@
     <Compile Include="..\..\SecurityMitigationModels.cs" Link="SecurityMitigationModels.cs" />
     <Compile Include="..\..\SecurityMitigationNative.cs" Link="SecurityMitigationNative.cs" />
     <Compile Include="..\..\WindowsPrivilegeService.cs" Link="WindowsPrivilegeService.cs" />
-    <Compile Include="..\..\BackgroundOwnerReport.cs" Link="BackgroundOwnerReport.cs" />
-    <Compile Include="..\..\BackgroundOwnerService.cs" Link="BackgroundOwnerService.cs" />
-    <Compile Include="..\..\NativeResourceProbe.cs" Link="NativeResourceProbe.cs" />
+    <Compile Include="../RetiredModules/BackgroundOwnerReport.cs" Link="BackgroundOwnerReport.cs" />
+    <Compile Include="../RetiredModules/BackgroundOwnerService.cs" Link="BackgroundOwnerService.cs" />
+    <Compile Include="../RetiredModules/NativeResourceProbe.cs" Link="NativeResourceProbe.cs" />
     <Compile Include="..\..\ApplicationLanguagePolicy.cs" Link="ApplicationLanguagePolicy.cs" />
     <Compile Include="..\..\SystemReportEntry.cs" Link="SystemReportEntry.cs" />
     <Compile Include="..\..\SystemReportService.cs" Link="SystemReportService.cs" />

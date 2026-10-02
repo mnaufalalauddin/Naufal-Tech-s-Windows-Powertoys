@@ -20,12 +20,20 @@ public sealed partial class MainWindow
 
     private async void CatalogInventory_Click(object sender, RoutedEventArgs args)
     {
+        var button = (Microsoft.UI.Xaml.Controls.Button)sender;
+        button.IsEnabled = false;
+        CatalogInventoryStatus.Text = "Building action inventory...";
         try
         {
             var catalogs = new[] { ("Essential Windows Tweaks", EssentialCatalog()), ("Gaming Tweaks", GamingCatalog()), ("Advanced Windows Tweaks & De-Bloat", AdvancedCatalog()) };
             var rows = await Task.Run(() => CatalogInventoryReport.Build(catalogs));
-            if (!_isClosed) await ShowTableReportDialogAsync("Action Inventory / Shared Targets", "Action-Inventory", rows);
+            if (!_isClosed)
+            {
+                CatalogInventoryText.Text = BuildTableReportText(rows);
+                CatalogInventoryStatus.Text = "Inventory loaded below. Select text to copy. No system changes performed.";
+            }
         }
-        catch (Exception exception) { if (!_isClosed) await ShowMessageDialogAsync("Inventory failed", exception.Message); }
+        catch (Exception exception) { if (!_isClosed) CatalogInventoryStatus.Text = "Inventory failed: " + exception.Message; }
+        finally { if (!_isClosed) button.IsEnabled = true; }
     }
 }

@@ -31,6 +31,14 @@ namespace Naufal_Windows_Tech_s_Powertoys
         // grandchildren so closing the dashboard cannot orphan a tool.
         private static readonly HashSet<ToolWindow> OpenTools = new();
         private readonly Window _owner;
+        private readonly ContentControl _analysisHost = new()
+        {
+            Visibility = Visibility.Collapsed,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(18, 0, 18, 8)
+        };
+
+        internal InlineAnalysisProgress CreateAnalysisProgress(IReadOnlyList<CatalogProgressItem> items) => new(_analysisHost, items);
         public Func<bool>? IsBusy { get; set; }
         public bool IsClosed { get; private set; }
 
@@ -103,6 +111,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+            // An optional inline scan panel sits above the fixed action footer.
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             _headingText = new TextBlock
             {
                 Text = title,
@@ -135,6 +145,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             };
             Grid.SetRow(presenter, 1);
             root.Children.Add(presenter);
+            Grid.SetRow(_analysisHost, 2);
+            root.Children.Add(_analysisHost);
 
             PrimaryButton = CreateFooterButton(primaryButtonText, isPrimary: true);
             SecondaryButton = CreateFooterButton(secondaryButtonText, isPrimary: false);
@@ -174,7 +186,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 Padding = new Thickness(18, 11, 18, 11),
                 Child = footerButtons
             };
-            Grid.SetRow(footerBorder, 2);
+            Grid.SetRow(footerBorder, 3);
             root.Children.Add(footerBorder);
 
             Content = root;

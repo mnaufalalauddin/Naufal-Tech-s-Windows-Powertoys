@@ -1041,20 +1041,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
 
         private ToolWindow CreateMessageWindow(string title, string message)
         {
-            TextBlock messageText = new()
-            {
-                Text = message,
-                TextWrapping = TextWrapping.Wrap,
-                IsTextSelectionEnabled = true,
-                VerticalAlignment = VerticalAlignment.Top,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Margin = new Thickness(4)
-            };
-
             ToolWindow window = new(
                 this,
                 title,
-                messageText,
+                DialogMessageContent.Create(message),
                 closeButtonText: "OK",
                 initialWidth: 660,
                 initialHeight: 390,
@@ -1069,20 +1059,10 @@ namespace Naufal_Windows_Tech_s_Powertoys
             string primaryButtonText,
             string closeButtonText = "Cancel")
         {
-            TextBlock messageText = new()
-            {
-                Text = message,
-                TextWrapping = TextWrapping.Wrap,
-                IsTextSelectionEnabled = true,
-                VerticalAlignment = VerticalAlignment.Top,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Margin = new Thickness(4)
-            };
-
             ToolWindow window = new(
                 this,
                 title,
-                messageText,
+                DialogMessageContent.Create(message),
                 primaryButtonText: primaryButtonText,
                 closeButtonText: closeButtonText,
                 initialWidth: 680,
@@ -1618,9 +1598,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 officialSourceButton.IsEnabled = false;
                 list.Items.Clear();
                 statusText.Text = "Analyzing installed runtimes and Windows prerequisites...";
-                CatalogProgressWindow progressWindow = new(
-                    this,
-                    "Analyzing",
+                InlineAnalysisProgress progressWindow = window.CreateAnalysisProgress(
                     new[]
                     {
                         new CatalogProgressItem(
@@ -3328,9 +3306,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 }
                 UpdateSelectionSummary();
                 statusText.Text = $"Checking {definitions.Count} current setting(s)... You can review and resize this window while the checks finish.";
-                CatalogProgressWindow progressWindow = new(
-                    this,
-                    "Analyzing",
+                InlineAnalysisProgress progressWindow = window.CreateAnalysisProgress(
                     definitions
                         .Select(item => new CatalogProgressItem(item.Id, item.Name))
                         .ToArray());
@@ -3351,6 +3327,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         ToolToggleState state = await ReadToggleStateWithTimeoutAsync(
                             service,
                             definition);
+                        UpdateCatalogStateText(stateTexts[definition.Id], state);
                         progressWindow.VerifyItem(definition.Id);
                         if (state.IsConfirmedUnavailable)
                             progressWindow.UnavailableItem(definition.Id, state.Error);
@@ -3406,7 +3383,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                         ? "Select rows, then Apply selected to apply their tweaks or Restore selected to replay saved state/documented Windows service defaults. Toggle switches change one item after confirmation."
                         : $"Current states loaded; {unavailable} item(s) are unavailable on this PC and their Select and ON/OFF controls remain disabled.";
                     if (failedChecks > 0)
-                        statusText.Text = $"Verification failed for {failedChecks} item(s). See the progress window for details.";
+                        statusText.Text = $"Verification failed for {failedChecks} item(s). See Analysis details below or the affected rows.";
                     statusText.Foreground = new SolidColorBrush(failedChecks > 0
                         ? Color.FromArgb(255, 185, 28, 28)
                         : unavailable > 0 ? Color.FromArgb(255, 107, 114, 128) : Color.FromArgb(255, 0, 112, 60));
@@ -4130,9 +4107,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 window.SecondaryButton.IsEnabled = false;
                 openRegistryButton.IsEnabled = false;
                 statusText.Text = "Parsing active PCI registry keys, IRQ resources, and driver INF files...";
-                CatalogProgressWindow progressWindow = new(
-                    this,
-                    "Reading",
+                InlineAnalysisProgress progressWindow = window.CreateAnalysisProgress(
                     new[] { new CatalogProgressItem("MsiInventory", "MSI-compatible devices") });
                 progressWindow.Show();
                 progressWindow.BeginItem(
@@ -4587,9 +4562,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 officialSourceButton.IsEnabled = false;
                 refreshButton.IsEnabled = false;
                 statusText.Text = "Reading display-adapter inventory...";
-                CatalogProgressWindow progressWindow = new(
-                    this,
-                    "Reading",
+                InlineAnalysisProgress progressWindow = window.CreateAnalysisProgress(
                     new[] { new CatalogProgressItem("GpuInventory", "GPU driver inventory") });
                 progressWindow.Show();
                 progressWindow.BeginItem(
@@ -5074,9 +5047,7 @@ namespace Naufal_Windows_Tech_s_Powertoys
                 bitLockerLoading = true;
                 SetActionAvailability(false);
                 statusText.Text = "Reading BitLocker status...";
-                CatalogProgressWindow progressWindow = new(
-                    this,
-                    "Reading",
+                InlineAnalysisProgress progressWindow = window.CreateAnalysisProgress(
                     new[] { new CatalogProgressItem("BitLockerStatus", "BitLocker volumes") });
                 progressWindow.Show();
                 progressWindow.BeginItem(
@@ -5559,9 +5530,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             Func<SecuritySettingsLaunchResult> openSettings)
         {
             TaskStatusMessage = taskLabel;
-            CatalogProgressWindow progressWindow = new(
-                this,
-                "Reading",
+            InlineAnalysisProgress progressWindow = new(
+                MainAnalysisHost,
                 new[] { new CatalogProgressItem("SecurityReport", dialogTitle) });
             progressWindow.Show();
             progressWindow.BeginItem(
@@ -5749,9 +5719,8 @@ namespace Naufal_Windows_Tech_s_Powertoys
             }
 
             TaskStatusMessage = taskLabel;
-            CatalogProgressWindow progressWindow = new(
-                this,
-                "Collecting",
+            InlineAnalysisProgress progressWindow = new(
+                MainAnalysisHost,
                 new[] { new CatalogProgressItem(suggestedFileName, dialogTitle) });
             progressWindow.Show();
 

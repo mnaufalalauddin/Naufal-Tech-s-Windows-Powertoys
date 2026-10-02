@@ -24,6 +24,7 @@ internal sealed class SecurityMitigationNative : ISecurityMitigationPlatform, IL
         int[]? configured = null, running = null, hardware = null;
         string machine = "";
         bool? managed = null, policy = null;
+        ManagementEvidence? management = null;
         bool client = false;
         int build = 0;
         try
@@ -40,14 +41,15 @@ internal sealed class SecurityMitigationNative : ISecurityMitigationPlatform, IL
             policy = HasContent(machineHive, @"SOFTWARE\Policies\Microsoft\Windows\DeviceGuard") ||
                 HasContent(machineHive, @"SOFTWARE\Microsoft\PolicyManager\current\device\DeviceGuard") ||
                 HasContent(machineHive, @"SOFTWARE\Microsoft\PolicyManager\current\device\VirtualizationBasedTechnology");
-            bool enrolled = HasContent(machineHive, @"SYSTEM\CurrentControlSet\Control\CloudDomainJoin\JoinInfo") ||
+            bool legacyArtifacts = HasContent(machineHive, @"SYSTEM\CurrentControlSet\Control\CloudDomainJoin\JoinInfo") ||
                 HasContent(machineHive, @"SOFTWARE\Microsoft\Provisioning\OMADM\Accounts") ||
                 HasContent(machineHive, @"SOFTWARE\Microsoft\Enrollments");
             int computers = 0;
             bool? domain = null;
             NativeRscReader.Visit((_, instance) => { domain = bool.TryParse(NativeRscReader.ReadValue(instance, "PartOfDomain"), out bool joined) ? joined : null; computers++; },
                 @"ROOT\CIMV2", "SELECT PartOfDomain FROM Win32_ComputerSystem");
-            managed = computers == 1 && domain.HasValue ? enrolled || domain.Value : null;
+            management = ReadManagement(computers == 1 ? domain : null, legacyArtifacts);
+            managed = management.Managed;
         }
         catch (Exception ex) { errors.Add("Registry/management evidence: " + ex.Message); }
         try
@@ -70,8 +72,45 @@ internal sealed class SecurityMitigationNative : ISecurityMitigationPlatform, IL
         }
         catch (Exception ex) { configured = running = hardware = null; vbs = ci = null; errors.Add("Win32_DeviceGuard: " + ex.Message); }
         return new(build, client, WindowsPrivilegeService.IsAdministrator(), machine, enabled, hvciLocked, vbsLocked,
-            vbs, configured, running, hardware, managed, policy, ci, string.Join("; ", errors)) { Lsa = ReadLsaEvidence() };
+            vbs, configured, running, hardware, managed, policy, ci, string.Join("; ", errors)) { Lsa = ReadLsaEvidence(), Management = management };
     }
+
+    private static ManagementEvidence ReadManagement(bool? domain, bool legacyArtifacts)
+    {
+        bool? mdm = null;
+        int? cloud = null;
+        List<string> errors = [];
+        if (domain is null) errors.Add("Domain membership unavailable");
+        try
+        {
+            // Request only the BOOL. Do not collect the optional account UPN.
+            int result = IsDeviceRegisteredWithManagement(out bool registered, 0, 0);
+            if (result == 0) mdm = registered;
+            else errors.Add($"MDM registration query returned 0x{result:X8}");
+        }
+        catch (Exception ex) { errors.Add("MDM registration query unavailable: " + ex.GetType().Name); }
+        nint info = 0;
+        try
+        {
+            int result = NetGetAadJoinInformation(0, out info);
+            // Only read the first enum field; never copy tenant, certificate or user data.
+            cloud = ManagementEvidence.DecodeCloudJoin(result, info != 0, result >= 0 && info != 0 ? Marshal.ReadInt32(info) : 0);
+            if (cloud is null) errors.Add($"Entra join query returned unknown evidence (0x{result:X8})");
+        }
+        catch (Exception ex) { errors.Add("Entra join query unavailable: " + ex.GetType().Name); }
+        finally { if (info != 0) NetFreeAadJoinInformation(info); }
+        return new(domain, mdm, cloud, legacyArtifacts, string.Join("; ", errors));
+    }
+
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [DllImport("MDMRegistration.dll", ExactSpelling = true)]
+    private static extern int IsDeviceRegisteredWithManagement([MarshalAs(UnmanagedType.Bool)] out bool registered, uint upnLength, nint upn);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [DllImport("Netapi32.dll", ExactSpelling = true)]
+    private static extern int NetGetAadJoinInformation(nint tenantId, out nint joinInfo);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [DllImport("Netapi32.dll", ExactSpelling = true)]
+    private static extern void NetFreeAadJoinInformation(nint joinInfo);
 
     private static LsaProtectionSnapshot ReadLsaEvidence()
     {

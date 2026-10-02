@@ -4,6 +4,47 @@ int assertions = 0;
 void Check(bool condition, string message) { assertions++; if (!condition) throw new Exception(message); }
 var baseline = new SecurityMitigationSnapshot(22631, true, true, "synthetic-machine", 1, 0, 0, 2,
     new[] { 1, 2 }, new[] { 1, 2 }, new[] { 1, 2, 7 }, false, false, 0, "");
+var unmanaged = new ManagementEvidence(false, false, -1, true, "");
+Check(unmanaged.Managed == false, "Legacy Enrollments content alone does not mark a personal device as managed");
+Check((unmanaged with { RegistryArtifacts = false }).Managed == false, "Empty registry artifacts do not change current API evidence");
+Check((unmanaged with { RegistryArtifacts = null }).Managed == false, "Legacy hints do not substitute registration queries");
+Check((unmanaged with { DomainJoined = true }).Managed == true, "Domain join still blocks local protection changes");
+Check((unmanaged with { MdmRegistered = true }).Managed == true, "MDM API registration still blocks local protection changes");
+Check((unmanaged with { CloudJoinType = 1 }).Managed == true, "Entra device join still blocks local protection changes");
+foreach (var unknown in new[] { unmanaged with { DomainJoined = null }, unmanaged with { MdmRegistered = null },
+    unmanaged with { CloudJoinType = null }, unmanaged with { CloudJoinType = 0 }, unmanaged with { CloudJoinType = 2 },
+    unmanaged with { CloudJoinType = 99 }, unmanaged with { ReadError = "API unavailable" } })
+    Check(unknown.Managed is null, "Incomplete or work-account-only evidence remains unresolved, never unmanaged");
+Check((unmanaged with { MdmRegistered = true, DomainJoined = null }).Managed == true, "Known registration is not discarded when another probe fails");
+Check(ManagementEvidence.DecodeCloudJoin(0, false, 0) == -1, "Successful null join buffer means no reported join");
+Check(ManagementEvidence.DecodeCloudJoin(1, false, 0) == -1, "S_FALSE is HRESULT success with no reported join, not an API error");
+Check(ManagementEvidence.DecodeCloudJoin(1, true, 0) is null, "Success HRESULT does not make an unknown join enum valid");
+Check(ManagementEvidence.DecodeCloudJoin(0, true, 1) == 1, "Device join enum preserved");
+Check(ManagementEvidence.DecodeCloudJoin(0, true, 2) == 2, "Workplace registration is distinct from device join");
+Check(ManagementEvidence.DecodeCloudJoin(-1, false, 0) is null, "Failed API with null buffer is unknown, not no enrollment");
+Check(ManagementEvidence.DecodeCloudJoin(-1, true, 1) is null, "Failure never trusts a returned buffer");
+Check(ManagementEvidence.DecodeCloudJoin(0, true, 0) is null, "Unknown join enum is unresolved");
+Check(ManagementEvidence.DecodeCloudJoin(0, true, 99) is null, "Unexpected join enum is unresolved");
+Check(unmanaged.Describe().Contains("not proof of active management"), "Legacy artifact warning retained in diagnostics");
+var screenshot = baseline with { Managed = unmanaged.Managed, Management = unmanaged, HvciEnabled = null,
+    HvciLocked = null, VbsLocked = null, VbsStatus = 0, CodeIntegrityPolicy = 2 };
+var enableBlock = SecurityMitigationPolicy.ControlBlockReason(screenshot, SecurityMitigationAction.EnableMemoryIntegrity, null);
+var disableBlock = SecurityMitigationPolicy.ControlBlockReason(screenshot, SecurityMitigationAction.DisableMemoryIntegrity, null);
+Check(!enableBlock.Contains("policy owner's controls") && !enableBlock.Contains("management status is unresolved"), "Personal PC is not incorrectly labeled managed");
+Check(enableBlock.Contains("firmware-lock") && enableBlock.Contains("Code Integrity") && enableBlock.Contains("VBS must already"), "All remaining enable blockers visible together");
+Check(disableBlock.Contains("firmware-lock") && disableBlock.Contains("Code Integrity") && !disableBlock.Contains("VBS must already"), "Disable does not inherit enable-only prerequisite");
+Check(SecurityMitigationPolicy.ControlBlockReason(baseline, SecurityMitigationAction.RestoreMemoryIntegrity, null).Contains("No exact"), "Restore UI rejects absent backup before confirmation");
+Check(SecurityMitigationPolicy.ControlBlockReason(baseline with { VbsStatus = 0 }, SecurityMitigationAction.RestoreMemoryIntegrity,
+    new("synthetic-machine", 1, "Prepared", DateTimeOffset.UtcNow)).Contains("VBS must already"), "Restore-to-enabled checks enable prerequisites");
+Check(SecurityMitigationPolicy.ControlBlockReason(baseline with { VbsStatus = 0 }, SecurityMitigationAction.RestoreMemoryIntegrity,
+    new("synthetic-machine", 0, "Prepared", DateTimeOffset.UtcNow)).Length == 0, "Restore-to-disabled does not require running VBS");
+Check(SecurityMitigationPolicy.ControlBlockReason(baseline, SecurityMitigationAction.EnableMemoryIntegrity,
+    new("foreign", 1, "Prepared", DateTimeOffset.UtcNow)).Contains("another machine"), "UI and backend both reject foreign snapshot");
+Check(SecurityMitigationPolicy.Report(screenshot).Contains("Enable HVCI blocked") && SecurityMitigationPolicy.Report(screenshot).Contains("Disable HVCI blocked"), "Export reports direction-specific restrictions");
+string appSecurityReport = SecurityMitigationPolicy.Report(screenshot, includeHvciControls: false);
+Check(appSecurityReport.Contains("read-only in this utility"), "Current app HVCI report is explicitly read-only");
+Check(!appSecurityReport.Contains("Enable HVCI blocked") && !appSecurityReport.Contains("Enable/Disable here"), "Current app does not advertise removed HVCI controls");
+Check(SecurityMitigationPolicy.BlockReason(baseline with { Managed = null }, false).Contains("not a confirmed managed-device"), "Unknown management is not called active enrollment");
 foreach (var blocked in new[] { baseline with { Administrator = false }, baseline with { ClientWindows = false },
     baseline with { WindowsBuild = 18363 }, baseline with { MachineIdentity = "" }, baseline with { EvidenceError = "denied" },
     baseline with { Managed = true }, baseline with { Managed = null }, baseline with { PolicyPresent = true },

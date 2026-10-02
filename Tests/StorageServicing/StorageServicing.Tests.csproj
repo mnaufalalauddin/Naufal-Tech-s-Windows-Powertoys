@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../StorageServicing.cs" Link="StorageServicing.cs" />
+    <Compile Include="../RetiredModules/StorageServicing.cs" Link="StorageServicing.cs" />
     <Compile Include="../../NativeCommandRunner.cs" Link="NativeCommandRunner.cs" />
-    <Compile Include="../../OfflineImageModels.cs" Link="OfflineImageModels.cs" />
+    <Compile Include="../RetiredModules/OfflineImageModels.cs" Link="OfflineImageModels.cs" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 # Naufal Windows Utility — Changelog
 
-Development history from **30 August 2026** through **1 October 2026**.
+Development history from **30 August 2026** through **2 October 2026**.
 
 **Original history snapshot:** 12 September 2026, 00:39:41 WIB (Asia/Jakarta, UTC+07:00).
 Later development entries are appended below with their own dates.
@@ -21,6 +21,72 @@ mutation, complete visual validation, or full behavioral parity.
 Historical report filenames identify the records used when this history was
 assembled. Reports not included in this repository are shown as plain references,
 not download links; private backups and raw machine evidence are not published.
+
+## 2 October 2026 — Simplified interface development preview
+
+- **Release package:** `v8.0.0.0-build.20261002`, a development preview with
+  application/installer version **v8.0.0.0**. Earlier releases and tags are retained.
+- **Source:** Includes the 1 October module removals, inline analysis, scrollable
+  confirmations, preserved repair/tweak/SMART backends and read-only HVCI status.
+  Existing user backups and external WIM/VM files are neither removed nor changed.
+- **Documentation:** Updated README's landing-page notice, feature descriptions,
+  download link and verification summary to match the simplified application.
+  Historical screenshots and earlier engineering records remain clearly dated.
+- **Distribution:** The installer, its `SHA256SUMS.txt` and this changelog form the
+  release assets. The installer remains unsigned; checksums establish file identity,
+  not publisher trust or universal compatibility. No live mutation/reboot is part
+  of the publication checks. See the 1 October entries for detailed test evidence.
+- **Publication checks:** Re-ran 4,786 profile/action, 337 English UI, 27 simplified
+  interface, 92 catalog-interaction and 33 identity assertions successfully. Fresh
+  Native AOT/Inno packaging passed, including 91 icon assertions. Installer size:
+  38,635,495 bytes; SHA-256:
+  `1B4EF3F88B953957755964662D1F336233107611C2E5D69EA83236F591FBD1C4`.
+
+## 1 October 2026 — Simplified modules, inline analysis and scrollable confirmations
+
+- **Removed from the application:** Resource Analyzer, Background Owner Finder,
+  Storage / Windows Servicing, Offline Image Workspace, and HVCI Enable/Disable/
+  Restore controls. Retired storage/offline/resource/background backends are now
+  test-only fixtures; backups, settings, offline images and VM data are untouched.
+- **Changed:** Catalog, runtime, GPU, MSI and BitLocker read-only scans show progress
+  and expandable results in the owning window. Main-window report collection,
+  action inventory and security evidence no longer need extra analysis windows.
+- **Preserved:** Disk/SMART reporting, existing repair and tweak backends, shared
+  snapshot protection, guarded LSA Enable, and separate Apply/Restore confirmation
+  and progress. HVCI state is read-only in the application's security report.
+- **Fixed:** Long confirmation and message text now wraps and scrolls vertically
+  inside the content row while footer actions remain outside the viewport.
+- **Scope:** Local v8.0.0.0 revision; no automatic publication or host mutation.
+- **Verification:** Debug x64 builds without warnings/errors; 4,786 profile/action,
+  337 English UI, 105 security/offline fixture, 54 LSA and 33 storage fixture checks
+  pass. Also passed 27 removal/inline-route and 92 catalog-interaction source checks.
+  Native WinUI tests cover wrapped long confirmations, reachable final warnings,
+  fixed Apply/Cancel buttons, both themes, text scales and resize cases. No host
+  tweak, uninstall, Windows servicing, security change or reboot is run by these tests.
+- **Packaging/UI evidence:** 20,961 native WinUI assertions passed (128 layout
+  cases, 8 scaling flyouts, long confirmation and inline-error checks). Fresh
+  Native AOT x64 and Inno Setup packaging completed. Local installer SHA-256:
+  `76EFEE9DFCBA605A488F17A78CD4EC6713219CF314F84664ED0BB06DCE88CC4B`.
+
+## 1 October 2026 — HVCI management detection and action explanations
+
+- **Fixed:** Populated legacy enrollment registry containers no longer classify
+  a personal PC as managed. Domain membership and native Windows MDM/Entra queries
+  establish registration evidence; failed queries and work-account-only registration
+  remain unresolved. Correctly handle successful `S_FALSE` no-join responses.
+- **Changed:** Show selectable reasons next to each security action, including all
+  applicable blockers. Enable/Disable/Restore share backend eligibility checks;
+  Restore validates snapshot presence, identity and its original target direction.
+- **Preserved:** Policy/firmware-lock safeguards, separate configured/running state,
+  confirmations, original snapshots and reboot handling. No enrollment/policy key,
+  firmware, BCD, prerequisite or host protection is changed by this fix.
+- **Verification:** 103 security/offline assertions (33 new), 54 LSA, 4,786
+  profile/action and 353 English UI checks passed. Read-only native probing now
+  reports no domain/MDM/Entra registration on this PC despite legacy registry
+  content. Unknown locks, active Code Integrity and missing VBS remain independent
+  blockers. The probe was non-admin; no live HVCI Apply/rollback was performed.
+- **Scope:** Local fix at v8.0.0.0; not automatically pushed or released. Native UI
+  visual verification and live protection round trips remain outstanding.
 
 ## 1 October 2026 — Shared privacy originals and isolated validation preparation
 

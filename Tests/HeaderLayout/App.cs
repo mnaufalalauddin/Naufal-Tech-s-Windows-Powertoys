@@ -7,6 +7,8 @@ namespace Naufal_Windows_Tech_s_Powertoys;
 public partial class App : Application
 {
     private Window? _window;
+    internal static void WriteCrashLog(Exception exception, string context) =>
+        File.AppendAllText(ResultPath, "NOTE: " + context + ": " + exception.Message + Environment.NewLine);
     internal static readonly string ResultPath = Path.Combine(AppContext.BaseDirectory, "header-layout-results.txt");
     public App()
     {

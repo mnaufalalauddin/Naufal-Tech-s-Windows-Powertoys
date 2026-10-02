@@ -1,5 +1,8 @@
 # Performance/debloat audit — 29 September 2026
 
+Historical record: the Resource Analyzer and Background Owner Finder were removed
+from the app on 1 October 2026. See [current functionality](../README.md).
+
 Status: **Work in progress. This checkpoint completes a bounded P0 slice, not the
 entire requested audit or optimization roadmap.** Existing behavior, framework,
 branding, version v8.0.0.0 and backup identities are retained. No host tweaks,

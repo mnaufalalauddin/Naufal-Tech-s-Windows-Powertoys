@@ -1,10 +1,22 @@
 # Security & Mitigations
 
-This panel treats each protection independently. It does not apply a blanket security-off preset or claim performance improvements. Its Apply buttons require confirmation and the shared system-mutation lock. Opening or reloading the panel is read-only.
+Open **Windows Security → Security status / LSA protection**. Results appear inline in the main window, with Copy and Save TXT. Opening/reloading is read-only. The retained LSA Enable action still requires confirmation and the shared mutation lock; it does not change other protections.
 
 ## Memory integrity / HVCI
 
-Enable, Disable and exact-snapshot Restore remain guarded by management, policy, hardware and explicit unlocked-state evidence. Incomplete evidence blocks changes. A successful DWORD readback means **configuration verified, reboot required**, not that the running protection changed.
+HVCI Enable, Disable and exact-snapshot Restore were removed from the application
+on **1 October 2026**. The report still distinguishes registry configuration from
+running DeviceGuard protection. Use **Open Windows Security** for configuration
+and driver compatibility review; the utility never forces policy or firmware
+restrictions aside.
+
+Existing HVCI snapshot files are left untouched. No setting is restored, deleted
+or changed merely because these controls were removed. Historical VM harnesses
+and tests may still reference the former controls; these are not UI entry points.
+
+Management evidence uses domain membership and native MDM/Entra registration
+queries. Legacy enrollment registry contents alone are not proof of management.
+Unknown results remain unknown; no enrollment or policy record is removed.
 
 ## Local Security Authority protection
 
@@ -20,9 +32,20 @@ Enable requires explicit acknowledgement of authentication plug-in compatibility
 
 `Tests/SecurityProtection` covers mock enable, denied/unknown/stale preflight, foreign snapshots, snapshot persistence failures, repeated Apply, and configuration/effective distinctions. These tests do not Apply anything to the host. VM restart, sign-in compatibility and live protection verification remain separate acceptance requirements; mock success is not evidence of deployment testing.
 
+`Tests/BacklogModules` also covers legacy-registry false positives, API failure,
+domain/MDM/Entra registration, workplace-only ambiguity, HRESULT decoding, all
+remaining blockers and direction-specific Restore eligibility. The updated suite
+passes 103 assertions (33 added); no security writes or real DISM commands run.
+The current application has no separate security-analysis window or HVCI action.
+Live LSA mutation/sign-in testing remains outside these regression checks.
+
 ## Microsoft references
 
 - [LSA configuration, compatibility and effective verification](https://learn.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection)
 - [Process protection metadata](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_protection_level_information)
 - [GetProcessInformation access requirements](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocessinformation)
 - [Memory integrity configuration](https://learn.microsoft.com/en-us/windows/security/hardware-security/enable-virtualization-based-protection-of-code-integrity)
+- [Read MDM registration without collecting a UPN](https://learn.microsoft.com/en-us/windows/win32/api/mdmregistration/nf-mdmregistration-isdeviceregisteredwithmanagement)
+- [Read Entra join information](https://learn.microsoft.com/en-us/windows/win32/api/lmjoin/nf-lmjoin-netgetaadjoininformation)
+- [Device join versus work-account registration](https://learn.microsoft.com/en-us/windows/win32/api/lmjoin/ne-lmjoin-dsreg_join_type)
+- [HRESULT success and S_FALSE](https://learn.microsoft.com/en-us/windows/win32/learnwin32/error-handling-in-com)

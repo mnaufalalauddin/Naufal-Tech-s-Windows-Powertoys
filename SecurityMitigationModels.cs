@@ -12,6 +12,36 @@ internal sealed record SecurityMitigationSnapshot(
     bool? Managed, bool? PolicyPresent, int? CodeIntegrityPolicy, string EvidenceError)
 {
     internal LsaProtectionSnapshot? Lsa { get; init; }
+    internal ManagementEvidence? Management { get; init; }
+}
+
+// Registry containers can outlive enrollment or contain Windows-owned records.
+// Only successful current-state queries may establish an unmanaged result.
+internal sealed record ManagementEvidence(bool? DomainJoined, bool? MdmRegistered,
+    int? CloudJoinType, bool? RegistryArtifacts, string ReadError)
+{
+    // -1 is our successful API/no-buffer sentinel; 1=device join; 2=work account.
+    internal bool? Managed => DomainJoined == true || MdmRegistered == true || CloudJoinType == 1
+        ? true
+        : ReadError.Length != 0 || DomainJoined is null || MdmRegistered is null || CloudJoinType != -1
+            ? null : false;
+
+    internal static int? DecodeCloudJoin(int result, bool hasBuffer, int joinType) =>
+        // HRESULT success includes S_FALSE (1), observed for a successful no-join query.
+        result < 0 ? null : !hasBuffer ? -1 : joinType is 1 or 2 ? joinType : null;
+
+    internal string Describe() =>
+        $"Domain joined: {Known(DomainJoined)}; MDM registered (Windows API): {Known(MdmRegistered)}; " +
+        "Entra join (Windows API): " + (CloudJoinType switch
+        {
+            -1 => "No device join or current-user work account reported",
+            1 => "Device joined",
+            2 => "Work account registered; device management not established, review required",
+            _ => "Unknown"
+        }) + $". Legacy enrollment registry content: {Known(RegistryArtifacts)} (informational only; not proof of active management)." +
+        (ReadError.Length == 0 ? "" : " Read notes: " + ReadError);
+
+    private static string Known(bool? value) => value is null ? "Unknown" : value.Value ? "Yes" : "No";
 }
 
 internal sealed record LsaProtectionSnapshot(int? RunAsPpl, bool? PolicyPresent, uint? EffectiveProtectionLevel, string ReadError);
@@ -102,30 +132,47 @@ internal static class SecurityMitigationPolicy
 {
     internal static string BlockReason(SecurityMitigationSnapshot s, bool enabling)
     {
-        if (!s.Administrator) return "Administrator rights are required; no automatic elevation is attempted.";
-        if (!s.ClientWindows || s.WindowsBuild < 19041) return "Unsupported Windows client/build for this in-app control.";
-        if (string.IsNullOrWhiteSpace(s.MachineIdentity)) return "Machine identity could not be verified.";
-        if (!string.IsNullOrEmpty(s.EvidenceError)) return "Preflight evidence is incomplete: " + s.EvidenceError;
-        if (s.Managed != false || s.PolicyPresent != false) return "Managed-device or policy status is present/unknown. Use your administrator's policy controls.";
+        return string.Join("\n", BlockReasons(s, enabling));
+    }
+
+    internal static IReadOnlyList<string> BlockReasons(SecurityMitigationSnapshot s, bool enabling)
+    {
+        List<string> reasons = [];
+        if (!s.Administrator) reasons.Add("Administrator rights are required; no automatic elevation is attempted.");
+        if (!s.ClientWindows || s.WindowsBuild < 19041) reasons.Add("Unsupported Windows client/build for this in-app control.");
+        if (string.IsNullOrWhiteSpace(s.MachineIdentity)) reasons.Add("Machine identity could not be verified.");
+        if (!string.IsNullOrEmpty(s.EvidenceError)) reasons.Add("Preflight evidence is incomplete: " + s.EvidenceError);
+        if (s.Managed == true) reasons.Add("Device domain join or management registration is reported. Use the policy owner's controls.");
+        else if (s.Managed != false) reasons.Add("Device-management status is unresolved. Review the domain/MDM/Entra evidence and reload; this is not a confirmed managed-device result.");
+        if (s.PolicyPresent != false) reasons.Add("DeviceGuard policy is present or unreadable. Review it with the policy owner; no policy is overridden here.");
         // Absence is not proof that a persisted firmware lock is absent. Require explicit unlocked evidence.
-        if (s.HvciLocked != 0 || s.VbsLocked != 0) return "UEFI-lock state is locked or unknown. This utility will not bypass a lock.";
-        if (s.CodeIntegrityPolicy != 0) return "Code Integrity/App Control policy is active or unknown; use the policy owner.";
+        if (s.HvciLocked != 0 || s.VbsLocked != 0) reasons.Add("HVCI/VBS firmware-lock evidence is locked or unknown. Missing registry values do not prove unlocked firmware; use Windows Security or the policy owner. No lock is changed here.");
+        if (s.CodeIntegrityPolicy != 0) reasons.Add("Code Integrity/App Control policy is active or unknown. This in-app control cannot establish whether that policy requires HVCI; use Windows Security or the policy owner.");
         if (s.Configured is null || s.Running is null || s.Hardware is null || s.VbsStatus is null)
-            return "Win32_DeviceGuard did not return complete configured/effective state.";
-        if (s.HvciEnabled is not (null or 0 or 1)) return "Unexpected Memory integrity registry value; manual review required.";
-        if (enabling && (s.VbsStatus != 2 || !s.Hardware.Contains(1)))
-            return "Enable requires VBS already running and hardware virtualization support. Configure prerequisites in Windows Security first.";
-        return "";
+            reasons.Add("Win32_DeviceGuard did not return complete configured/effective state.");
+        if (s.HvciEnabled is not (null or 0 or 1)) reasons.Add("Unexpected Memory integrity registry value; manual review required.");
+        if (enabling && (s.VbsStatus != 2 || s.Hardware?.Contains(1) != true))
+            reasons.Add("This in-app Enable only changes HVCI, not its prerequisites. VBS must already be running with hardware virtualization available. Review Device security / Core isolation in Windows Security first.");
+        return reasons;
+    }
+
+    internal static string ControlBlockReason(SecurityMitigationSnapshot s, SecurityMitigationAction action, SecurityMitigationBackup? backup)
+    {
+        List<string> reasons = new(BlockReasons(s, action == SecurityMitigationAction.EnableMemoryIntegrity ||
+            (action == SecurityMitigationAction.RestoreMemoryIntegrity && backup?.OriginalValue == 1)));
+        if (backup is not null && (!StringComparer.Ordinal.Equals(backup.MachineIdentity, s.MachineIdentity) || backup.OriginalValue is not (null or 0 or 1)))
+            reasons.Add("The saved snapshot belongs to another machine or contains an unsupported value. It is retained for review.");
+        if (action == SecurityMitigationAction.RestoreMemoryIntegrity && backup is null)
+            reasons.Add("No exact Memory integrity snapshot exists. Restore cannot guess a default.");
+        return string.Join("\n", reasons);
     }
 
     internal static SecurityMitigationResult Execute(SecurityMitigationAction action, ISecurityMitigationPlatform platform, ISecurityMitigationBackupStore store)
     {
         var before = platform.Read();
         var backup = store.Load();
-        if (backup is not null && (!StringComparer.Ordinal.Equals(backup.MachineIdentity, before.MachineIdentity) || backup.OriginalValue is not (null or 0 or 1)))
-            return new(false, false, "Blocked", "The snapshot does not match this machine or contains an unsupported original value.");
-        if (action == SecurityMitigationAction.RestoreMemoryIntegrity && backup is null)
-            return new(false, false, "Blocked", "No exact snapshot exists. No Windows default is guessed.");
+        string block = ControlBlockReason(before, action, backup);
+        if (block.Length > 0) return new(false, false, "Blocked", block);
         int? desired = action switch
         {
             SecurityMitigationAction.EnableMemoryIntegrity => 1,
@@ -133,8 +180,6 @@ internal static class SecurityMitigationPolicy
             SecurityMitigationAction.RestoreMemoryIntegrity => backup!.OriginalValue,
             _ => throw new ArgumentOutOfRangeException(nameof(action))
         };
-        string block = BlockReason(before, desired == 1);
-        if (block.Length > 0) return new(false, false, "Blocked", block);
         if (platform.ReadMemoryIntegrity() != before.HvciEnabled)
             return new(false, false, "Blocked", "Configuration changed during preflight. Reload and try again.");
         if (before.HvciEnabled == desired)
@@ -161,7 +206,7 @@ internal static class SecurityMitigationPolicy
         }
     }
 
-    internal static string Report(SecurityMitigationSnapshot s)
+    internal static string Report(SecurityMitigationSnapshot s, bool includeHvciControls = true)
     {
         StringBuilder text = new();
         text.AppendLine("SECURITY & MITIGATIONS — independent protection evidence");
@@ -173,15 +218,22 @@ internal static class SecurityMitigationPolicy
             text.AppendLine($"{item.Item2}: configured={Member(s.Configured,item.Item1)}; running={Member(s.Running,item.Item1)}");
         text.AppendLine("DeviceGuard service lists can vary by Windows version; absent identifiers mean not reported configured/running, not hardware unsupported.");
         text.AppendLine($"Hardware property IDs: {(s.Hardware is null ? "Unknown" : string.Join(", ", s.Hardware))} (1 virtualization; 2 Secure Boot capability; 3 DMA; 5 NX; 7 MBEC/GMET). Capable does not mean enabled.");
-        text.AppendLine($"Organization-management indicators: {Known(s.Managed)}; DeviceGuard policy present: {Known(s.PolicyPresent)}");
-        text.AppendLine("Management indicators are conservative registry/domain evidence, not proof of a currently active enrollment; unresolved indicators block local changes.");
+        text.AppendLine($"Device domain join / management registration: {Known(s.Managed)}; DeviceGuard policy present: {Known(s.PolicyPresent)}");
+        text.AppendLine(s.Management?.Describe() ?? "Detailed management evidence is unavailable in this snapshot; no registration source is inferred.");
+        text.AppendLine("Registration does not prove current organization connectivity. Unknown API results and work-account-only registration require review. Legacy registry contents alone do not mark a device as managed.");
         text.AppendLine($"HVCI lock: {Lock(s.HvciLocked)}; VBS lock: {Lock(s.VbsLocked)}; Code Integrity policy: {s.CodeIntegrityPolicy switch { 0 => "Off", 1 => "Audit", 2 => "Enforced", _ => "Unknown" }}");
         text.AppendLine("CPU speculative-execution mitigations: Not measured. This panel never changes FeatureSettingsOverride masks.");
         text.AppendLine("Defender, Smart App Control and BitLocker remain in their existing independent managers. Firmware, TPM and Secure Boot are not changed here.");
+        if (includeHvciControls)
+        {
+        // Historical VM harness diagnostics only; the app has no HVCI action.
         text.AppendLine("Enable/Disable here only changes the HVCI Enabled DWORD after strict preflight. Driver compatibility is not established by this scan; review incompatible drivers in Windows Security first.");
         text.AppendLine("Memory integrity helps protect kernel code. Disabling reduces that protection and is not recommended as a generic performance optimization.");
-        string block = BlockReason(s, false);
-        text.AppendLine(block.Length == 0 ? "Local HVCI controls: preflight eligible (checked again immediately before a write)." : "Local HVCI controls blocked: " + block);
+        string enableBlock = BlockReason(s, true), disableBlock = BlockReason(s, false);
+        text.AppendLine(enableBlock.Length == 0 ? "Enable HVCI: preflight eligible; snapshot checked separately before write." : "Enable HVCI blocked:\n" + enableBlock);
+        text.AppendLine(disableBlock.Length == 0 ? "Disable HVCI: preflight eligible; snapshot checked separately before write." : "Disable HVCI blocked:\n" + disableBlock);
+        }
+        else text.AppendLine("HVCI / Memory integrity is read-only in this utility. Review its configuration and driver compatibility in Windows Security. Existing snapshots are retained; no protection is changed by this scan.");
         if (s.EvidenceError.Length > 0) text.AppendLine("Read notes: " + s.EvidenceError);
         text.AppendLine("Sources: https://learn.microsoft.com/en-us/windows/security/hardware-security/enable-virtualization-based-protection-of-code-integrity");
         text.AppendLine("https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/configure");

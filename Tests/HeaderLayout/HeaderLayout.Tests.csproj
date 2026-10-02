@@ -37,6 +37,12 @@
     <Compile Include="..\..\SmartAttribute.cs" Link="SmartAttribute.cs" />
     <Compile Include="..\..\DiskReportPresentation.cs" Link="DiskReportPresentation.cs" />
     <Compile Include="..\..\DiskInfoView.cs" Link="DiskInfoView.cs" />
+    <Compile Include="..\..\ToolWindow.cs" Link="ToolWindow.cs" />
+    <Compile Include="..\..\AppWindowIcon.cs" Link="AppWindowIcon.cs" />
+    <Compile Include="..\..\DialogMessageContent.cs" Link="DialogMessageContent.cs" />
+    <Compile Include="..\..\InlineAnalysisProgress.cs" Link="InlineAnalysisProgress.cs" />
+    <Compile Include="..\..\CatalogProgressItem.cs" Link="CatalogProgressItem.cs" />
+    <Content Include="..\..\Assets\NaufalWindowsPowertoys.ico" Link="Assets\NaufalWindowsPowertoys.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <!-- Linked XAML compiles to XBF in TargetDir, but is not automatically
        included by the source-only host's Native AOT publish pipeline. -->

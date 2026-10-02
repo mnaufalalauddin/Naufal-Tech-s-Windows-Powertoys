@@ -74,6 +74,7 @@
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -126,7 +127,9 @@
             </Grid>
         </Border>
 
-        <NavigationView x:Name="MainNavigation" Grid.Row="1" PaneDisplayMode="Auto"
+        <ContentControl x:Name="MainAnalysisHost" Grid.Row="1" Visibility="Collapsed"
+                        HorizontalContentAlignment="Stretch" Margin="18,4"/>
+        <NavigationView x:Name="MainNavigation" Grid.Row="2" PaneDisplayMode="Auto"
                         OpenPaneLength="256" CompactPaneLength="48" ExpandedModeThresholdWidth="1100"
                         CompactModeThresholdWidth="640" IsSettingsVisible="False" IsBackButtonVisible="Collapsed"
                         PaneTitle="Windows Utility" SelectionChanged="MainNavigation_SelectionChanged" ItemInvoked="MainNavigation_ItemInvoked">
@@ -256,12 +259,15 @@
 <Button x:Name="WindowsActivationButton" Content="Windows Activation Status"
                                         Click="WindowsActivationButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
-<Button Content="Resource Analyzer — Before / After" Click="ResourceAnalyzer_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-<Button Content="Action Inventory / Shared Targets" Click="CatalogInventory_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-<Button Content="Background Owner Finder — Read-only" Click="BackgroundOwners_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
+<Expander Header="Action Inventory / Shared Targets" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+    <StackPanel Spacing="10">
+        <Button Content="Load action inventory" Click="CatalogInventory_Click" Style="{StaticResource ToolButtonStyle}"/>
+        <TextBlock x:Name="CatalogInventoryStatus" Text="Read-only catalog definitions; no Windows scan or changes." TextWrapping="Wrap"/>
+        <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <TextBlock x:Name="CatalogInventoryText" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+        </ScrollViewer>
+    </StackPanel>
+</Expander>
 <Button x:Name="OfficeActivationButton" Content="Office Activation Status"
                                         Click="OfficeActivationButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
@@ -279,6 +285,11 @@
 <Button x:Name="SmartAppControlButton" Content="Smart App Control"
                                         Click="SmartAppControlButton_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
+<Expander Header="Security status / LSA protection" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+    <StackPanel x:Name="SecurityEvidencePanel" Spacing="12">
+        <Button Content="Load security status" Click="SecurityMitigations_Click" Style="{StaticResource ToolButtonStyle}"/>
+    </StackPanel>
+</Expander>
 </StackPanel>
 <StackPanel x:Name="AdvancedPage" Visibility="Collapsed" Spacing="16" MaxWidth="920" HorizontalAlignment="Left"><TextBlock Text="Advanced Windows Tweaks" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Explore optional configuration, applications, drivers, and runtime tools. Review each warning and keep a recovery backup." TextWrapping="Wrap"/>
 <Button x:Name="EssentialTweaksButton" Content="Essential Windows Tweaks"
@@ -298,12 +309,6 @@
                                         Style="{StaticResource ToolButtonStyle}"/>
 <Button x:Name="MsiModeUtilityButton" Content="MSI Mode Utility"
                                         Click="MsiModeUtilityButton_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-<Button Content="Storage / Windows Servicing" Click="StorageManager_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-<Button Content="Security &amp; Mitigations — Individual Controls" Click="SecurityMitigations_Click"
-                                        Style="{StaticResource ToolButtonStyle}"/>
-<Button Content="Offline Image Workspace" Click="OfflineImages_Click"
                                         Style="{StaticResource ToolButtonStyle}"/>
 </StackPanel>
                 </StackPanel>

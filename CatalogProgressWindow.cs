@@ -11,8 +11,6 @@ using Windows.ApplicationModel.DataTransfer;
 
 namespace Naufal_Windows_Tech_s_Powertoys
 {
-    internal sealed record CatalogProgressItem(string Id, string Name);
-
     /// <summary>
     /// Modeless, resizable progress surface shared by every catalog operation.
     /// Per-item progress lives here instead of inside the catalog cards, and the
